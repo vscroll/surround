@@ -7,11 +7,11 @@ StitchImpl::StitchImpl(QObject *parent) :
     mWorker = new StitchWorker();
 }
 
-void StitchImpl::start()
+void StitchImpl::start(ICapture* capture)
 {
     if (NULL != mWorker)
     {
-        mWorker->start();
+        mWorker->start(capture);
     }
 }
 
@@ -20,14 +20,6 @@ void StitchImpl::stop()
     if (NULL != mWorker)
     {
         mWorker->stop();
-    }
-}
-
-void StitchImpl::append(surround_image4_t* images)
-{
-    if (NULL != mWorker)
-    {
-        mWorker->append(images);
     }
 }
 

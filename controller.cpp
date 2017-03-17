@@ -4,7 +4,6 @@
 #include "stitchimpl.h"
 #include "capture1impl.h"
 #include "capture4impl.h"
-#include <QDebug>
 
 Controller::Controller() :
     mIsRunning(false),
@@ -18,8 +17,8 @@ void Controller::init()
 {
     if (NULL == mCapture)
     {
-        mCapture = new Capture4Impl();
-        //mCapture = new Capture1Impl();
+        //mCapture = new Capture4Impl();
+        mCapture = new Capture1Impl();
         mCapture->openDevice();
     }
 
@@ -53,11 +52,11 @@ void Controller::start(VIDEO_FPS captureFps)
 
    if (NULL != mStitch)
    {
-       mStitch->start();
+       mStitch->start(mCapture);
    }
 
-   mIsRunning = true;
-   QThread::start();
+   //mIsRunning = true;
+   //QThread::start();
 }
 
 void Controller::stop()
@@ -91,17 +90,8 @@ void Controller::run()
             break;
         }
 
-        surround_image4_t* tmp = mCapture->popOneFrame();
-        if (NULL != tmp)
-        {
-#ifdef DEBUG
-            qDebug()<< "Controller::run"
-                    << ", elapsed to capture:" << (int)(clock() - tmp->timestamp)/1000;
-#endif
-            mStitch->append(tmp);
-        }
-
-        usleep(1);
+        qDebug() << "Controll::run";
+        usleep(5000);
     }
 }
 

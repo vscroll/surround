@@ -1,15 +1,23 @@
 #include "stitchworker.h"
 #include "stitch_algorithm.h"
+#include "ICapture.h"
 
 StitchWorker::StitchWorker() :
     mIsRunning(true),
-    mVideoChannel(VIDEO_CHANNEL_FRONT)
+    mVideoChannel(VIDEO_CHANNEL_FRONT),
+    mFreq(10)
 {
 
 }
 
-void StitchWorker::start()
+void StitchWorker::start(ICapture *capture)
 {
+    if (NULL == capture)
+    {
+        return;
+    }
+
+    mCapture = capture;
     mIsRunning = true;
     QThread::start();
 }
@@ -21,25 +29,16 @@ void StitchWorker::stop()
 
 void StitchWorker::run()
 {
-
-    int inputsize = 0;
     double timestamp = 0;
     while (true) {
 
         if (!mIsRunning)
         {
+            usleep(mFreq);
             break;
         }
 
-        surround_image4_t* surroundImage = NULL;
-        {
-            QMutexLocker locker(&mInputImageMutex);
-            inputsize = mInputImageQueue.size();
-            if (inputsize > 0)
-            {
-                surroundImage = mInputImageQueue.dequeue();
-            }
-        }
+        surround_image4_t* surroundImage = mCapture->popOneFrame();
         if (NULL == surroundImage)
         {
             continue;
@@ -99,23 +98,12 @@ void StitchWorker::run()
         qDebug() << "StitchWorke::run"
                  << ", elapsed to capture:" << elapsed
                  << ", stitch:" << (int)(end-start)/1000
-                 << ", inputsize:" << inputsize
                  << ", fullsize:" << fullsize
                  << ", smallsize:" << smallsize;
 #endif
 
-        usleep(10);
+        usleep(mFreq);
     }
-}
-
-void StitchWorker::append(surround_image4_t* images)
-{
-    if (NULL != images)
-    {
-        QMutexLocker locker(&mInputImageMutex);
-        mInputImageQueue.append(images);
-    }
-
 }
 
 surround_image1_t* StitchWorker::dequeueFullImage()

@@ -12,9 +12,8 @@ class StitchImpl : public QObject, public IStitch
 public:
     explicit StitchImpl(QObject *parent = 0);
 
-    virtual void start();
+    virtual void start(ICapture* capture);
     virtual void stop();
-    virtual void append(surround_image4_t* images);
     virtual surround_image1_t* dequeueFullImage();
     virtual surround_image1_t* dequeueSmallImage(VIDEO_CHANNEL channel);
 signals:

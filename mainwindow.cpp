@@ -18,8 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mUpdateFPS = VIDEO_FPS_15;
-    mCaptureFPS = VIDEO_FPS_15;
+    mUpdateFPS = VIDEO_FPS_20;
+    mCaptureFPS = VIDEO_FPS_20;
 
     mController.init();
     start();
