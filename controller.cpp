@@ -90,7 +90,6 @@ void Controller::run()
             break;
         }
 
-        qDebug() << "Controll::run";
         usleep(5000);
     }
 }

@@ -25,12 +25,17 @@ public slots:
 private:
     int mVideoChannel;
     QQueue<surround_image1_t*> mSurroundImageQueue;
-    QMutex mMutex;
+    QMutex mMutexQueue;
 
     CvCapture *mCapture;
+    QMutex mMutexCapture;
 
     int mDropFrameCount;
+    QMutex mMutexDrop;
+
     double mLastTimestamp;
+
+    QMutex mMutexFile;
 };
 
 #endif // CAPTURE1WORKER_H

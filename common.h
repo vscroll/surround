@@ -13,6 +13,7 @@ enum VIDEO_CHANNEL {
 };
 
 enum VIDEO_FPS {
+    VIDEO_FPS_5 = 5,
     VIDEO_FPS_10 = 10,
     VIDEO_FPS_15 = 15,
     VIDEO_FPS_20 = 20,

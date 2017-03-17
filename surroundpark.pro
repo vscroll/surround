@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     controller.cpp \
     stitchworker.cpp \
     stitchimpl.cpp \
-    stitch_algorithm.cpp
+    stitch_algorithm.cpp \
+    util.cpp
 
 HEADERS  += mainwindow.h \
     capture1worker.h \
@@ -34,6 +35,7 @@ HEADERS  += mainwindow.h \
     stitchworker.h \
     IStitch.h \
     stitchimpl.h \
-    stitch_algorithm.h
+    stitch_algorithm.h \
+    util.h
 
 FORMS    += mainwindow.ui

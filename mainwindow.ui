@@ -26,6 +26,9 @@
     <property name="text">
      <string>video_full</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    </property>
    </widget>
    <widget class="QLabel" name="label_video_small">
     <property name="geometry">
@@ -38,6 +41,9 @@
     </property>
     <property name="text">
      <string>video_small</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
     </property>
    </widget>
    <widget class="QPushButton" name="pb_front">

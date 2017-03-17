@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -9,8 +10,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlags(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_NoBackground);
+    ui->label_video_small->setAttribute(Qt::WA_NoBackground);
+    ui->label_video_full->setAttribute(Qt::WA_NoBackground);
 
     mCurVideoChannel = VIDEO_CHANNEL_FRONT;
+    connect(&mVideoUpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdate()));
     connect(&mVideoUpdateSmallTimer, SIGNAL(timeout()), this, SLOT(onUpdateSmallImage()));
     connect(&mVideoUpdateFullTimer, SIGNAL(timeout()), this, SLOT(onUpdateFullImage()));
     connect(ui->pb_front, SIGNAL(clicked()), this, SLOT(onClickFront()));
@@ -20,6 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mUpdateFPS = VIDEO_FPS_20;
     mCaptureFPS = VIDEO_FPS_20;
+
+    mLastUpdateSmall = 0.0;
+    mLastUpdateFull = 0.0;
 
     mController.init();
     start();
@@ -34,8 +42,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::start()
 {
-    mVideoUpdateSmallTimer.start(1000/mUpdateFPS);
-    mVideoUpdateFullTimer.start(1000/mUpdateFPS);
+    mVideoUpdateTimer.start(1000/mUpdateFPS);
+    //mVideoUpdateSmallTimer.start(1000/mUpdateFPS);
+    //mVideoUpdateFullTimer.start(1000/mUpdateFPS);
     QObject::connect(&mController, SIGNAL(finished()), this, SLOT(onControllerQuit()));
     mController.start(mCaptureFPS);
 }
@@ -50,56 +59,29 @@ void MainWindow::onControllerQuit()
     mController.uninit();
 }
 
-void MainWindow::onUpdateSmallImage()
+void MainWindow::paintEvent(QPaintEvent *event)
 {
-
-#if DEBUG
-    double start = (double)clock();
-#endif
-    surround_image1_t* surroundImage = mController.dequeueSmallImage(mCurVideoChannel);
-#if DEBUG
-    double end = (double)clock();
-#endif
-
-    if (NULL == surroundImage)
-    {
-        return;
-    }
-
-    int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
-#if DEBUG
-    double start1 = (double)clock();
-#endif
-
-    //if (elapsed < 1000/mUpdateFPS)
-    {
-        IplImage* frame = (IplImage*)(surroundImage->image);
-        QImage image((const uchar*)frame->imageData,
-                     frame->width,
-                     frame->height,
-                     QImage::Format_RGB888);
-         ui->label_video_small->setPixmap(QPixmap::fromImage(image));
-    }
-
-#if DEBUG
-    double end1 = (double)clock();
-    qDebug() << "MainWindow::onUpdateSmallImage"
-             << ", fps:" << mUpdateFPS
-             << ", elapsed to capture:" << elapsed
-             << ", read:" << (int)(end-start)/1000
-             << ", show:" << (int)(end1-start1)/1000;
-#endif
-
-    cvReleaseImage((IplImage**)(&(surroundImage->image)));
-    delete surroundImage;
-
+    QMainWindow::paintEvent(event);
+    updateFullImage();
+    updateSmallImage();
 }
 
+void MainWindow::onUpdate()
+{
+    update();
+}
 
-void MainWindow::onUpdateFullImage()
+void MainWindow::updateFullImage()
 {
 #if DEBUG
+    double timestamp = 0.0;
     double start = (double)clock();
+    int showElapsed = 0;
+    if (qAbs(mLastUpdateFull) > 0.00001f)
+    {
+        showElapsed = (int)(start - mLastUpdateFull)/1000;
+    }
+    mLastUpdateFull = start;
 #endif
     surround_image1_t* surroundImage = mController.dequeueFullImage();
 #if DEBUG
@@ -113,6 +95,65 @@ void MainWindow::onUpdateFullImage()
 
     int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
 #if DEBUG
+    timestamp = surroundImage->timestamp;
+    double start1 = (double)clock();
+#endif
+
+    //if (elapsed < 1000/mUpdateFPS)
+    {
+
+        IplImage* frame = (IplImage*)(surroundImage->image);
+        QImage image((const uchar*)frame->imageData,
+                     frame->width,
+                     frame->height,
+                     QImage::Format_RGB888);
+        ui->label_video_full->setPixmap(QPixmap::fromImage(image));
+        //QPainter painter(this);
+        //painter.drawImage(QPoint(20,20), image);
+    }
+
+    cvReleaseImage((IplImage**)(&(surroundImage->image)));
+    delete surroundImage;
+
+#if DEBUG
+    double end1 = (double)clock();
+
+    qDebug() << "MainWindow::onUpdateFullImage"
+             << ", fps:" << mUpdateFPS
+             << ", elapsed to last update:" << showElapsed
+             << ", timestamp:" << timestamp
+             << ", elapsed to capture:" << elapsed
+             << ", read:" << (int)(end-start)/1000
+             << ", show:" << (int)(end1-start1)/1000;
+
+#endif
+}
+
+void MainWindow::updateSmallImage()
+{
+#if DEBUG
+    double timestamp = 0.0;
+    double start = (double)clock();
+    int showElapsed = 0;
+    if (qAbs(mLastUpdateSmall) > 0.00001f)
+    {
+        showElapsed = (int)(start - mLastUpdateSmall)/1000;
+    }
+    mLastUpdateSmall = start;
+#endif
+    surround_image1_t* surroundImage = mController.dequeueSmallImage(mCurVideoChannel);
+#if DEBUG
+    double end = (double)clock();
+#endif
+
+    if (NULL == surroundImage)
+    {
+        return;
+    }
+
+    int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
+#if DEBUG
+    timestamp = surroundImage->timestamp;
     double start1 = (double)clock();
 #endif
 
@@ -123,19 +164,31 @@ void MainWindow::onUpdateFullImage()
                      frame->width,
                      frame->height,
                      QImage::Format_RGB888);
-         ui->label_video_full->setPixmap(QPixmap::fromImage(image));
+         ui->label_video_small->setPixmap(QPixmap::fromImage(image));
     }
 
+    cvReleaseImage((IplImage**)(&(surroundImage->image)));
+    delete surroundImage;
 #if DEBUG
     double end1 = (double)clock();
-    qDebug() << "MainWindow::onUpdateFullImage"
+    qDebug() << "MainWindow::onUpdateSmallImage"
              << ", fps:" << mUpdateFPS
+             << ", elapsed to last update:" << showElapsed
+             << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
              << ", read:" << (int)(end-start)/1000
              << ", show:" << (int)(end1-start1)/1000;
 #endif
-    cvReleaseImage((IplImage**)(&(surroundImage->image)));
-    delete surroundImage;
+}
+
+void MainWindow::onUpdateFullImage()
+{
+    updateFullImage();
+}
+
+void MainWindow::onUpdateSmallImage()
+{
+    updateSmallImage();
 }
 
 void MainWindow::onClickFront()

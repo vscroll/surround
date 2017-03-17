@@ -42,19 +42,19 @@ void Capture4Worker::onCapture()
         return;
     }
 
-    surround_image4_t* surroundImage = new surround_image4_t();
-    surroundImage->timestamp = (double)clock();
-
+    double timestamp = (double)clock();
 #if DEBUG
     int size = 0;
     int elapsed = 0;
-    if (mLastTimestamp > 0)
+    if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed = (int)(surroundImage->timestamp - mLastTimestamp)/1000;
+        elapsed = (int)(timestamp - mLastTimestamp)/1000;
     }
-    mLastTimestamp = surroundImage->timestamp;
+    mLastTimestamp = timestamp;
 #endif
 
+    surround_image4_t* surroundImage = new surround_image4_t();
+    surroundImage->timestamp = timestamp;
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
         surroundImage->image[i] = cvQueryFrame(mCaptureArray[i]);

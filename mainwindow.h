@@ -21,7 +21,12 @@ public:
     void start();
     void stop();
 
+    // QWidget interface
+protected:
+    void paintEvent(QPaintEvent *event);
+
 private slots:
+    void onUpdate();
     void onUpdateFullImage();
     void onUpdateSmallImage();
     void onClickFront();
@@ -29,10 +34,17 @@ private slots:
     void onClickLeft();
     void onClickRight();
     void onControllerQuit();
+
+private:
+    void updateFullImage();
+    void updateSmallImage();
+
 private:
     Ui::MainWindow *ui;
     QLabel *mVideoLabelFull;
     QLabel *mVideoLabelSmall;
+
+    QTimer mVideoUpdateTimer;
 
     QTimer mVideoUpdateFullTimer;
     QTimer mVideoUpdateSmallTimer;
@@ -42,6 +54,9 @@ private:
 
     VIDEO_FPS mCaptureFPS;
     Controller mController;
+
+    double mLastUpdateSmall;
+    double mLastUpdateFull;
 };
 
 #endif // MAINWINDOW_H

@@ -1,6 +1,7 @@
 #include "capture1worker.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include "util.h"
 
 Capture1Worker::Capture1Worker(QObject *parent, int videoChannel) :
     QObject(parent),
@@ -31,33 +32,49 @@ void Capture1Worker::closeDevice()
 
 void Capture1Worker::onCapture()
 {
-    if (mDropFrameCount-- > 0)
+
+    mMutexDrop.lock();
+    int count = mDropFrameCount--;
+    mMutexDrop.unlock();
+
+    if (count >= 0)
     {
+        QMutexLocker locker(&mMutexCapture);
         cvQueryFrame(mCapture);
         return;
     }
 
-    surround_image1_t* surroundImage = new surround_image1_t();
-    surroundImage->timestamp = (double)clock();
-
+    double timestamp = (double)clock();
+    IplImage *tmpImage = NULL;
 #if DEBUG
     int size = 0;
     int elapsed = 0;
-    if (mLastTimestamp > 0)
+    if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed = (int)(surroundImage->timestamp - mLastTimestamp)/1000;
+        elapsed = (int)(timestamp - mLastTimestamp)/1000;
     }
-    mLastTimestamp = surroundImage->timestamp;
+    mLastTimestamp = timestamp;
 #endif
 
-    surroundImage->image = cvQueryFrame(mCapture);
+    {
+        QMutexLocker locker(&mMutexCapture);
+        tmpImage = cvQueryFrame(mCapture);
+    }
 
 #if DEBUG
     double end0 = (double)clock();
 #endif
 
+    if (NULL != tmpImage)
     {
-        QMutexLocker locker(&mMutex);
+        //mMutexFile.lock();
+        //Util::write2File(mVideoChannel, tmpImage);
+        //mMutexFile.unlock();
+
+        surround_image1_t* surroundImage = new surround_image1_t();
+        surroundImage->timestamp = timestamp;
+        surroundImage->image = tmpImage;
+        QMutexLocker locker(&mMutexQueue);
         mSurroundImageQueue.append(surroundImage);
 #if DEBUG
         size = mSurroundImageQueue.size();
@@ -80,7 +97,7 @@ void Capture1Worker::onCapture()
 
 int Capture1Worker::getFrameCount()
 {
-    QMutexLocker locker(&mMutex);
+    QMutexLocker locker(&mMutexQueue);
     return mSurroundImageQueue.size();
 }
 
@@ -89,7 +106,7 @@ surround_image1_t* Capture1Worker::popOneFrame()
     struct surround_image1_t* surroundImage = NULL;
 
     {
-        QMutexLocker locker(&mMutex);
+        QMutexLocker locker(&mMutexQueue);
         if (mSurroundImageQueue.size() > 0)
         {
             surroundImage = mSurroundImageQueue.dequeue();
