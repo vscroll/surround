@@ -1,18 +1,14 @@
-#include "capture4worker.h"
+#include "capture4workerimpl.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-Capture4Worker::Capture4Worker(QObject *parent, int videoChannelNum) :
-    QObject(parent),
-    mVideoChannelNum(videoChannelNum < VIDEO_CHANNEL_SIZE ? videoChannelNum : VIDEO_CHANNEL_SIZE)
+Capture4WorkerImpl::Capture4WorkerImpl(QObject *parent, int videoChannelNum) :
+    Capture4WorkerBase(parent, videoChannelNum)
 {
     memset(mCaptureArray, 0, sizeof(mCaptureArray));
-
-    mDropFrameCount = 10;
-    mLastTimestamp = 0.0;
 }
 
-void Capture4Worker::openDevice()
+void Capture4WorkerImpl::openDevice()
 {
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
@@ -20,7 +16,7 @@ void Capture4Worker::openDevice()
     }
 }
 
-void Capture4Worker::closeDevice()
+void Capture4WorkerImpl::closeDevice()
 {
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
@@ -31,7 +27,7 @@ void Capture4Worker::closeDevice()
     }
 }
 
-void Capture4Worker::onCapture()
+void Capture4WorkerImpl::onCapture()
 {
     if (mDropFrameCount-- > 0)
     {
@@ -65,7 +61,7 @@ void Capture4Worker::onCapture()
 #endif
 
     {
-        QMutexLocker locker(&mMutex);
+        QMutexLocker locker(&mMutexQueue);
         mSurroundImageQueue.append(surroundImage);
 #if DEBUG
         size = mSurroundImageQueue.size();
@@ -77,26 +73,11 @@ void Capture4Worker::onCapture()
 #endif
 
 #if DEBUG
-    qDebug() << "Capture4Worker::onCapture"
-             << ", channel:" << mVideoChannelNum
+    qDebug() << "Capture4WorkerImpl::onCapture"
+             << " channel:" << mVideoChannelNum
              << ", size: "<< size
              << ", elapsed to last time:" << elapsed
              << ", capture:" << (int)(end0-mLastTimestamp)/1000
              << ", write:" << (int)(end1-end0)/1000;
 #endif
-}
-
-surround_image4_t* Capture4Worker::popOneFrame()
-{
-    struct surround_image4_t* surroundImage = NULL;
-
-    {
-        QMutexLocker locker(&mMutex);
-        if (mSurroundImageQueue.size() > 0)
-        {
-            surroundImage = mSurroundImageQueue.dequeue();
-        }
-    }
-
-    return surroundImage;
 }

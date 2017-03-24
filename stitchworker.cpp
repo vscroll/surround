@@ -66,6 +66,14 @@ void StitchWorker::run()
 #if DEBUG
         end = (double)clock();
 #endif
+        for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+        {
+            IplImage* frame = (IplImage*)(surroundImage->image[i]);
+            if (NULL != frame)
+            {
+                cvReleaseImage(&frame);
+            }
+        }
 
         delete surroundImage;
         surroundImage = NULL;
@@ -96,7 +104,7 @@ void StitchWorker::run()
 
 #if DEBUG
         qDebug() << "StitchWorke::run"
-                 << ", elapsed to capture:" << elapsed
+                 << " elapsed to capture:" << elapsed
                  << ", stitch:" << (int)(end-start)/1000
                  << ", fullsize:" << fullsize
                  << ", smallsize:" << smallsize;

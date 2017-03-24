@@ -17,8 +17,11 @@ void Controller::init()
 {
     if (NULL == mCapture)
     {
-        //mCapture = new Capture4Impl();
+#ifdef CAPTURE_4_CHANNEL_ONCE
+        mCapture = new Capture4Impl();
+#else
         mCapture = new Capture1Impl();
+#endif
         mCapture->openDevice();
     }
 

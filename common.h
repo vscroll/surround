@@ -4,6 +4,9 @@
 #include <QDebug>
 #define DEBUG 1
 
+#define CAPTURE_4_CHANNEL_ONCE 1
+#define CAPTURE_ON_V4L2 1
+
 enum VIDEO_CHANNEL {
     VIDEO_CHANNEL_FRONT = 2,
     VIDEO_CHANNEL_REAR = 0,

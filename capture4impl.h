@@ -6,7 +6,7 @@
 #include <QThread>
 
 #include "ICapture.h"
-
+#include "capture4workerbase.h"
 
 class Capture4Worker;
 class Capture4Impl : public QObject, public ICapture
@@ -26,7 +26,7 @@ public slots:
 
 private:
     QTimer mVideoCaptureTimer;
-    Capture4Worker *mCaptureWorker;
+    Capture4WorkerBase *mCaptureWorker;
     QThread mCaptureThread;
     VIDEO_FPS mFPS;
 };

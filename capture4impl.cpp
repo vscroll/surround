@@ -1,5 +1,6 @@
 #include "capture4impl.h"
-#include "capture4worker.h"
+#include "capture4workerimpl.h"
+#include "capture4workerv4l2impl.h"
 
 Capture4Impl::Capture4Impl(QObject *parent) :
     QObject(parent),
@@ -11,7 +12,11 @@ int Capture4Impl::openDevice()
 {
     if (NULL == mCaptureWorker)
     {
-        mCaptureWorker = new Capture4Worker(NULL, 4);
+#ifdef CAPTURE_ON_V4L2
+        mCaptureWorker = new Capture4WorkerV4l2Impl(NULL, 4);
+#else
+        mCaptureWorker = new Capture4WorkerImpl(NULL, 4);
+#endif
         mCaptureWorker->openDevice();
         connect(&mVideoCaptureTimer, SIGNAL(timeout()), mCaptureWorker, SLOT(onCapture()));
     }

@@ -1,22 +1,15 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <QObject>
-#include <opencv/cv.h>
-
-class Util : public QObject
+class Util
 {
-    Q_OBJECT
 public:
-    explicit Util(QObject *parent = 0);
+    Util();
 
-signals:
+    static void write2File(int channel, void* image);
 
-public slots:
-
-public:
-    static void write2File(int channel, IplImage* frame);
-
+    static void yuyv_to_rgb24(int width, int height, unsigned char *src, unsigned char *dst);
+    static void uyvy_to_rgb24(int width, int height, unsigned char *src, unsigned char *dst);
 };
 
 #endif // UTIL_H

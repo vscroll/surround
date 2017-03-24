@@ -1,5 +1,6 @@
 #include "capture1impl.h"
-#include "capture1worker.h"
+#include "capture1workerimpl.h"
+#include "capture1workerv4l2impl.h"
 
 Capture1Impl::Capture1Impl(QObject *parent) :
     QObject(parent)
@@ -11,7 +12,11 @@ int Capture1Impl::openDevice()
 {
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        mCaptureWorker[i] = new Capture1Worker(NULL, i);
+#ifdef CAPTURE_ON_V4L2
+        mCaptureWorker[i] = new Capture1WorkerV4l2Impl(NULL, i);
+#else
+        mCaptureWorker[i] = new Capture1WorkerImpl(NULL, i);
+#endif
         mCaptureWorker[i]->openDevice();
         connect(&mVideoCaptureTimer[i], SIGNAL(timeout()), mCaptureWorker[i], SLOT(onCapture()));
     }
@@ -90,6 +95,7 @@ surround_image4_t* Capture1Impl::popOneFrame()
                 {
                     pFrame->timestamp = tmp->timestamp;
                 }
+                delete tmp;
             }
         }
     }

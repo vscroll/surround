@@ -7,7 +7,7 @@
 
 #include "ICapture.h"
 
-class Capture1Worker;
+class Capture1WorkerBase;
 class Capture1Impl : public QObject, public ICapture
 {
     Q_OBJECT
@@ -25,7 +25,7 @@ public slots:
 
 private:
     QTimer mVideoCaptureTimer[VIDEO_CHANNEL_SIZE];
-    Capture1Worker *mCaptureWorker[VIDEO_CHANNEL_SIZE];
+    Capture1WorkerBase *mCaptureWorker[VIDEO_CHANNEL_SIZE];
     QThread mCaptureThread[VIDEO_CHANNEL_SIZE];
     VIDEO_FPS mFPS;
 };

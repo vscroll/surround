@@ -14,20 +14,23 @@ TEMPLATE = app
 LIBS += -lopencv_core -lopencv_highgui
 SOURCES += main.cpp\
         mainwindow.cpp \
-    capture1worker.cpp \
-    capture4worker.cpp \
     capture4impl.cpp \
     capture1impl.cpp \
     controller.cpp \
     stitchworker.cpp \
     stitchimpl.cpp \
     stitch_algorithm.cpp \
-    util.cpp
+    util.cpp \
+    capture1workerv4l2impl.cpp \
+    capture1workerbase.cpp \
+    capture4workerbase.cpp \
+    capture4workerimpl.cpp \
+    capture1workerimpl.cpp \
+    capture4workerv4l2impl.cpp \
+    v4l2.cpp
 
 HEADERS  += mainwindow.h \
-    capture1worker.h \
     common.h \
-    capture4worker.h \
     ICapture.h \
     capture4impl.h \
     capture1impl.h \
@@ -36,6 +39,13 @@ HEADERS  += mainwindow.h \
     IStitch.h \
     stitchimpl.h \
     stitch_algorithm.h \
-    util.h
+    util.h \
+    capture1workerv4l2impl.h \
+    capture1workerbase.h \
+    capture4workerbase.h \
+    capture4workerimpl.h \
+    capture1workerimpl.h \
+    capture4workerv4l2impl.h \
+    v4l2.h
 
 FORMS    += mainwindow.ui

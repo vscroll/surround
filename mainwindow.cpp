@@ -110,16 +110,16 @@ void MainWindow::updateFullImage()
         ui->label_video_full->setPixmap(QPixmap::fromImage(image));
         //QPainter painter(this);
         //painter.drawImage(QPoint(20,20), image);
-    }
 
-    cvReleaseImage((IplImage**)(&(surroundImage->image)));
-    delete surroundImage;
+        cvReleaseImage(&frame);
+        delete surroundImage;
+    }
 
 #if DEBUG
     double end1 = (double)clock();
 
     qDebug() << "MainWindow::onUpdateFullImage"
-             << ", fps:" << mUpdateFPS
+             << " fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
@@ -165,14 +165,15 @@ void MainWindow::updateSmallImage()
                      frame->height,
                      QImage::Format_RGB888);
          ui->label_video_small->setPixmap(QPixmap::fromImage(image));
+
+         cvReleaseImage(&frame);
+         delete surroundImage;
     }
 
-    cvReleaseImage((IplImage**)(&(surroundImage->image)));
-    delete surroundImage;
 #if DEBUG
     double end1 = (double)clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
-             << ", fps:" << mUpdateFPS
+             << " fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed

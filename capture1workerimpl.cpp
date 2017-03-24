@@ -1,19 +1,16 @@
-#include "capture1worker.h"
+#include "capture1workerimpl.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include "util.h"
 
-Capture1Worker::Capture1Worker(QObject *parent, int videoChannel) :
-    QObject(parent),
-    mVideoChannel(videoChannel),
+Capture1WorkerImpl::Capture1WorkerImpl(QObject *parent, int videoChannel) :
+    Capture1WorkerBase(parent, videoChannel),
     mCapture(NULL)
 {
 
     mDropFrameCount = 10;
-    mLastTimestamp = 0.0;
 }
 
-void Capture1Worker::openDevice()
+void Capture1WorkerImpl::openDevice()
 {
     if (NULL == mCapture)
     {
@@ -21,7 +18,7 @@ void Capture1Worker::openDevice()
     }
 }
 
-void Capture1Worker::closeDevice()
+void Capture1WorkerImpl::closeDevice()
 {
     if (NULL != mCapture)
     {
@@ -30,7 +27,7 @@ void Capture1Worker::closeDevice()
     }
 }
 
-void Capture1Worker::onCapture()
+void Capture1WorkerImpl::onCapture()
 {
 
     mMutexDrop.lock();
@@ -67,10 +64,6 @@ void Capture1Worker::onCapture()
 
     if (NULL != tmpImage)
     {
-        //mMutexFile.lock();
-        //Util::write2File(mVideoChannel, tmpImage);
-        //mMutexFile.unlock();
-
         surround_image1_t* surroundImage = new surround_image1_t();
         surroundImage->timestamp = timestamp;
         surroundImage->image = tmpImage;
@@ -86,32 +79,11 @@ void Capture1Worker::onCapture()
 #endif
 
 #if DEBUG
-    qDebug() << "Capture1Worker::onCapture"
-             << ", channel:" << mVideoChannel
+    qDebug() << "Capture1WorkerImpl::onCapture"
+             << " channel:" << mVideoChannel
              << ", size:" << size
              << ", elapsed to last time:" << elapsed
              << ", capture:" << (int)(end0-mLastTimestamp)/1000
              << ", write:" << (int)(end1-end0)/1000;
 #endif
-}
-
-int Capture1Worker::getFrameCount()
-{
-    QMutexLocker locker(&mMutexQueue);
-    return mSurroundImageQueue.size();
-}
-
-surround_image1_t* Capture1Worker::popOneFrame()
-{
-    struct surround_image1_t* surroundImage = NULL;
-
-    {
-        QMutexLocker locker(&mMutexQueue);
-        if (mSurroundImageQueue.size() > 0)
-        {
-            surroundImage = mSurroundImageQueue.dequeue();
-        }
-    }
-
-    return surroundImage;
 }
