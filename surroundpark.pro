@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     capture4workerimpl.cpp \
     capture1workerimpl.cpp \
     capture4workerv4l2impl.cpp \
-    v4l2.cpp
+    v4l2.cpp \
+    GoOnline.cpp
 
 HEADERS  += mainwindow.h \
     common.h \

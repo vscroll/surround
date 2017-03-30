@@ -53,7 +53,9 @@ void Capture4WorkerImpl::onCapture()
     surroundImage->timestamp = timestamp;
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
-        surroundImage->image[i] = cvQueryFrame(mCaptureArray[i]);
+        IplImage* pIplImage = cvQueryFrame(mCaptureArray[i]);
+        cv::Mat* image = new cv::Mat(pIplImage, true);
+        surroundImage->image[i] = image;
     }
 
 #if DEBUG

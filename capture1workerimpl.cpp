@@ -64,9 +64,10 @@ void Capture1WorkerImpl::onCapture()
 
     if (NULL != tmpImage)
     {
+        cv::Mat* image = new cv::Mat(tmpImage, true);
         surround_image1_t* surroundImage = new surround_image1_t();
         surroundImage->timestamp = timestamp;
-        surroundImage->image = tmpImage;
+        surroundImage->image = image;
         QMutexLocker locker(&mMutexQueue);
         mSurroundImageQueue.append(surroundImage);
 #if DEBUG

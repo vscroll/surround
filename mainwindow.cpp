@@ -3,6 +3,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <QPainter>
+#include "util.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -101,17 +102,25 @@ void MainWindow::updateFullImage()
 
     //if (elapsed < 1000/mUpdateFPS)
     {
-
+#if DATA_TYPE_IPLIMAGE
         IplImage* frame = (IplImage*)(surroundImage->image);
         QImage image((const uchar*)frame->imageData,
                      frame->width,
                      frame->height,
                      QImage::Format_RGB888);
+#else
+        cv::Mat* frame = (cv::Mat*)(surroundImage->image);
+        QImage image = Util::cvMat2QImage(*frame);
+#endif
         ui->label_video_full->setPixmap(QPixmap::fromImage(image));
         //QPainter painter(this);
         //painter.drawImage(QPoint(20,20), image);
 
+#if DATA_TYPE_IPLIMAGE
         cvReleaseImage(&frame);
+#else
+        delete frame;
+#endif
         delete surroundImage;
     }
 
@@ -159,15 +168,24 @@ void MainWindow::updateSmallImage()
 
     //if (elapsed < 1000/mUpdateFPS)
     {
+#if DATA_TYPE_IPLIMAGE
         IplImage* frame = (IplImage*)(surroundImage->image);
         QImage image((const uchar*)frame->imageData,
                      frame->width,
                      frame->height,
                      QImage::Format_RGB888);
-         ui->label_video_small->setPixmap(QPixmap::fromImage(image));
+#else
+        cv::Mat* frame = (cv::Mat*)(surroundImage->image);
+        QImage image = Util::cvMat2QImage(*frame);
+#endif
+        ui->label_video_small->setPixmap(QPixmap::fromImage(image));
 
-         cvReleaseImage(&frame);
-         delete surroundImage;
+#if DATA_TYPE_IPLIMAGE
+        cvReleaseImage(&frame);
+#else
+        delete frame;
+#endif
+        delete surroundImage;
     }
 
 #if DEBUG

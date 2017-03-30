@@ -73,7 +73,7 @@ void Capture4WorkerV4l2Impl::onCapture()
     }
     mLastTimestamp = start;
 
-    IplImage *pIplImage[VIDEO_CHANNEL_SIZE] = {NULL};
+    void* image[VIDEO_CHANNEL_SIZE] = {NULL};
     unsigned char flag = 1;
     double timestamp = (double)clock();
     for (int i = 0; i < mVideoChannelNum; ++i)
@@ -125,15 +125,26 @@ void Capture4WorkerV4l2Impl::onCapture()
                          << ", yuv to rgb:" << convert_time;
 #endif
 
-                pIplImage[i] = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
+#if DATA_TYPE_IPLIMAGE
+                IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
                 if (NULL != pIplImage)
                 {
-                    memcpy(pIplImage[i]->imageData, frame_buffer, imageSize);
-                    //write2File(pIplImage[i]);
-                    //cvReleaseImage(&pIplImage[i]);
-
+                    memcpy(pIplImage->imageData, frame_buffer, imageSize);
                     flag = flag << 1;
+                    image[i] = pIplImage;
                 }
+#else
+                //matImage[i] = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
+                IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
+                memcpy(pIplImage->imageData, frame_buffer, imageSize);
+                cv::Mat* matImage = new cv::Mat(pIplImage, true);
+                if (NULL != matImage)
+                {
+                    flag = flag << 1;
+                    image[i] = matImage;
+                }
+                cvReleaseImage(&pIplImage);
+#endif
             }
         }
 
@@ -147,7 +158,7 @@ void Capture4WorkerV4l2Impl::onCapture()
         surroundImage->timestamp = timestamp;
         for (int i = 0; i < mVideoChannelNum; ++i)
         {
-            surroundImage->image[i] = pIplImage[i];
+            surroundImage->image[i] = image[i];
         }
 
         mMutexQueue.lock();
@@ -159,9 +170,13 @@ void Capture4WorkerV4l2Impl::onCapture()
     {
         for (int i = 0; i < mVideoChannelNum; ++i)
         {
-            if (NULL != pIplImage[i])
+            if (NULL != image[i])
             {
-                cvReleaseImage(&pIplImage[i]);
+#if DATA_TYPE_IPLIMAGE
+                cvReleaseImage((IplImage**)image[i]);
+#else
+                delete (cv::Mat*)image[i];
+#endif
             }
         }
     }

@@ -7,6 +7,7 @@
 #include <QThread>
 
 #include "common.h"
+#include <opencv/cv.h>
 
 class ICapture;
 class StitchWorker : public QThread
@@ -40,6 +41,8 @@ private:
 
     ICapture *mCapture;
     int mFreq;
+
+    std::vector<cv::Mat> mStitchMaps;
 };
 
 #endif // STITCHWORKER_H

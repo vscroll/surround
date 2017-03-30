@@ -107,16 +107,16 @@ void Capture1WorkerV4l2Impl::onCapture()
 #endif
             mMutexCapture.unlock();
 
-            IplImage *pIplImage = cvCreateImage(cvSize(mWidth, mHeight), IPL_DEPTH_8U, 3);
-            if (NULL != pIplImage)
+            cv::Mat* image = new cv::Mat(mHeight, mWidth, CV_8UC3, frame_buffer);
+            if (NULL != image)
             {
-                memcpy(pIplImage->imageData, frame_buffer, imageSize);
+                //memcpy(image->data, frame_buffer, imageSize);
                 //write2File(pIplImage);
                 //cvReleaseImage(&pIplImage);
 
                 surround_image1_t* surroundImage = new surround_image1_t();
                 surroundImage->timestamp = timestamp;
-                surroundImage->image = pIplImage;
+                surroundImage->image = image;
                 mMutexQueue.lock();
                 mSurroundImageQueue.append(surroundImage);
                 size = mSurroundImageQueue.size();

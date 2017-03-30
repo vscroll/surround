@@ -45,7 +45,7 @@ int Capture4Impl::start(VIDEO_FPS fps)
     if (NULL != mCaptureWorker)
     {
         mCaptureWorker->moveToThread(&mCaptureThread);
-        mCaptureThread.start();
+        mCaptureThread.start(QThread::TimeCriticalPriority);
     }
 
     return 0;

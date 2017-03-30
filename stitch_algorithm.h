@@ -2,9 +2,13 @@
 #define STITCH_ALGORITHM_H
 
 #include <opencv/cv.h>
-void stitching(const IplImage* front, const IplImage* rear, const IplImage* left, const IplImage* right,
-               IplImage** outFull,
-               IplImage** outSmall,
+
+void stitching_init(const std::string config_path, std::vector<cv::Mat>& Maps);
+
+void stitching(const void* front, const void* rear, const void* left, const void* right,
+               const std::vector<cv::Mat>& Maps,
+               void** outFull,
+               void** outSmall,
                int channel);
 
 #endif // STITCH_ALGORITHM_H

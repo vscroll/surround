@@ -17,9 +17,12 @@ void StitchWorker::start(ICapture *capture)
         return;
     }
 
+
+    stitching_init("Fish2Pano.bin", mStitchMaps);
+
     mCapture = capture;
     mIsRunning = true;
-    QThread::start();
+    QThread::start(QThread::TimeCriticalPriority);
 }
 
 void StitchWorker::stop()
@@ -44,34 +47,40 @@ void StitchWorker::run()
             continue;
         }
 
-        IplImage* outSmall = NULL;
-        IplImage* outFull = NULL;
+        void* outSmall = NULL;
+        void* outFull = NULL;
 #if DEBUG
-        int elapsed = 0;
         int fullsize = 0;
         int smallsize = 0;
-        double start = 0.0;
         double end = 0.0;
-        start = (double)clock();
-        elapsed = (int)(start - surroundImage->timestamp)/1000;
 #endif
         timestamp = surroundImage->timestamp;
-        stitching((IplImage*)surroundImage->image[VIDEO_CHANNEL_FRONT],
-                  (IplImage*)surroundImage->image[VIDEO_CHANNEL_REAR],
-                  (IplImage*)surroundImage->image[VIDEO_CHANNEL_LEFT],
-                  (IplImage*)surroundImage->image[VIDEO_CHANNEL_RIGHT],
+        int elapsed = 0;
+        double start = (double)clock();
+        elapsed = (int)(start - surroundImage->timestamp)/1000;
+        if (elapsed < 1500)
+        {
+                stitching(surroundImage->image[VIDEO_CHANNEL_FRONT],
+                  surroundImage->image[VIDEO_CHANNEL_REAR],
+                  surroundImage->image[VIDEO_CHANNEL_LEFT],
+                  surroundImage->image[VIDEO_CHANNEL_RIGHT],
+                  mStitchMaps,
                   &outFull,
                   &outSmall,
                   mVideoChannel);
+         }
 #if DEBUG
         end = (double)clock();
 #endif
         for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
-            IplImage* frame = (IplImage*)(surroundImage->image[i]);
-            if (NULL != frame)
+            if (NULL != surroundImage->image[i])
             {
-                cvReleaseImage(&frame);
+#if DATA_TYPE_IPLIMAGE
+                cvReleaseImage((IplImage**)surroundImage->image[i]);
+#else
+                delete (cv::Mat*)surroundImage->image[i];
+#endif
             }
         }
 
@@ -107,6 +116,7 @@ void StitchWorker::run()
                  << " elapsed to capture:" << elapsed
                  << ", stitch:" << (int)(end-start)/1000
                  << ", fullsize:" << fullsize
+                 << ", channel" << mVideoChannel
                  << ", smallsize:" << smallsize;
 #endif
 
