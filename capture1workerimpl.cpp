@@ -43,7 +43,7 @@ void Capture1WorkerImpl::onCapture()
 
     double timestamp = (double)clock();
     IplImage *tmpImage = NULL;
-#if DEBUG
+#if DEBUG_CAPTURE
     int size = 0;
     int elapsed = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
@@ -58,7 +58,7 @@ void Capture1WorkerImpl::onCapture()
         tmpImage = cvQueryFrame(mCapture);
     }
 
-#if DEBUG
+#if DEBUG_CAPTURE
     double end0 = (double)clock();
 #endif
 
@@ -70,16 +70,16 @@ void Capture1WorkerImpl::onCapture()
         surroundImage->image = image;
         QMutexLocker locker(&mMutexQueue);
         mSurroundImageQueue.append(surroundImage);
-#if DEBUG
+#if DEBUG_CAPTURE
         size = mSurroundImageQueue.size();
 #endif
     }
 
-#if DEBUG
+#if DEBUG_CAPTURE
     double end1 = (double)clock();
 #endif
 
-#if DEBUG
+#if DEBUG_CAPTURE
     qDebug() << "Capture1WorkerImpl::onCapture"
              << " channel:" << mVideoChannel
              << ", size:" << size

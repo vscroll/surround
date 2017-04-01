@@ -74,7 +74,7 @@ void MainWindow::onUpdate()
 
 void MainWindow::updateFullImage()
 {
-#if DEBUG
+#if DEBUG_UPDATE
     double timestamp = 0.0;
     double start = (double)clock();
     int showElapsed = 0;
@@ -85,7 +85,7 @@ void MainWindow::updateFullImage()
     mLastUpdateFull = start;
 #endif
     surround_image1_t* surroundImage = mController.dequeueFullImage();
-#if DEBUG
+#if DEBUG_UPDATE
     double end = (double)clock();
 #endif
 
@@ -95,7 +95,7 @@ void MainWindow::updateFullImage()
     }
 
     int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
-#if DEBUG
+#if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
     double start1 = (double)clock();
 #endif
@@ -124,7 +124,7 @@ void MainWindow::updateFullImage()
         delete surroundImage;
     }
 
-#if DEBUG
+#if DEBUG_UPDATE
     double end1 = (double)clock();
 
     qDebug() << "MainWindow::onUpdateFullImage"
@@ -140,7 +140,7 @@ void MainWindow::updateFullImage()
 
 void MainWindow::updateSmallImage()
 {
-#if DEBUG
+#if DEBUG_UPDATE
     double timestamp = 0.0;
     double start = (double)clock();
     int showElapsed = 0;
@@ -151,7 +151,7 @@ void MainWindow::updateSmallImage()
     mLastUpdateSmall = start;
 #endif
     surround_image1_t* surroundImage = mController.dequeueSmallImage(mCurVideoChannel);
-#if DEBUG
+#if DEBUG_UPDATE
     double end = (double)clock();
 #endif
 
@@ -161,7 +161,7 @@ void MainWindow::updateSmallImage()
     }
 
     int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
-#if DEBUG
+#if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
     double start1 = (double)clock();
 #endif
@@ -188,7 +188,7 @@ void MainWindow::updateSmallImage()
         delete surroundImage;
     }
 
-#if DEBUG
+#if DEBUG_UPDATE
     double end1 = (double)clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
              << " fps:" << mUpdateFPS

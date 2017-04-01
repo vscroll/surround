@@ -3,6 +3,9 @@
 
 #include <QDebug>
 #define DEBUG 1
+#define DEBUG_CAPTURE 0
+#define DEBUG_STITCH 1
+#define DEBUG_UPDATE 0
 
 #define CAPTURE_4_CHANNEL_ONCE 1
 #define CAPTURE_ON_V4L2 1

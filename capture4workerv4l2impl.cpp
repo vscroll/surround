@@ -112,13 +112,13 @@ void Capture4WorkerV4l2Impl::onCapture()
                 unsigned char frame_buffer[imageSize];
                 mMutexCapture.lock();
                 unsigned char* buffer = (unsigned char*)(mV4l2Buf[i][buf.index].start);
-#if DEBUG
+#if DEBUG_CAPTURE
                 double convert_start = (double)clock();
 #endif
                 Util::yuyv_to_rgb24(mWidth[i], mHeight[i], buffer, frame_buffer);
                 mMutexCapture.unlock();
 
-#if DEBUG
+#if DEBUG_CAPTURE
                 convert_time = (int)(clock() - convert_start)/1000;
                 qDebug() << "Capture4WorkerV4l2Impl::onCapture"
                          << ", channel:" << i
@@ -181,7 +181,7 @@ void Capture4WorkerV4l2Impl::onCapture()
         }
     }
 
-#if DEBUG
+#if DEBUG_CAPTURE
     qDebug() << "Capture4WorkerV4l2Impl::onCapture"
              << ", channel:" << mVideoChannelNum
              << ", flag:" << flag

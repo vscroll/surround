@@ -78,6 +78,7 @@ void Capture1WorkerV4l2Impl::onCapture()
     }
 
     double start = (double)clock();
+#if DEBUG_CAPTURE
     int size = 0;
     int elapsed = 0;
     int convert_time = 0;
@@ -85,6 +86,7 @@ void Capture1WorkerV4l2Impl::onCapture()
     {
         elapsed = (int)(start - mLastTimestamp)/1000;
     }
+#endif
     mLastTimestamp = start;
 
     int imageSize = mWidth*mHeight*3;
@@ -97,12 +99,12 @@ void Capture1WorkerV4l2Impl::onCapture()
         {
             unsigned char frame_buffer[imageSize];
             mMutexCapture.lock();
-#if DEBUG
+#if DEBUG_CAPTURE
             double convert_start = (double)clock();
 #endif
             Util::yuyv_to_rgb24(mWidth, mHeight, (unsigned char*)(mV4l2Buf[buf.index].start), frame_buffer);
             //memset((unsigned char*)(mV4l2Buf[buf.index].start), 0, mV4l2Buf[buf.index].length);
-#if DEBUG
+#if DEBUG_CAPTURE
             convert_time = (int)(clock() - convert_start)/1000;
 #endif
             mMutexCapture.unlock();
@@ -119,7 +121,9 @@ void Capture1WorkerV4l2Impl::onCapture()
                 surroundImage->image = image;
                 mMutexQueue.lock();
                 mSurroundImageQueue.append(surroundImage);
+#if DEBUG_CAPTURE
                 size = mSurroundImageQueue.size();
+#endif
                 mMutexQueue.unlock();
             }
         }
@@ -127,7 +131,7 @@ void Capture1WorkerV4l2Impl::onCapture()
 
     V4l2::v4l2QBuf(mVideoFd, &buf);
 
-#if DEBUG
+#if DEBUG_CAPTURE
     qDebug() << "Capture1WorkerV4l2Impl::onCapture"
              << ", channel:" << mVideoChannel
              << ", size:" << size

@@ -49,7 +49,7 @@ void StitchWorker::run()
 
         void* outSmall = NULL;
         void* outFull = NULL;
-#if DEBUG
+#if DEBUG_STITCH
         int fullsize = 0;
         int smallsize = 0;
         double end = 0.0;
@@ -69,7 +69,7 @@ void StitchWorker::run()
                   &outSmall,
                   mVideoChannel);
          }
-#if DEBUG
+#if DEBUG_STITCH
         end = (double)clock();
 #endif
         for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -94,7 +94,7 @@ void StitchWorker::run()
             tmp->timestamp = timestamp;
             QMutexLocker locker(&mOutputFullImageMutex);
             mOutputFullImageQueue.append(tmp);
-#if DEBUG
+#if DEBUG_STITCH
             fullsize = mOutputFullImageQueue.size();
 #endif
         }
@@ -106,12 +106,12 @@ void StitchWorker::run()
             tmp->timestamp = timestamp;
             QMutexLocker locker(&mOutputSmallImageMutex);
             mOutputSmallImageQueue.append(tmp);
-#if DEBUG
+#if DEBUG_STITCH
             smallsize = mOutputSmallImageQueue.size();
 #endif
         }
 
-#if DEBUG
+#if DEBUG_STITCH
         qDebug() << "StitchWorke::run"
                  << " elapsed to capture:" << elapsed
                  << ", stitch:" << (int)(end-start)/1000
