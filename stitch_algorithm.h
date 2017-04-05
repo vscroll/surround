@@ -3,11 +3,14 @@
 
 #include <opencv/cv.h>
 
-void stitching_init(const std::string config_path, std::vector<cv::Mat>& Maps);
+void stitching_init(const std::string config_path, cv::Mat& Maps, cv::Mat& Mask);
 
 void stitching(const void* front, const void* rear, const void* left, const void* right,
-               const std::vector<cv::Mat>& Maps,
+               const cv::Mat& Map,
+               const cv::Mat& Mask,
                void** outFull,
+               int full_width,
+               int full_height,
                void** outSmall,
                int channel);
 

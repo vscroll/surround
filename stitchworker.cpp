@@ -18,7 +18,7 @@ void StitchWorker::start(ICapture *capture)
     }
 
 
-    stitching_init("Fish2Pano.bin", mStitchMaps);
+    stitching_init("PanoConfig.bin", mStitchMap, mMask);
 
     mCapture = capture;
     mIsRunning = true;
@@ -64,8 +64,11 @@ void StitchWorker::run()
                   surroundImage->image[VIDEO_CHANNEL_REAR],
                   surroundImage->image[VIDEO_CHANNEL_LEFT],
                   surroundImage->image[VIDEO_CHANNEL_RIGHT],
-                  mStitchMaps,
+                  mStitchMap,
+                  mMask,
                   &outFull,
+                  FULL_WIDTH,
+                  FULL_HEIGHT,
                   &outSmall,
                   mVideoChannel);
          }

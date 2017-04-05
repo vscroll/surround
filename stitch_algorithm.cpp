@@ -1,15 +1,19 @@
 #include "stitch_algorithm.h"
 #include "common.h"
 
-extern void CarPano(const std::vector<cv::Mat>& fishImgs, const std::vector<cv::Mat>& Maps, const int Channel, cv::Mat** Pano2D, cv::Mat** SideImg);
+extern void CarPano(const std::vector<cv::Mat>& fishImgs, const cv::Mat& Map, const cv::Mat& Mask, cv::Mat** Pano2D, int full_width,
+                    int full_height, cv::Mat** SideImg, int side_channel);
 
 
-static int STITCH_CHANNEL[] = {1,3,0,2};
+static int SIDE_CHANNEL[] = {1,3,0,2};
 void stitching(const void* front, const void* rear, const void* left, const void* right,
-               const std::vector<cv::Mat>& Maps,
+               const cv::Mat& Map,
+               const cv::Mat& Mask,
                void** outFull,
+               int full_width,
+               int full_height,
                void** outSmall,
-               int channel)
+               int side_channel)
 {
     if (NULL == front || NULL == rear || NULL == left || NULL == right)
     {
@@ -119,8 +123,7 @@ void stitching(const void* front, const void* rear, const void* left, const void
     fishImgs.push_back(matLeft);
     fishImgs.push_back(matRight);
 
-    int stitch_channel = STITCH_CHANNEL[channel];
-    CarPano(fishImgs, Maps, stitch_channel, (cv::Mat**)outFull, (cv::Mat**)outSmall);
+    CarPano(fishImgs, Map, Mask, (cv::Mat**)outFull, full_width, full_height, (cv::Mat**)outSmall, SIDE_CHANNEL[side_channel]);
 #endif
 
 #endif
