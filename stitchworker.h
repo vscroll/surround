@@ -30,6 +30,9 @@ signals:
 public slots:
 
 private:
+    static const int FULL_WIDTH = 424;
+    static const int FULL_HEIGHT = 600;
+
     bool mIsRunning;
     QQueue<surround_image1_t*> mOutputFullImageQueue;
     QQueue<surround_image1_t*> mOutputSmallImageQueue;
@@ -42,7 +45,8 @@ private:
     ICapture *mCapture;
     int mFreq;
 
-    std::vector<cv::Mat> mStitchMaps;
+    cv::Mat mStitchMap;
+    cv::Mat mMask;
 };
 
 #endif // STITCHWORKER_H
