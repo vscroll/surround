@@ -1,6 +1,7 @@
 #include "capture4workerimpl.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include "settings.h"
 
 Capture4WorkerImpl::Capture4WorkerImpl(QObject *parent, int videoChannelNum) :
     Capture4WorkerBase(parent, videoChannelNum)
@@ -12,7 +13,8 @@ void Capture4WorkerImpl::openDevice()
 {
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
-        mCaptureArray[i] = cvCreateCameraCapture(i);
+        int video_channel = Settings::getInstant()->mVideoChanel[i];
+        mCaptureArray[i] = cvCreateCameraCapture(video_channel);
     }
 }
 

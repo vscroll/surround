@@ -28,7 +28,8 @@ SOURCES += main.cpp\
     capture1workerimpl.cpp \
     capture4workerv4l2impl.cpp \
     v4l2.cpp \
-    GoOnline.cpp
+    GoOnline.cpp \
+    settings.cpp
 
 HEADERS  += mainwindow.h \
     common.h \
@@ -47,6 +48,7 @@ HEADERS  += mainwindow.h \
     capture4workerimpl.h \
     capture1workerimpl.h \
     capture4workerv4l2impl.h \
-    v4l2.h
+    v4l2.h \
+    settings.h
 
 FORMS    += mainwindow.ui

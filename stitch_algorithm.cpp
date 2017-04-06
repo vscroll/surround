@@ -4,8 +4,6 @@
 extern void CarPano(const std::vector<cv::Mat>& fishImgs, const cv::Mat& Map, const cv::Mat& Mask, cv::Mat** Pano2D, int full_width,
                     int full_height, cv::Mat** SideImg, int side_channel);
 
-
-static int SIDE_CHANNEL[] = {1,3,0,2};
 void stitching(const void* front, const void* rear, const void* left, const void* right,
                const cv::Mat& Map,
                const cv::Mat& Mask,
@@ -123,7 +121,7 @@ void stitching(const void* front, const void* rear, const void* left, const void
     fishImgs.push_back(matLeft);
     fishImgs.push_back(matRight);
 
-    CarPano(fishImgs, Map, Mask, (cv::Mat**)outFull, full_width, full_height, (cv::Mat**)outSmall, SIDE_CHANNEL[side_channel]);
+    CarPano(fishImgs, Map, Mask, (cv::Mat**)outFull, full_width, full_height, (cv::Mat**)outSmall, side_channel);
 #endif
 
 #endif

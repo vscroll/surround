@@ -2,6 +2,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <QDebug>
+#include <QSettings>
 
 Util::Util()
 {
@@ -165,6 +166,7 @@ QImage Util::cvMat2QImage(const cv::Mat& mat)
     }
 }
 
+#if 0
 cv::Mat Util::QImage2cvMat(QImage& image)
 {
     cv::Mat mat;
@@ -186,3 +188,4 @@ cv::Mat Util::QImage2cvMat(QImage& image)
     }
     return mat;
 }
+#endif

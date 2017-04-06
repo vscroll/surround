@@ -12,7 +12,7 @@ class Capture1WorkerBase : public QObject
 {
     Q_OBJECT
 public:
-    explicit Capture1WorkerBase(QObject *parent = 0, int videoChannel = VIDEO_CHANNEL_FRONT);
+    explicit Capture1WorkerBase(QObject *parent = 0, int videoChannel = 0);
 
     virtual void openDevice();
     virtual void closeDevice();

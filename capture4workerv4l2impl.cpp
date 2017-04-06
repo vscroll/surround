@@ -2,8 +2,10 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <errno.h>
 #include "util.h"
+#include "settings.h"
 
 Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannelNum) :
     Capture4WorkerBase(parent, videoChannelNum)
@@ -22,8 +24,9 @@ void Capture4WorkerV4l2Impl::openDevice()
 {
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
+        int video_channel = Settings::getInstant()->mVideoChanel[i];
         char devName[16] = {0};
-        sprintf(devName, "/dev/video%d", i);
+        sprintf(devName, "/dev/video%d", video_channel);
         mVideoFd[i] = open(devName, O_RDWR/* | O_NONBLOCK*/);
         if (mVideoFd[i] <= 0)
         {
@@ -31,7 +34,9 @@ void Capture4WorkerV4l2Impl::openDevice()
         }
 
         V4l2::getVideoCap(mVideoFd[i]);
-        V4l2::setVideoFmt(mVideoFd[i], mWidth[i], mHeight[i]);
+        V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
+        //i don't know why
+        V4l2::setVideoFmt(mVideoFd[i], mWidth[i]-2, mHeight[i]-2);
         V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);

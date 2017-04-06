@@ -10,6 +10,7 @@ namespace Ui {
 class MainWindow;
 }
 
+class Settings;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -43,6 +44,8 @@ private:
     Ui::MainWindow *ui;
     QLabel *mVideoLabelFull;
     QLabel *mVideoLabelSmall;
+
+    Settings* mSettings;
 
     QTimer mVideoUpdateTimer;
 

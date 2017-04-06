@@ -4,6 +4,7 @@
 #include <opencv/highgui.h>
 #include <QPainter>
 #include "util.h"
+#include "settings.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,6 +15,9 @@ MainWindow::MainWindow(QWidget *parent) :
     setAttribute(Qt::WA_NoBackground);
     ui->label_video_small->setAttribute(Qt::WA_NoBackground);
     ui->label_video_full->setAttribute(Qt::WA_NoBackground);
+
+    mSettings = Settings::getInstant();
+    mSettings->loadSettings("config.ini");
 
     mCurVideoChannel = VIDEO_CHANNEL_FRONT;
     connect(&mVideoUpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdate()));

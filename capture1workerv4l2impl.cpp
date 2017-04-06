@@ -2,6 +2,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <errno.h>
 #include "util.h"
 
