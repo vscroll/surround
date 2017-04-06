@@ -25,7 +25,8 @@ public slots:
 private:
     int mWidth;
     int mHeight;
-    struct V4l2::buffer* mV4l2Buf;
+    v4l2_memory mMemType;
+    struct V4l2::buffer mV4l2Buf[V4l2::V4L2_BUF_COUNT];
     int mVideoFd;
     QMutex mMutexCapture;
 

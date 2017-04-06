@@ -16,8 +16,8 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannel
         mWidth[i] = 704;
         mHeight[i] = 576;
         mVideoFd[i] = -1;
-        mV4l2Buf[i] = NULL;
     }
+    mMemType = V4L2_MEMORY_MMAP;
 }
 
 void Capture4WorkerV4l2Impl::openDevice()
@@ -40,12 +40,12 @@ void Capture4WorkerV4l2Impl::openDevice()
         V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);
-        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], &mV4l2Buf[i]))
+        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mV4l2Buf[i], mMemType))
         {
             return;
         }
 
-        if (-1 == V4l2::startCapture(mVideoFd[i]))
+        if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], mMemType))
         {
             return;
         }
@@ -68,6 +68,7 @@ void Capture4WorkerV4l2Impl::closeDevice()
 
 void Capture4WorkerV4l2Impl::onCapture()
 {
+#if DEBUG_CAPTURE
     double start = (double)clock();
     int size = 0;
     int elapsed = 0;
@@ -77,6 +78,7 @@ void Capture4WorkerV4l2Impl::onCapture()
         elapsed = (int)(start - mLastTimestamp)/1000;
     }
     mLastTimestamp = start;
+#endif
 
     void* image[VIDEO_CHANNEL_SIZE] = {NULL};
     unsigned char flag = 1;
@@ -110,7 +112,7 @@ void Capture4WorkerV4l2Impl::onCapture()
 
         int imageSize = mWidth[i]*mHeight[i]*3;
         struct v4l2_buffer buf;
-        if (-1 != V4l2::readFrame(mVideoFd[i], &buf))
+        if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
         {
             if (buf.index < V4l2::V4L2_BUF_COUNT)
             {
@@ -168,7 +170,9 @@ void Capture4WorkerV4l2Impl::onCapture()
 
         mMutexQueue.lock();
         mSurroundImageQueue.append(surroundImage);
+#if DEBUG_CAPTURE
         size = mSurroundImageQueue.size();
+#endif
         mMutexQueue.unlock();
     }
     else

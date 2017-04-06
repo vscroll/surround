@@ -113,13 +113,13 @@ int V4l2::setFps(int fd, int fps)
     return result;
 }
 
-int V4l2::initV4l2Buf(int fd, struct buffer** v4l2_buf)
+int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
     req.count = V4L2_BUF_COUNT;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
+    req.memory = mem_type;
     if (-1 == ioctl(fd, VIDIOC_REQBUFS, &req))
     {
         return -1;
@@ -131,46 +131,51 @@ int V4l2::initV4l2Buf(int fd, struct buffer** v4l2_buf)
         return -1;
     }
 
-    *v4l2_buf = (struct buffer*)malloc(req.count*sizeof(struct buffer));
-    if (NULL == *v4l2_buf)
-    {
-        return -1;
-    }
-
     for (unsigned int i = 0; i < req.count; ++i)
     {
         struct v4l2_buffer buf;
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
+        buf.memory = mem_type;
         buf.index = i; // 查询序号为mV4l2Buf的缓冲区，得到其起始物理地址和大小
-        if (-1 != ioctl(fd, VIDIOC_QUERYBUF, &buf))
+        if (-1 == ioctl(fd, VIDIOC_QUERYBUF, &buf))
         {
-            (*v4l2_buf)[i].length = buf.length;
-            // 映射内存
-            (*v4l2_buf)[i].start = mmap (NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
-            if (MAP_FAILED == (*v4l2_buf)[i].start)
-            {
-                qDebug() << "V4l2::initV4l2Buf"
-                         << " mmap failed";
+            return -1;
+        }
 
+        if (mem_type == V4L2_MEMORY_MMAP)
+        {
+            v4l2_buf[i].length = buf.length;
+            v4l2_buf[i].offset = buf.m.offset;
+            // 映射内存
+            v4l2_buf[i].start = mmap (NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
+            if (MAP_FAILED == v4l2_buf[i].start)
+            {
+                printf("initV4l2Buf mmap failed\n");
                 return -1;
             }
+            memset(v4l2_buf[i].start, 0xFF, v4l2_buf[i].length);
         }
     }
 
     return 0;
 }
 
-int V4l2::startCapture(int fd)
+int V4l2::startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
 {
-    for (unsigned int i = 0; i < V4L2_BUF_COUNT; ++i)
+    unsigned int i = 0;
+    for (i = 0; i < V4L2_BUF_COUNT; ++i)
     {
         struct v4l2_buffer buf;
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
+        buf.memory = mem_type;
         buf.index = i;
+        buf.length = v4l2_buf[i].length;
+        if (mem_type == V4L2_MEMORY_MMAP)
+        {
+            buf.m.offset = v4l2_buf[i].offset;
+        }
 
         // 将缓冲帧放入队列
         if (-1 == ioctl(fd, VIDIOC_QBUF, &buf))
@@ -195,11 +200,11 @@ void V4l2::stoptCapture(int fd)
     ioctl(fd, VIDIOC_STREAMOFF, &type);
 }
 
-int V4l2::readFrame(int fd, struct v4l2_buffer* buf)
+int V4l2::readFrame(int fd, struct v4l2_buffer* buf, v4l2_memory mem_type)
 {
     memset (buf, 0, sizeof(struct v4l2_buffer));
     buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf->memory = V4L2_MEMORY_MMAP;
+    buf->memory = mem_type;
 
     return ioctl(fd, VIDIOC_DQBUF, buf); // 从缓冲区取出一个缓冲帧
 }

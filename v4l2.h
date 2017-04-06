@@ -13,6 +13,7 @@ public:
     struct buffer
     {
         void* start;
+        unsigned int offset;
         unsigned int length;
     };
 
@@ -21,10 +22,10 @@ public:
     static int setVideoFmt(int fd, int width, int height);
     static int getFps(int fd);
     static int setFps(int fd, int fps);
-    static int initV4l2Buf(int fd, struct buffer** v4l2_buf);
-    static int startCapture(int fd);
+    static int initV4l2Buf(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type);
+    static int startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type);
     static void stoptCapture(int fd);
-    static int readFrame(int fd, struct v4l2_buffer* buf);
+    static int readFrame(int fd, struct v4l2_buffer* buf, v4l2_memory mem_type);
     static void v4l2QBuf(int fd, struct v4l2_buffer* buf);
 };
 

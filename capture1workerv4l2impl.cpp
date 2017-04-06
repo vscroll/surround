@@ -10,9 +10,9 @@ Capture1WorkerV4l2Impl::Capture1WorkerV4l2Impl(QObject *parent, int videoChannel
     Capture1WorkerBase(parent, videoChannel),
     mWidth(704),
     mHeight(576),
-    mV4l2Buf(NULL),
     mVideoFd(-1)
 {
+     mMemType = V4L2_MEMORY_MMAP;
 }
 
 void Capture1WorkerV4l2Impl::openDevice()
@@ -29,12 +29,12 @@ void Capture1WorkerV4l2Impl::openDevice()
     V4l2::setVideoFmt(mVideoFd, mWidth, mHeight);
     V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
     V4l2::getFps(mVideoFd);
-    if (-1 == V4l2::initV4l2Buf(mVideoFd, &mV4l2Buf))
+    if (-1 == V4l2::initV4l2Buf(mVideoFd, mV4l2Buf, mMemType))
     {
         return;
     }
 
-    if (-1 == V4l2::startCapture(mVideoFd))
+    if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, mMemType))
     {
         return;
     }
@@ -94,7 +94,7 @@ void Capture1WorkerV4l2Impl::onCapture()
     double timestamp = (double)clock();
 
     struct v4l2_buffer buf;
-    if (-1 != V4l2::readFrame(mVideoFd, &buf))
+    if (-1 != V4l2::readFrame(mVideoFd, &buf, mMemType))
     {
         if (buf.index < V4l2::V4L2_BUF_COUNT)
         {

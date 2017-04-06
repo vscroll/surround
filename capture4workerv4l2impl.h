@@ -24,7 +24,8 @@ public slots:
 private:
     int mWidth[VIDEO_CHANNEL_SIZE];
     int mHeight[VIDEO_CHANNEL_SIZE];
-    struct V4l2::buffer* mV4l2Buf[VIDEO_CHANNEL_SIZE];
+    v4l2_memory mMemType;
+    struct V4l2::buffer mV4l2Buf[VIDEO_CHANNEL_SIZE][V4l2::V4L2_BUF_COUNT];
     int mVideoFd[VIDEO_CHANNEL_SIZE];
     QMutex mMutexCapture;
 };
