@@ -1,6 +1,7 @@
 #include "settings.h"
 #include <QSettings>
 #include <QDebug>
+#include <QApplication>
 
 Settings* Settings::mInstant = NULL;
 
@@ -53,4 +54,9 @@ void Settings::loadSettings(QString path)
     qDebug() << "rear" << mVideoChanel[VIDEO_CHANNEL_REAR];
     qDebug() << "left" << mVideoChanel[VIDEO_CHANNEL_LEFT];
     qDebug() << "right" << mVideoChanel[VIDEO_CHANNEL_RIGHT];
+}
+
+QString Settings::getApplicationPath()
+{
+    return QCoreApplication::applicationDirPath();
 }

@@ -1,6 +1,7 @@
 #include "stitchworker.h"
 #include "stitch_algorithm.h"
 #include "ICapture.h"
+#include "settings.h"
 
 StitchWorker::StitchWorker() :
     mIsRunning(true),
@@ -17,8 +18,8 @@ void StitchWorker::start(ICapture *capture)
         return;
     }
 
-
-    stitching_init("PanoConfig.bin", mStitchMap, mMask);
+    QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
+    stitching_init(path.toStdString(), mStitchMap, mMask);
 
     mCapture = capture;
     mIsRunning = true;

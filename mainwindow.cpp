@@ -3,6 +3,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <QPainter>
+#include <QDir>
 #include "util.h"
 #include "settings.h"
 
@@ -17,7 +18,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_video_full->setAttribute(Qt::WA_NoBackground);
 
     mSettings = Settings::getInstant();
-    mSettings->loadSettings("config.ini");
+    QString path = mSettings->getApplicationPath() + "/config.ini";
+    qDebug() << "path " << path;
+    mSettings->loadSettings(path);
 
     mCurVideoChannel = VIDEO_CHANNEL_FRONT;
     connect(&mVideoUpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdate()));
@@ -28,8 +31,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mUpdateFPS = VIDEO_FPS_20;
-    mCaptureFPS = VIDEO_FPS_20;
+    mUpdateFPS = VIDEO_FPS_30;
+    mCaptureFPS = VIDEO_FPS_30;
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;

@@ -43,7 +43,7 @@ int main()
 
 void stitching_init(const string config_path, Mat& Map, Mat& Mask)
 {
-    cout << "System Initialization" << endl;
+    cout << "System Initialization:" << config_path << endl;
     FileStorage fs(config_path, FileStorage::READ);
     cout << "Reading Map" << endl;
     fs["Map"] >> Map;

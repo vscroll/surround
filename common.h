@@ -3,7 +3,7 @@
 
 #include <QDebug>
 #define DEBUG 1
-#define DEBUG_CAPTURE 0
+#define DEBUG_CAPTURE 1
 #define DEBUG_STITCH 1
 #define DEBUG_UPDATE 1
 

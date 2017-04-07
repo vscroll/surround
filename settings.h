@@ -15,6 +15,8 @@ public:
 
     void loadSettings(QString path);
 
+    QString getApplicationPath();
+
 public:
     int mVideoChanel[VIDEO_CHANNEL_SIZE];
 
