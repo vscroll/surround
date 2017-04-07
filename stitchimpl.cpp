@@ -7,6 +7,11 @@ StitchImpl::StitchImpl(QObject *parent) :
     mWorker = new StitchWorker();
 }
 
+StitchImpl::~StitchImpl()
+{
+
+}
+
 void StitchImpl::start(ICapture* capture)
 {
     if (NULL != mWorker)

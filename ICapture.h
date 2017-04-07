@@ -6,6 +6,7 @@
 class ICapture
 {
 public:
+    virtual ~ICapture() {}
     virtual int openDevice() = 0;
     virtual int closeDevice() = 0;
     virtual int start(VIDEO_FPS fps) = 0;

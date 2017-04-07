@@ -6,8 +6,7 @@
 Settings* Settings::mInstant = NULL;
 
 Settings::Settings(QObject *parent) :
-    QObject(parent),
-    mVideoChanel({0,0,0,0})
+    QObject(parent)
 {
     memset(mVideoChanel, 0, sizeof(mVideoChanel));
 }

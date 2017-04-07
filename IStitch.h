@@ -7,6 +7,7 @@ class ICapture;
 class IStitch
 {
 public:
+    virtual ~IStitch() {}
     virtual void start(ICapture* capture) = 0;
     virtual void stop() = 0;
     virtual surround_image1_t* dequeueFullImage() = 0;

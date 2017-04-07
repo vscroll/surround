@@ -8,6 +8,11 @@ Capture4Impl::Capture4Impl(QObject *parent) :
 {
 }
 
+Capture4Impl::~Capture4Impl()
+{
+
+}
+
 int Capture4Impl::openDevice()
 {
     if (NULL == mCaptureWorker)

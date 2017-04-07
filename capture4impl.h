@@ -14,6 +14,7 @@ class Capture4Impl : public QObject, public ICapture
     Q_OBJECT
 public:
     explicit Capture4Impl(QObject *parent = 0);
+    virtual ~Capture4Impl();
 
     virtual int openDevice();
     virtual int closeDevice();

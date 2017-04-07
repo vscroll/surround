@@ -11,6 +11,7 @@ class StitchImpl : public QObject, public IStitch
     Q_OBJECT
 public:
     explicit StitchImpl(QObject *parent = 0);
+    virtual ~StitchImpl();
 
     virtual void start(ICapture* capture);
     virtual void stop();
