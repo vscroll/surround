@@ -8,9 +8,9 @@ Capture4WorkerBase::Capture4WorkerBase(QObject *parent, int videoChannelNum) :
     mLastTimestamp = 0.0;
 }
 
-void Capture4WorkerBase::openDevice()
+int Capture4WorkerBase::openDevice()
 {
-
+    return -1;
 }
 
 void Capture4WorkerBase::closeDevice()

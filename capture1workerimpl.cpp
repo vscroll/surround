@@ -10,12 +10,14 @@ Capture1WorkerImpl::Capture1WorkerImpl(QObject *parent, int videoChannel) :
     mDropFrameCount = 10;
 }
 
-void Capture1WorkerImpl::openDevice()
+int Capture1WorkerImpl::openDevice()
 {
     if (NULL == mCapture)
     {
         mCapture = cvCreateCameraCapture(mVideoChannel);
     }
+
+    return mCapture == NULL ? -1:0;
 }
 
 void Capture1WorkerImpl::closeDevice()

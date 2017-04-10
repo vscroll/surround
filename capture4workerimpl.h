@@ -16,7 +16,7 @@ public:
     explicit Capture4WorkerImpl(QObject *parent = 0, int videoChannelNum = 4);
 
 public:
-    virtual void openDevice();
+    virtual int openDevice();
     virtual void closeDevice();
 signals:
 

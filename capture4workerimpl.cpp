@@ -9,13 +9,19 @@ Capture4WorkerImpl::Capture4WorkerImpl(QObject *parent, int videoChannelNum) :
     memset(mCaptureArray, 0, sizeof(mCaptureArray));
 }
 
-void Capture4WorkerImpl::openDevice()
+int Capture4WorkerImpl::openDevice()
 {
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
         int video_channel = Settings::getInstant()->mVideoChanel[i];
         mCaptureArray[i] = cvCreateCameraCapture(video_channel);
+        if (mCaptureArray[i] == NULL)
+        {
+            return -1;
+        }
     }
+
+    return 0;
 }
 
 void Capture4WorkerImpl::closeDevice()

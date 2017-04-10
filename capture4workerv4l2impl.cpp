@@ -6,31 +6,54 @@
 #include <errno.h>
 #include "util.h"
 #include "settings.h"
+#include <sys/ioctl.h>
+#if USE_IMX_IPU
+#include <linux/ipu.h>
+#endif
 
 Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannelNum) :
     Capture4WorkerBase(parent, videoChannelNum)
 {
-
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mWidth[i] = 704;
         mHeight[i] = 576;
+        mIPUFd[i] = -1;
         mVideoFd[i] = -1;
     }
+#if USE_IMX_IPU
+    mMemType = V4L2_MEMORY_USERPTR;
+#else
     mMemType = V4L2_MEMORY_MMAP;
+#endif
 }
 
-void Capture4WorkerV4l2Impl::openDevice()
+int Capture4WorkerV4l2Impl::openDevice()
 {
+
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
+#if USE_IMX_IPU
+        mIPUFd[i] = open("/dev/mxc_ipu", O_RDWR, 0);
+        if (mIPUFd[i] < 0)
+        {
+            qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                    << " open ipu failed";
+            return -1;
+        }
+        qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                << " ipu fd:" << mIPUFd[i];
+#endif
+
         int video_channel = Settings::getInstant()->mVideoChanel[i];
         char devName[16] = {0};
         sprintf(devName, "/dev/video%d", video_channel);
         mVideoFd[i] = open(devName, O_RDWR/* | O_NONBLOCK*/);
-        if (mVideoFd[i] <= 0)
+        if (mVideoFd[i] < 0)
         {
-            return;
+            qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                    << " open video failed";
+            return -1;
         }
 
         V4l2::getVideoCap(mVideoFd[i]);
@@ -40,16 +63,44 @@ void Capture4WorkerV4l2Impl::openDevice()
         V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);
-        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mV4l2Buf[i], mMemType))
+
+        qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                 << "mem type: " << V4L2_MEMORY_MMAP
+                 << "buf count:" << V4l2::V4L2_BUF_COUNT
+                << " width:" << mWidth[i]
+                << " height:" << mHeight[i];
+
+        for (unsigned int j = 0; j < V4l2::V4L2_BUF_COUNT; ++j)
         {
-            return;
+            mV4l2Buf[i][j].width = mWidth[i];
+            mV4l2Buf[i][j].height = mHeight[i];
+            mV4l2Buf[i][j].fmt = V4L2_PIX_FMT_UYVY;
         }
 
+        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mIPUFd[i], mV4l2Buf[i], mMemType))
+        {
+            return -1;
+        }
+#if USE_IMX_IPU
+        for (unsigned int j = 0; j < V4l2::V4L2_BUF_COUNT; ++j)
+        {
+            mIpuBuf[i][j].width = mWidth[i];
+            mIpuBuf[i][j].height = mHeight[i];
+            mIpuBuf[i][j].fmt = V4L2_PIX_FMT_UYVY;
+        }
+
+        if (-1 == V4l2::initIpuBuf(mIPUFd[i], mIpuBuf[i], V4l2::V4L2_BUF_COUNT))
+        {
+            return -1;
+        }
+#endif
         if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], mMemType))
         {
-            return;
+            return -1;
         }
     }
+
+    return 0;
 }
 
 void Capture4WorkerV4l2Impl::closeDevice()
@@ -117,13 +168,36 @@ void Capture4WorkerV4l2Impl::onCapture()
             if (buf.index < V4l2::V4L2_BUF_COUNT)
             {
                 unsigned char frame_buffer[imageSize];
-                mMutexCapture.lock();
+                //mMutexCapture.lock();
                 unsigned char* buffer = (unsigned char*)(mV4l2Buf[i][buf.index].start);
 #if DEBUG_CAPTURE
                 double convert_start = (double)clock();
 #endif
-                Util::yuyv_to_rgb24(mWidth[i], mHeight[i], buffer, frame_buffer);
-                mMutexCapture.unlock();
+
+#if USE_IMX_IPU                
+                struct ipu_task task;
+                memset(&task, 0, sizeof(struct ipu_task));
+                task.input.width  = mWidth[i];
+                task.input.height = mHeight[i];
+                task.input.format = V4L2_PIX_FMT_UYVY;
+                
+                task.output.width = mWidth[i];
+                task.output.height = mHeight[i];
+                task.output.format = V4L2_PIX_FMT_RGB24;
+
+                task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
+                task.output.paddr = (int)mIpuBuf[i][buf.index].offset;
+                if (ioctl(mIPUFd[i], IPU_QUEUE_TASK, &task) < 0) {
+                    qDebug() << "Capture1WorkerV4l2Impl::onCapture"
+                            << " ipu task failed:" << mIPUFd[i];
+                    continue;
+                }
+                
+                memcpy(frame_buffer, (void*)(mIpuBuf[i][buf.index].start), mIpuBuf[i][buf.index].length);
+#else                
+                Util::uyvy_to_rgb24(mWidth[i], mHeight[i], buffer, frame_buffer);
+#endif
+                //mMutexCapture.unlock();
 
 #if DEBUG_CAPTURE
                 convert_time = (int)(clock() - convert_start)/1000;

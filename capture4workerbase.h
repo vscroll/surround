@@ -13,7 +13,7 @@ class Capture4WorkerBase : public QObject
 public:
     explicit Capture4WorkerBase(QObject *parent = 0, int videoChannelNum = 4);
 
-    virtual void openDevice();
+    virtual int openDevice();
     virtual void closeDevice();
     virtual surround_image4_t* popOneFrame();
     virtual int getFrameCount();

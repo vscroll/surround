@@ -15,29 +15,36 @@ Capture1WorkerV4l2Impl::Capture1WorkerV4l2Impl(QObject *parent, int videoChannel
      mMemType = V4L2_MEMORY_MMAP;
 }
 
-void Capture1WorkerV4l2Impl::openDevice()
+int Capture1WorkerV4l2Impl::openDevice()
 {
+    if (Capture1WorkerBase::openDevice() <= 0)
+    {
+        return -1;
+    }
+
     char devName[16] = {0};
     sprintf(devName, "/dev/video%d", mVideoChannel);
     mVideoFd = open(devName, O_RDWR/* | O_NONBLOCK*/);
     if (mVideoFd <= 0)
     {
-        return;
+        return -1;
     }
 
     V4l2::getVideoCap(mVideoFd);
     V4l2::setVideoFmt(mVideoFd, mWidth, mHeight);
     V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
     V4l2::getFps(mVideoFd);
-    if (-1 == V4l2::initV4l2Buf(mVideoFd, mV4l2Buf, mMemType))
+    if (-1 == V4l2::initV4l2Buf(mVideoFd, mIPUFd, mV4l2Buf, mMemType))
     {
-        return;
+        return -1;
     }
 
     if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, mMemType))
     {
-        return;
+        return -1;
     }
+
+    return 0;
 }
 
 void Capture1WorkerV4l2Impl::closeDevice()

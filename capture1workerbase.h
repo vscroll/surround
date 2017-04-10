@@ -14,7 +14,7 @@ class Capture1WorkerBase : public QObject
 public:
     explicit Capture1WorkerBase(QObject *parent = 0, int videoChannel = 0);
 
-    virtual void openDevice();
+    virtual int openDevice();
     virtual void closeDevice();
     virtual surround_image1_t* popOneFrame();
     virtual int getFrameCount();
@@ -31,6 +31,8 @@ protected:
     int mVideoChannel;
     QQueue<surround_image1_t*> mSurroundImageQueue;
     QMutex mMutexQueue;
+
+    int mIPUFd;
 
     double mLastTimestamp;
     QMutex mMutexFile;

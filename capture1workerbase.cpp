@@ -1,21 +1,29 @@
 #include "capture1workerbase.h"
 #include "util.h"
+#include <unistd.h>
+#include <fcntl.h>
 
 Capture1WorkerBase::Capture1WorkerBase(QObject *parent, int videoChannel) :
     QObject(parent),
     mVideoChannel(videoChannel),
     mLastTimestamp(0.0)
 {
+    mIPUFd = -1;
 }
 
-void Capture1WorkerBase::openDevice()
+int Capture1WorkerBase::openDevice()
 {
-
+    mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
+    return mIPUFd;
 }
 
 void Capture1WorkerBase::closeDevice()
 {
-
+    if (mIPUFd > 0)
+    {
+        close(mIPUFd);
+        mIPUFd = -1;
+    }
 }
 
 void Capture1WorkerBase::onCapture()

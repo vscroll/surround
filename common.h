@@ -14,6 +14,8 @@
 
 #define DATA_FAKE 0
 
+#define USE_IMX_IPU 0
+
 enum VIDEO_CHANNEL {
     VIDEO_CHANNEL_FRONT = 0,
     VIDEO_CHANNEL_REAR,

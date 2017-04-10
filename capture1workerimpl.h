@@ -15,7 +15,7 @@ class Capture1WorkerImpl : public Capture1WorkerBase
 public:
     explicit Capture1WorkerImpl(QObject *parent = 0, int videoChannel = 0);
 
-    virtual void openDevice();
+    virtual int openDevice();
     virtual void closeDevice();
 signals:
 

@@ -3,6 +3,12 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <QDebug>
+#include <unistd.h>
+#include "common.h"
+
+#if USE_IMX_IPU
+#include <linux/ipu.h>
+#endif
 
 V4l2::V4l2()
 {
@@ -63,7 +69,7 @@ int V4l2::setVideoFmt(int fd, int width, int height)
     struct v4l2_format fmt;
     memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
     fmt.fmt.pix.width = width;
     fmt.fmt.pix.height = height;
@@ -113,7 +119,7 @@ int V4l2::setFps(int fd, int fps)
     return result;
 }
 
-int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
+int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, v4l2_memory mem_type)
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
@@ -122,6 +128,8 @@ int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
     req.memory = mem_type;
     if (-1 == ioctl(fd, VIDIOC_REQBUFS, &req))
     {
+        qDebug() << "V4l2::initV4l2Buf"
+                 << " REQBUFS failed";
         return -1;
     }
 
@@ -131,32 +139,106 @@ int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
         return -1;
     }
 
-    for (unsigned int i = 0; i < req.count; ++i)
+    if (mem_type == V4L2_MEMORY_MMAP)
     {
-        struct v4l2_buffer buf;
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = mem_type;
-        buf.index = i; // 查询序号为mV4l2Buf的缓冲区，得到其起始物理地址和大小
-        if (-1 == ioctl(fd, VIDIOC_QUERYBUF, &buf))
+        for (unsigned int i = 0; i < req.count; ++i)
         {
-            return -1;
-        }
+            struct v4l2_buffer buf;
+            memset(&buf, 0, sizeof(buf));
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = mem_type;
+            buf.index = i; // 查询序号为mV4l2Buf的缓冲区，得到其起始物理地址和大小
+            if (-1 == ioctl(fd, VIDIOC_QUERYBUF, &buf))
+            {
+                qDebug() << "V4l2::initV4l2Buf"
+                         << " QUERYBUF failed";
+                return -1;
+            }
 
-        if (mem_type == V4L2_MEMORY_MMAP)
-        {
             v4l2_buf[i].length = buf.length;
             v4l2_buf[i].offset = buf.m.offset;
             // 映射内存
             v4l2_buf[i].start = mmap (NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
             if (MAP_FAILED == v4l2_buf[i].start)
             {
-                printf("initV4l2Buf mmap failed\n");
+                qDebug() << "V4l2::initV4l2Buf"
+                        << " mmap failed";
                 return -1;
             }
             memset(v4l2_buf[i].start, 0xFF, v4l2_buf[i].length);
         }
     }
+    else if (mem_type == V4L2_MEMORY_USERPTR)
+    {
+#if USE_IMX_IPU
+        for (unsigned int i = 0; i < req.count; ++i)
+        {
+            unsigned int page_size = getpagesize();
+            unsigned int buf_size = v4l2_buf[i].width * v4l2_buf[i].height * 2;
+            buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
+            v4l2_buf[i].length = v4l2_buf[i].offset = buf_size;
+            if (-1 == ioctl(fd_ipu, IPU_ALLOC, &v4l2_buf[i].offset))
+            {
+                qDebug() << "V4l2::initV4l2Buf"
+                        << " IPU_ALLOC failed";
+                return -1;
+            }
+
+            v4l2_buf[i].start = mmap(0, buf_size, PROT_READ | PROT_WRITE,
+                                    MAP_SHARED, fd_ipu, v4l2_buf[i].offset);
+            if (NULL == v4l2_buf[i].start)
+            {
+                qDebug() << "V4l2::initV4l2Buf"
+                        << " ipu map failed";
+                return -1;
+            }
+
+            struct v4l2_buffer buf;
+            memset(&buf, 0, sizeof(buf));
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = mem_type;
+            buf.index = i; // 查询序号为mV4l2Buf的缓冲区，得到其起始物理地址和大小
+            buf.length = v4l2_buf[i].length;
+            buf.m.userptr = (unsigned long) v4l2_buf[i].start;
+            if (-1 == ioctl(fd, VIDIOC_QUERYBUF, &buf))
+            {
+                qDebug() << "V4l2::initV4l2Buf"
+                        << " QUERYBUF failed";
+                return -1;
+            }
+        }
+#endif
+    }
+
+    return 0;
+}
+
+int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count)
+{
+#if USE_IMX_IPU
+    for (unsigned int i = 0; i < buf_count; ++i)
+    {
+        unsigned int page_size = getpagesize();
+        unsigned int buf_size = ipu_buf[i].width * ipu_buf[i].height * 2;
+        buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
+        ipu_buf[i].length = ipu_buf[i].offset = buf_size;
+        if (-1 == ioctl(fd_ipu, IPU_ALLOC, &ipu_buf[i].offset))
+        {
+            qDebug() << "V4l2::initIpuBuf"
+                    << " IPU_ALLOC failed";
+            return -1;
+        }
+
+        ipu_buf[i].start = mmap(0, buf_size, PROT_READ | PROT_WRITE,
+                                MAP_SHARED, fd_ipu, ipu_buf[i].offset);
+        if (NULL == ipu_buf[i].start)
+        {
+            qDebug() << "V4l2::initIpuBuf"
+                    << " ipu map failed";
+            return -1;
+        }
+    }
+#endif
 
     return 0;
 }
@@ -176,10 +258,16 @@ int V4l2::startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
         {
             buf.m.offset = v4l2_buf[i].offset;
         }
+        else if (mem_type == V4L2_MEMORY_USERPTR)
+        {
+            buf.m.offset = (unsigned int)v4l2_buf[i].start;
+        }
 
         // 将缓冲帧放入队列
         if (-1 == ioctl(fd, VIDIOC_QBUF, &buf))
         {
+            qDebug() << "V4l2::startCapture"
+                    << " QBUF failed";
             return -1;
         }
     }
