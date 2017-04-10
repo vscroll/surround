@@ -8,8 +8,6 @@ class V4l2
 public:
     V4l2();
 
-    static const unsigned int V4L2_BUF_COUNT = 4;
-
     struct buffer
     {
         void* start;
@@ -25,7 +23,7 @@ public:
     static int setVideoFmt(int fd, int width, int height);
     static int getFps(int fd);
     static int setFps(int fd, int fps);
-    static int initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, v4l2_memory mem_type);
+    static int initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, int buf_count, v4l2_memory mem_type);
     static int initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count);
     static int startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type);
     static void stoptCapture(int fd);

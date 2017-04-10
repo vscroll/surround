@@ -66,30 +66,30 @@ int Capture4WorkerV4l2Impl::openDevice()
 
         qDebug() << "Capture4WorkerV4l2Impl::openDevice"
                  << "mem type: " << V4L2_MEMORY_MMAP
-                 << "buf count:" << V4l2::V4L2_BUF_COUNT
+                 << "buf count:" << V4L2_BUF_COUNT
                 << " width:" << mWidth[i]
                 << " height:" << mHeight[i];
 
-        for (unsigned int j = 0; j < V4l2::V4L2_BUF_COUNT; ++j)
+        for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
         {
             mV4l2Buf[i][j].width = mWidth[i];
             mV4l2Buf[i][j].height = mHeight[i];
             mV4l2Buf[i][j].fmt = V4L2_PIX_FMT_UYVY;
         }
 
-        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mIPUFd[i], mV4l2Buf[i], mMemType))
+        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mIPUFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType))
         {
             return -1;
         }
 #if USE_IMX_IPU
-        for (unsigned int j = 0; j < V4l2::V4L2_BUF_COUNT; ++j)
+        for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
         {
             mIpuBuf[i][j].width = mWidth[i];
             mIpuBuf[i][j].height = mHeight[i];
             mIpuBuf[i][j].fmt = V4L2_PIX_FMT_UYVY;
         }
 
-        if (-1 == V4l2::initIpuBuf(mIPUFd[i], mIpuBuf[i], V4l2::V4L2_BUF_COUNT))
+        if (-1 == V4l2::initIpuBuf(mIPUFd[i], mIpuBuf[i], V4L2_BUF_COUNT))
         {
             return -1;
         }
@@ -165,7 +165,7 @@ void Capture4WorkerV4l2Impl::onCapture()
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
         {
-            if (buf.index < V4l2::V4L2_BUF_COUNT)
+            if (buf.index < V4L2_BUF_COUNT)
             {
                 unsigned char frame_buffer[imageSize];
                 //mMutexCapture.lock();

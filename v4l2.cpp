@@ -119,11 +119,11 @@ int V4l2::setFps(int fd, int fps)
     return result;
 }
 
-int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, v4l2_memory mem_type)
+int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, int buf_count, v4l2_memory mem_type)
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
-    req.count = V4L2_BUF_COUNT;
+    req.count = buf_count;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = mem_type;
     if (-1 == ioctl(fd, VIDIOC_REQBUFS, &req))
@@ -133,7 +133,7 @@ int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, v4l2_memory m
         return -1;
     }
 
-    if (req.count < V4L2_BUF_COUNT) {
+    if (req.count < buf_count) {
         qDebug() << "V4l2::initV4l2Buf"
                  << " Insufficient buffer memory on device";
         return -1;

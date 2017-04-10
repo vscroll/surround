@@ -34,7 +34,7 @@ int Capture1WorkerV4l2Impl::openDevice()
     V4l2::setVideoFmt(mVideoFd, mWidth, mHeight);
     V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
     V4l2::getFps(mVideoFd);
-    if (-1 == V4l2::initV4l2Buf(mVideoFd, mIPUFd, mV4l2Buf, mMemType))
+    if (-1 == V4l2::initV4l2Buf(mVideoFd, mIPUFd, mV4l2Buf, V4L2_BUF_COUNT, mMemType))
     {
         return -1;
     }
@@ -103,7 +103,7 @@ void Capture1WorkerV4l2Impl::onCapture()
     struct v4l2_buffer buf;
     if (-1 != V4l2::readFrame(mVideoFd, &buf, mMemType))
     {
-        if (buf.index < V4l2::V4L2_BUF_COUNT)
+        if (buf.index < V4L2_BUF_COUNT)
         {
             unsigned char frame_buffer[imageSize];
             mMutexCapture.lock();
