@@ -81,15 +81,12 @@ int Capture4WorkerV4l2Impl::openDevice()
         {
             return -1;
         }
-#if USE_IMX_IPU
-        for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
-        {
-            mIpuBuf[i][j].width = mWidth[i];
-            mIpuBuf[i][j].height = mHeight[i];
-            mIpuBuf[i][j].fmt = V4L2_PIX_FMT_UYVY;
-        }
+        mIpuBuf[i].width = mWidth[i];
+        mIpuBuf[i].height = mHeight[i];
+        mIpuBuf[i].fmt = V4L2_PIX_FMT_RGB24;
 
-        if (-1 == V4l2::initIpuBuf(mIPUFd[i], mIpuBuf[i], V4L2_BUF_COUNT))
+#if USE_IMX_IPU
+        if (-1 == V4l2::initIpuBuf(mIPUFd[i], &(mIpuBuf[i]), 1))
         {
             return -1;
         }
@@ -167,37 +164,34 @@ void Capture4WorkerV4l2Impl::onCapture()
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
-                unsigned char frame_buffer[imageSize];
-                //mMutexCapture.lock();
                 unsigned char* buffer = (unsigned char*)(mV4l2Buf[i][buf.index].start);
 #if DEBUG_CAPTURE
                 double convert_start = (double)clock();
 #endif
 
-#if USE_IMX_IPU                
+#if USE_IMX_IPU
                 struct ipu_task task;
                 memset(&task, 0, sizeof(struct ipu_task));
                 task.input.width  = mWidth[i];
                 task.input.height = mHeight[i];
                 task.input.format = V4L2_PIX_FMT_UYVY;
-                
+
                 task.output.width = mWidth[i];
                 task.output.height = mHeight[i];
                 task.output.format = V4L2_PIX_FMT_RGB24;
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
-                task.output.paddr = (int)mIpuBuf[i][buf.index].offset;
+                task.output.paddr = (int)mIpuBuf[i].offset;
                 if (ioctl(mIPUFd[i], IPU_QUEUE_TASK, &task) < 0) {
                     qDebug() << "Capture1WorkerV4l2Impl::onCapture"
-                            << " ipu task failed:" << mIPUFd[i];
+                        << " ipu task failed:" << mIPUFd[i];
                     continue;
                 }
                 
-                memcpy(frame_buffer, (void*)(mIpuBuf[i][buf.index].start), mIpuBuf[i][buf.index].length);
 #else                
-                Util::uyvy_to_rgb24(mWidth[i], mHeight[i], buffer, frame_buffer);
+                unsigned char frame_buffer[imageSize];
+                Util::uyvy_to_rgb24(mWidth[i], mHeight[i], (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
 #endif
-                //mMutexCapture.unlock();
 
 #if DEBUG_CAPTURE
                 convert_time = (int)(clock() - convert_start)/1000;
@@ -217,7 +211,11 @@ void Capture4WorkerV4l2Impl::onCapture()
 #else
                 //matImage[i] = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
                 IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
+#if USE_IMX_IPU                
+                memcpy(pIplImage->imageData, (void*)(mIpuBuf[i].start), mIpuBuf[i].length);
+#else
                 memcpy(pIplImage->imageData, frame_buffer, imageSize);
+#endif
                 cv::Mat* matImage = new cv::Mat(pIplImage, true);
                 if (NULL != matImage)
                 {

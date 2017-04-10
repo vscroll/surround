@@ -238,8 +238,8 @@ int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count)
             return -1;
         }
     }
-#endif
 
+#endif
     return 0;
 }
 
