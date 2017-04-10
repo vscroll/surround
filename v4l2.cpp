@@ -119,7 +119,7 @@ int V4l2::setFps(int fd, int fps)
     return result;
 }
 
-int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, int buf_count, v4l2_memory mem_type)
+int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type)
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
@@ -192,7 +192,7 @@ int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, int buf_count
                         << " ipu map failed";
                 return -1;
             }
-
+/*
             struct v4l2_buffer buf;
             memset(&buf, 0, sizeof(buf));
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -206,6 +206,7 @@ int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, int buf_count
                         << " QUERYBUF failed";
                 return -1;
             }
+*/
         }
 #endif
     }
@@ -239,6 +240,8 @@ int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count)
         }
     }
 
+    qDebug() << "V4l2::initIpuBuf"
+        << " IPU_ALLOC ok";
 #endif
     return 0;
 }

@@ -81,11 +81,11 @@ int Capture4WorkerV4l2Impl::openDevice()
         {
             return -1;
         }
+#if USE_IMX_IPU
         mIpuBuf[i].width = mWidth[i];
         mIpuBuf[i].height = mHeight[i];
         mIpuBuf[i].fmt = V4L2_PIX_FMT_RGB24;
 
-#if USE_IMX_IPU
         if (-1 == V4l2::initIpuBuf(mIPUFd[i], &(mIpuBuf[i]), 1))
         {
             return -1;
@@ -164,7 +164,6 @@ void Capture4WorkerV4l2Impl::onCapture()
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
-                unsigned char* buffer = (unsigned char*)(mV4l2Buf[i][buf.index].start);
 #if DEBUG_CAPTURE
                 double convert_start = (double)clock();
 #endif
@@ -174,10 +173,16 @@ void Capture4WorkerV4l2Impl::onCapture()
                 memset(&task, 0, sizeof(struct ipu_task));
                 task.input.width  = mWidth[i];
                 task.input.height = mHeight[i];
+                task.input.crop.w = mWidth[i];
+                task.input.crop.h = mHeight[i];
                 task.input.format = V4L2_PIX_FMT_UYVY;
+                task.input.deinterlace.enable = 1;
+                task.input.deinterlace.motion = 2;
 
                 task.output.width = mWidth[i];
                 task.output.height = mHeight[i];
+                task.output.crop.w = mWidth[i];
+                task.output.crop.h = mHeight[i];
                 task.output.format = V4L2_PIX_FMT_RGB24;
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
