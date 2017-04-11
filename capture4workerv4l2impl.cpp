@@ -158,7 +158,6 @@ void Capture4WorkerV4l2Impl::onCapture()
             return;
         }
 
-        int imageSize = mWidth[i]*mHeight[i]*3;
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
         {
@@ -173,6 +172,8 @@ void Capture4WorkerV4l2Impl::onCapture()
                 memset(&task, 0, sizeof(struct ipu_task));
                 task.input.width  = mWidth[i];
                 task.input.height = mHeight[i];
+                task.input.crop.pos.x = 0;
+                task.input.crop.pos.y = 0;
                 task.input.crop.w = mWidth[i];
                 task.input.crop.h = mHeight[i];
                 task.input.format = V4L2_PIX_FMT_UYVY;
@@ -181,9 +182,13 @@ void Capture4WorkerV4l2Impl::onCapture()
 
                 task.output.width = mWidth[i];
                 task.output.height = mHeight[i];
+                task.output.crop.pos.x = 0;
+                task.output.crop.pos.y = 0;
                 task.output.crop.w = mWidth[i];
                 task.output.crop.h = mHeight[i];
-                task.output.format = V4L2_PIX_FMT_RGB24;
+                //for colour cast
+                //task.output.format = V4L2_PIX_FMT_RGB24;
+                task.output.format = V4L2_PIX_FMT_BGR24;
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
                 task.output.paddr = (int)mIpuBuf[i].offset;
@@ -193,7 +198,8 @@ void Capture4WorkerV4l2Impl::onCapture()
                     continue;
                 }
                 
-#else                
+#else
+                int imageSize = mWidth[i]*mHeight[i]*3;
                 unsigned char frame_buffer[imageSize];
                 Util::uyvy_to_rgb24(mWidth[i], mHeight[i], (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
 #endif

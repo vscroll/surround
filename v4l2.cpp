@@ -173,9 +173,9 @@ int V4l2::initV4l2Buf(int fd, int fd_ipu, struct buffer* v4l2_buf, unsigned int 
 #if USE_IMX_IPU
         for (unsigned int i = 0; i < req.count; ++i)
         {
-            unsigned int page_size = getpagesize();
+            //unsigned int page_size = getpagesize();
             unsigned int buf_size = v4l2_buf[i].width * v4l2_buf[i].height * 2;
-            buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
+           // buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
             v4l2_buf[i].length = v4l2_buf[i].offset = buf_size;
             if (-1 == ioctl(fd_ipu, IPU_ALLOC, &v4l2_buf[i].offset))
             {
@@ -219,9 +219,9 @@ int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count)
 #if USE_IMX_IPU
     for (unsigned int i = 0; i < buf_count; ++i)
     {
-        unsigned int page_size = getpagesize();
-        unsigned int buf_size = ipu_buf[i].width * ipu_buf[i].height * 2;
-        buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
+        //unsigned int page_size = getpagesize();
+        unsigned int buf_size = ipu_buf[i].width * ipu_buf[i].height * 3;
+        //buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
         ipu_buf[i].length = ipu_buf[i].offset = buf_size;
         if (-1 == ioctl(fd_ipu, IPU_ALLOC, &ipu_buf[i].offset))
         {
@@ -238,10 +238,14 @@ int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count)
                     << " ipu map failed";
             return -1;
         }
+
+        qDebug() << "V4l2::initIpuBuf"
+                 << " width:" << ipu_buf[i].width
+                 << " height:" << ipu_buf[i].height
+                 << " buf_size:" << buf_size
+                 << " IPU_ALLOC ok";
     }
 
-    qDebug() << "V4l2::initIpuBuf"
-        << " IPU_ALLOC ok";
 #endif
     return 0;
 }
