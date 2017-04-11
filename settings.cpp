@@ -9,6 +9,8 @@ Settings::Settings(QObject *parent) :
     QObject(parent)
 {
     memset(mVideoChanel, 0, sizeof(mVideoChanel));
+    mFullWidth = 0;
+    mFullHeight = 0;
 }
 
 Settings* Settings::getInstant()
@@ -49,10 +51,25 @@ void Settings::loadSettings(QString path)
         mVideoChanel[VIDEO_CHANNEL_RIGHT] = value;
     }
 
-    qDebug() << "front" << mVideoChanel[VIDEO_CHANNEL_FRONT];
-    qDebug() << "rear" << mVideoChanel[VIDEO_CHANNEL_REAR];
-    qDebug() << "left" << mVideoChanel[VIDEO_CHANNEL_LEFT];
-    qDebug() << "right" << mVideoChanel[VIDEO_CHANNEL_RIGHT];
+    value = settings.value("SIZE/fullwidth").toInt();
+    if (value >= 0)
+    {
+        mFullWidth = value;
+    }
+
+    value = settings.value("SIZE/fullheight").toInt();
+    if (value >= 0)
+    {
+        mFullHeight = value;
+    }
+
+    qDebug() << "front:" << mVideoChanel[VIDEO_CHANNEL_FRONT]
+        << " rear:" << mVideoChanel[VIDEO_CHANNEL_REAR]
+        << " left:" << mVideoChanel[VIDEO_CHANNEL_LEFT]
+        << " right:" << mVideoChanel[VIDEO_CHANNEL_RIGHT];
+
+    qDebug() << "full width:" << mFullWidth
+        << " full height:" << mFullHeight;
 }
 
 QString Settings::getApplicationPath()

@@ -18,6 +18,9 @@ void StitchWorker::start(ICapture *capture)
         return;
     }
 
+    mFullWidth = Settings::getInstant()->mFullWidth;
+    mFullHeight = Settings::getInstant()->mFullHeight;
+
     QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
     stitching_init(path.toStdString(), mStitchMap, mMask);
 
@@ -68,8 +71,8 @@ void StitchWorker::run()
                   mStitchMap,
                   mMask,
                   &outFull,
-                  FULL_WIDTH,
-                  FULL_HEIGHT,
+                  mFullWidth,
+                  mFullHeight,
                   &outSmall,
                   mVideoChannel);
          }

@@ -19,7 +19,8 @@ public:
 
 public:
     int mVideoChanel[VIDEO_CHANNEL_SIZE];
-
+    int mFullWidth;
+    int mFullHeight;
 signals:
 
 public slots:

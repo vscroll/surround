@@ -30,8 +30,8 @@ signals:
 public slots:
 
 private:
-    static const int FULL_WIDTH = 424;
-    static const int FULL_HEIGHT = 600;
+    int mFullWidth;
+    int mFullHeight;
 
     bool mIsRunning;
     QQueue<surround_image1_t*> mOutputFullImageQueue;
