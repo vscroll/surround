@@ -28,7 +28,10 @@ private:
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[V4L2_BUF_COUNT];
     int mVideoFd;
-    QMutex mMutexCapture;
+    int mIPUFd;
+    struct V4l2::buffer mIpuBuf;
+    QMutex mMutexV4l2;
+    QMutex mMutexIpu;
 
     int mDropFrameCount;
     QMutex mMutexDrop;

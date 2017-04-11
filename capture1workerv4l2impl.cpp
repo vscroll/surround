@@ -5,14 +5,23 @@
 #include <unistd.h>
 #include <errno.h>
 #include "util.h"
+#include <sys/ioctl.h>
+#if USE_IMX_IPU
+#include <linux/ipu.h>
+#endif
 
 Capture1WorkerV4l2Impl::Capture1WorkerV4l2Impl(QObject *parent, int videoChannel) :
     Capture1WorkerBase(parent, videoChannel),
     mWidth(704),
     mHeight(576),
-    mVideoFd(-1)
+    mVideoFd(-1),
+    mIPUFd(-1)
 {
-     mMemType = V4L2_MEMORY_MMAP;
+#if USE_IMX_IPU
+    mMemType = V4L2_MEMORY_USERPTR;
+#else
+    mMemType = V4L2_MEMORY_MMAP;
+#endif
 }
 
 int Capture1WorkerV4l2Impl::openDevice()
@@ -21,6 +30,18 @@ int Capture1WorkerV4l2Impl::openDevice()
     {
         return -1;
     }
+
+#if USE_IMX_IPU
+    mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
+    if (mIPUFd < 0)
+    {
+        qDebug() << "Capture1WorkerV4l2Impl::openDevice"
+            << " open ipu failed";
+        return -1;
+    }
+    qDebug() << "Capture1WorkerV4l2Impl::openDevice"
+        << " ipu fd:" << mIPUFd;
+#endif
 
     char devName[16] = {0};
     sprintf(devName, "/dev/video%d", mVideoChannel);
@@ -31,13 +52,25 @@ int Capture1WorkerV4l2Impl::openDevice()
     }
 
     V4l2::getVideoCap(mVideoFd);
-    V4l2::setVideoFmt(mVideoFd, mWidth, mHeight);
+    V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
+    V4l2::setVideoFmt(mVideoFd, mWidth-2, mHeight-2);
     V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
     V4l2::getFps(mVideoFd);
     if (-1 == V4l2::initV4l2Buf(mVideoFd, mIPUFd, mV4l2Buf, V4L2_BUF_COUNT, mMemType))
     {
         return -1;
     }
+
+#if USE_IMX_IPU
+    mIpuBuf.width = mWidth;
+    mIpuBuf.height = mHeight;
+    mIpuBuf.fmt = V4L2_PIX_FMT_RGB24;
+
+    if (-1 == V4l2::initIpuBuf(mIPUFd, &mIpuBuf, 1))
+    {
+        return -1;
+    }
+#endif
 
     if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, mMemType))
     {
@@ -105,19 +138,58 @@ void Capture1WorkerV4l2Impl::onCapture()
     {
         if (buf.index < V4L2_BUF_COUNT)
         {
-            unsigned char frame_buffer[imageSize];
-            mMutexCapture.lock();
 #if DEBUG_CAPTURE
             double convert_start = (double)clock();
 #endif
-            Util::yuyv_to_rgb24(mWidth, mHeight, (unsigned char*)(mV4l2Buf[buf.index].start), frame_buffer);
-            //memset((unsigned char*)(mV4l2Buf[buf.index].start), 0, mV4l2Buf[buf.index].length);
+
+#if USE_IMX_IPU
+            struct ipu_task task;
+            memset(&task, 0, sizeof(struct ipu_task));
+            task.input.width  = mWidth;
+            task.input.height = mHeight;
+            task.input.crop.w = mWidth;
+            task.input.crop.h = mHeight;
+            task.input.format = V4L2_PIX_FMT_UYVY;
+            task.input.deinterlace.enable = 1;
+            task.input.deinterlace.motion = 2;
+
+            task.output.width = mWidth;
+            task.output.height = mHeight;
+            task.output.crop.w = mWidth;
+            task.output.crop.h = mHeight;
+            task.output.format = V4L2_PIX_FMT_RGB24;
+
+            mMutexV4l2.lock();
+            task.input.paddr = (int)mV4l2Buf[buf.index].offset;
+            mMutexV4l2.unlock();
+
+            mMutexIpu.lock();
+            task.output.paddr = (int)mIpuBuf.offset;
+            mMutexIpu.unlock();
+
+            if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
+                qDebug() << "Capture1WorkerV4l2Impl::onCapture"
+                    << " ipu task failed:" << mIPUFd;
+                return;
+            }
+#else
+            unsigned char frame_buffer[imageSize];
+            mMutexV4l2.lock();
+            unsigned char* buffer =  (unsigned char*)(mV4l2Buf[buf.index].start);
+            mMutexV4l2.unlock();
+            Util::uyvy_to_rgb24(mWidth, mHeight, buffer, frame_buffer);
+#endif
 #if DEBUG_CAPTURE
             convert_time = (int)(clock() - convert_start)/1000;
 #endif
-            mMutexCapture.unlock();
 
+#if USE_IMX_IPU
+            mMutexIpu.lock();
+            cv::Mat* image = new cv::Mat(mHeight, mWidth, CV_8UC3, mIpuBuf.start);
+            mMutexIpu.unlock();
+#else
             cv::Mat* image = new cv::Mat(mHeight, mWidth, CV_8UC3, frame_buffer);
+#endif
             if (NULL != image)
             {
                 //memcpy(image->data, frame_buffer, imageSize);
