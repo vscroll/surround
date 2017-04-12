@@ -14,6 +14,7 @@ Capture1WorkerV4l2Impl::Capture1WorkerV4l2Impl(QObject *parent, int videoChannel
     Capture1WorkerBase(parent, videoChannel),
     mWidth(704),
     mHeight(576),
+    mFmt(V4L2_PIX_FMT_UYVY),
     mVideoFd(-1),
     mIPUFd(-1)
 {
@@ -52,11 +53,13 @@ int Capture1WorkerV4l2Impl::openDevice()
     }
 
     V4l2::getVideoCap(mVideoFd);
-    V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
-    V4l2::setVideoFmt(mVideoFd, mWidth-2, mHeight-2);
-    V4l2::getVideoFmt(mVideoFd, &mWidth, &mHeight);
+    V4l2::getVideoFmt(mVideoFd, &mFmt, &mWidth, &mHeight);
+    V4l2::setVideoFmt(mVideoFd, mFmt, mWidth-2, mHeight-2);
+    V4l2::getVideoFmt(mVideoFd, &mFmt, &mWidth, &mHeight);
     V4l2::getFps(mVideoFd);
-    if (-1 == V4l2::initV4l2Buf(mVideoFd, mIPUFd, mV4l2Buf, V4L2_BUF_COUNT, mMemType))
+
+    unsigned int frame_size = mWidth * mHeight * 2;
+    if (-1 == V4l2::initV4l2Buf(mVideoFd, mV4l2Buf, V4L2_BUF_COUNT, mMemType, mIPUFd, frame_size))
     {
         return -1;
     }
@@ -64,9 +67,9 @@ int Capture1WorkerV4l2Impl::openDevice()
 #if USE_IMX_IPU
     mIpuBuf.width = mWidth;
     mIpuBuf.height = mHeight;
-    mIpuBuf.fmt = V4L2_PIX_FMT_RGB24;
-
-    if (-1 == V4l2::initIpuBuf(mIPUFd, &mIpuBuf, 1))
+    mIpuBuf.fmt = V4L2_PIX_FMT_BGR24;
+    frame_size = mWidth * mHeight * 3;
+    if (-1 == V4l2::initIpuBuf(mIPUFd, &mIpuBuf, 1, frame_size))
     {
         return -1;
     }
@@ -130,7 +133,6 @@ void Capture1WorkerV4l2Impl::onCapture()
 #endif
     mLastTimestamp = start;
 
-    int imageSize = mWidth*mHeight*3;
     double timestamp = (double)clock();
 
     struct v4l2_buffer buf;
@@ -149,7 +151,7 @@ void Capture1WorkerV4l2Impl::onCapture()
             task.input.height = mHeight;
             task.input.crop.w = mWidth;
             task.input.crop.h = mHeight;
-            task.input.format = V4L2_PIX_FMT_UYVY;
+            task.input.format = mFmt;
             task.input.deinterlace.enable = 1;
             task.input.deinterlace.motion = 2;
 
@@ -157,7 +159,7 @@ void Capture1WorkerV4l2Impl::onCapture()
             task.output.height = mHeight;
             task.output.crop.w = mWidth;
             task.output.crop.h = mHeight;
-            task.output.format = V4L2_PIX_FMT_RGB24;
+            task.output.format = V4L2_PIX_FMT_BGR24;
 
             mMutexV4l2.lock();
             task.input.paddr = (int)mV4l2Buf[buf.index].offset;
@@ -173,6 +175,7 @@ void Capture1WorkerV4l2Impl::onCapture()
                 return;
             }
 #else
+            int imageSize = mWidth*mHeight*3;
             unsigned char frame_buffer[imageSize];
             mMutexV4l2.lock();
             unsigned char* buffer =  (unsigned char*)(mV4l2Buf[buf.index].start);

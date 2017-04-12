@@ -18,6 +18,7 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannel
     {
         mWidth[i] = 704;
         mHeight[i] = 576;
+        mFmt[i] = V4L2_PIX_FMT_UYVY;
         mIPUFd[i] = -1;
         mVideoFd[i] = -1;
     }
@@ -57,10 +58,10 @@ int Capture4WorkerV4l2Impl::openDevice()
         }
 
         V4l2::getVideoCap(mVideoFd[i]);
-        V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
+        V4l2::getVideoFmt(mVideoFd[i], &mFmt[i], &mWidth[i], &mHeight[i]);
         //i don't know why
-        V4l2::setVideoFmt(mVideoFd[i], mWidth[i]-2, mHeight[i]-2);
-        V4l2::getVideoFmt(mVideoFd[i], &mWidth[i], &mHeight[i]);
+        V4l2::setVideoFmt(mVideoFd[i], mFmt[i], mWidth[i]-2, mHeight[i]-2);
+        V4l2::getVideoFmt(mVideoFd[i], &mFmt[i], &mWidth[i], &mHeight[i]);
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);
 
@@ -74,19 +75,21 @@ int Capture4WorkerV4l2Impl::openDevice()
         {
             mV4l2Buf[i][j].width = mWidth[i];
             mV4l2Buf[i][j].height = mHeight[i];
-            mV4l2Buf[i][j].fmt = V4L2_PIX_FMT_UYVY;
+            mV4l2Buf[i][j].fmt = mFmt[i];
         }
 
-        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mIPUFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType))
+        unsigned int frame_size = mWidth[i] * mHeight[i] * 2;
+        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd[i], frame_size))
         {
             return -1;
         }
 #if USE_IMX_IPU
         mIpuBuf[i].width = mWidth[i];
         mIpuBuf[i].height = mHeight[i];
-        mIpuBuf[i].fmt = V4L2_PIX_FMT_RGB24;
+        mIpuBuf[i].fmt = V4L2_PIX_FMT_BGR24;
 
-        if (-1 == V4l2::initIpuBuf(mIPUFd[i], &(mIpuBuf[i]), 1))
+        frame_size = mIpuBuf[i].width * mIpuBuf[i].height * 3;
+        if (-1 == V4l2::initIpuBuf(mIPUFd[i], &(mIpuBuf[i]), 1, frame_size ))
         {
             return -1;
         }
@@ -176,7 +179,7 @@ void Capture4WorkerV4l2Impl::onCapture()
                 task.input.crop.pos.y = 0;
                 task.input.crop.w = mWidth[i];
                 task.input.crop.h = mHeight[i];
-                task.input.format = V4L2_PIX_FMT_UYVY;
+                task.input.format = mFmt[i];
                 task.input.deinterlace.enable = 1;
                 task.input.deinterlace.motion = 2;
 
