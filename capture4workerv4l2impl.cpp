@@ -160,6 +160,9 @@ void Capture4WorkerV4l2Impl::onCapture()
                      << " select timeout";
             return;
         }
+#if DEBUG_CAPTURE
+        double read_start = (double)clock();
+#endif
 
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
@@ -224,22 +227,29 @@ void Capture4WorkerV4l2Impl::onCapture()
                 }
 #else
                 //matImage[i] = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
-                IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
+                //IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
 #if USE_IMX_IPU                
-                memcpy(pIplImage->imageData, (void*)(mIpuBuf[i].start), mIpuBuf[i].length);
+                //memcpy(pIplImage->imageData, (void*)(mIpuBuf[i].start), mIpuBuf[i].length);
+                cv::Mat* matImage = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, mIpuBuf[i].start);
 #else
-                memcpy(pIplImage->imageData, frame_buffer, imageSize);
+                //memcpy(pIplImage->imageData, frame_buffer, imageSize);
+                cv::Mat* matImage = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
 #endif
-                cv::Mat* matImage = new cv::Mat(pIplImage, true);
+                //cv::Mat* matImage = new cv::Mat(pIplImage, true);
                 if (NULL != matImage)
                 {
                     flag = flag << 1;
                     image[i] = matImage;
                 }
-                cvReleaseImage(&pIplImage);
+                //cvReleaseImage(&pIplImage);
 #endif
             }
         }
+
+#if DEBUG_CAPTURE
+                qDebug() << "Capture4WorkerV4l2Impl::onCapture"
+                         << ", read frame:" << (int)(clock() - read_start)/1000;
+#endif
 
         V4l2::v4l2QBuf(mVideoFd[i], &buf);
     }

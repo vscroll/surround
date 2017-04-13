@@ -62,7 +62,7 @@ void StitchWorker::run()
         int elapsed = 0;
         double start = (double)clock();
         elapsed = (int)(start - surroundImage->timestamp)/1000;
-        if (elapsed < 1500)
+        if (elapsed < 1000)
         {
                 stitching(surroundImage->image[VIDEO_CHANNEL_FRONT],
                   surroundImage->image[VIDEO_CHANNEL_REAR],
