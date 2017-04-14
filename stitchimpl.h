@@ -2,6 +2,7 @@
 #define STITCHIMPL_H
 
 #include <QObject>
+#include <QTimer>
 #include <QThread>
 #include "IStitch.h"
 
@@ -13,7 +14,7 @@ public:
     explicit StitchImpl(QObject *parent = 0);
     virtual ~StitchImpl();
 
-    virtual void start(ICapture* capture);
+    virtual void start(ICapture* capture, int fps);
     virtual void stop();
     virtual surround_image_t* dequeueFullImage();
     virtual surround_image_t* dequeueSmallImage(VIDEO_CHANNEL channel);
@@ -23,6 +24,8 @@ public slots:
 
 private:
     StitchWorker *mWorker;
+    QTimer mTimer;
+    QThread mThread;
 };
 
 #endif // STITCHIMPL_H

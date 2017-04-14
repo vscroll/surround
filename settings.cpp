@@ -12,8 +12,7 @@ Settings::Settings(QObject *parent) :
     mFullWidth = 0;
     mFullHeight = 0;
 
-    mCaptureFps = 10;
-    mUpdateFps = 10;
+    mFps = 10;
 }
 
 Settings* Settings::getInstant()
@@ -69,13 +68,7 @@ void Settings::loadSettings(QString path)
     value = settings.value("FPS/capture").toInt();
     if (value >= 0)
     {
-        mCaptureFps = value;
-    }
-
-    value = settings.value("FPS/update").toInt();
-    if (value >= 0)
-    {
-        mUpdateFps = value;
+        mFps = value;
     }
 
     qDebug() << "front:" << mVideoChanel[VIDEO_CHANNEL_FRONT]
@@ -85,8 +78,7 @@ void Settings::loadSettings(QString path)
 
     qDebug() << "full width:" << mFullWidth
         << " full height:" << mFullHeight
-        << " capture fps:" << mCaptureFps
-        << " update fps" << mUpdateFps;
+        << " capture fps:" << mFps;
 }
 
 QString Settings::getApplicationPath()

@@ -4,13 +4,12 @@
 #include <QObject>
 #include <QQueue>
 #include <QMutex>
-#include <QThread>
 
 #include "common.h"
 #include <opencv/cv.h>
 
 class ICapture;
-class StitchWorker : public QThread
+class StitchWorker : public QObject
 {
     Q_OBJECT
 public:
@@ -25,17 +24,17 @@ public:
 private:
 
 protected:
-    void run();
+    //void run();
 
 signals:
 
 public slots:
+    virtual void onStitch();
 
 private:
     int mFullWidth;
     int mFullHeight;
 
-    bool mIsRunning;
     QQueue<surround_image_t*> mOutputFullImageQueue;
     QQueue<surround_image_t*> mOutputSmallImageQueue;
 
@@ -45,7 +44,6 @@ private:
     VIDEO_CHANNEL mVideoChannel;
 
     ICapture *mCapture;
-    int mFreq;
 
     cv::Mat mStitchMap;
     cv::Mat mMask;

@@ -53,9 +53,8 @@ private:
     QTimer mVideoUpdateSmallTimer;
 
     VIDEO_CHANNEL mCurVideoChannel;
-    int mUpdateFPS;
 
-    int mCaptureFPS;
+    int mFPS;
     Controller mController;
 
     double mLastUpdateSmall;

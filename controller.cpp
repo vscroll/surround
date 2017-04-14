@@ -46,16 +46,16 @@ void Controller::uninit()
     }
 }
 
-void Controller::start(int captureFps)
+void Controller::start(int fps)
 {
    if (NULL != mCapture)
    {
-       mCapture->start(captureFps);
+       mCapture->start(fps);
    }
 
    if (NULL != mStitch)
    {
-       mStitch->start(mCapture);
+       mStitch->start(mCapture, fps);
    }
 
    //mIsRunning = true;

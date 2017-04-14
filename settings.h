@@ -22,8 +22,7 @@ public:
     int mFullWidth;
     int mFullHeight;
 
-    int mCaptureFps;
-    int mUpdateFps;
+    int mFps;
 signals:
 
 public slots:

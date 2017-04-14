@@ -32,8 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mCaptureFPS = mSettings->mCaptureFps;
-    mUpdateFPS = mSettings->mUpdateFps;
+    mFPS = mSettings->mFps;
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
@@ -51,11 +50,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::start()
 {
-    mVideoUpdateTimer.start(1000/mUpdateFPS);
-    //mVideoUpdateSmallTimer.start(1000/mUpdateFPS);
-    //mVideoUpdateFullTimer.start(1000/mUpdateFPS);
+    mVideoUpdateTimer.start(1000/mFPS);
     QObject::connect(&mController, SIGNAL(finished()), this, SLOT(onControllerQuit()));
-    mController.start(mCaptureFPS);
+    mController.start(mFPS);
 }
 
 void MainWindow::stop()
@@ -123,7 +120,7 @@ void MainWindow::updateFullImage()
     double end1 = (double)clock();
 
     qDebug() << "MainWindow::onUpdateFullImage"
-             << " fps:" << mUpdateFPS
+             << " fps:" << mFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
@@ -173,7 +170,7 @@ void MainWindow::updateSmallImage()
 #if DEBUG_UPDATE
     double end1 = (double)clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
-             << " fps:" << mUpdateFPS
+             << " fps:" << mFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed

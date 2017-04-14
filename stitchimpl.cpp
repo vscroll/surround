@@ -4,7 +4,7 @@
 StitchImpl::StitchImpl(QObject *parent) :
     QObject(parent)
 {
-    mWorker = new StitchWorker();
+
 }
 
 StitchImpl::~StitchImpl()
@@ -12,19 +12,31 @@ StitchImpl::~StitchImpl()
 
 }
 
-void StitchImpl::start(ICapture* capture)
+void StitchImpl::start(ICapture* capture, int fps)
 {
-    if (NULL != mWorker)
+    if (NULL == mWorker)
     {
+        mWorker = new StitchWorker();
         mWorker->start(capture);
+
+        connect(&mTimer, SIGNAL(timeout()), mWorker, SLOT(onStitch()));
+        mTimer.start(1000/fps);
+
+        mWorker->moveToThread(&mThread);
+        mThread.start(QThread::TimeCriticalPriority);
     }
 }
 
 void StitchImpl::stop()
 {
+    mTimer.stop();
+    mThread.quit();
+
     if (NULL != mWorker)
     {
         mWorker->stop();
+        delete mWorker;
+        mWorker = NULL;
     }
 }
 
