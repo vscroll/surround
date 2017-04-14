@@ -49,6 +49,8 @@ private:
 
     cv::Mat mStitchMap;
     cv::Mat mMask;
+
+    double mLastTimestamp;
 };
 
 #endif // STITCHWORKER_H

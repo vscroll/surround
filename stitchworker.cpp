@@ -9,7 +9,7 @@ StitchWorker::StitchWorker() :
     mVideoChannel(VIDEO_CHANNEL_FRONT),
     mFreq(10)
 {
-
+    mLastTimestamp = 0.0;
 }
 
 void StitchWorker::start(ICapture *capture)
@@ -116,7 +116,15 @@ void StitchWorker::run()
         }
 
 #if DEBUG_STITCH
+        int elapsed_to_last = 0;
+        if (qAbs(mLastTimestamp) > 0.00001f)
+        {
+            elapsed_to_last = (int)(start - mLastTimestamp)/1000;
+        }
+        mLastTimestamp = start;
+
         qDebug() << "StitchWorke::run"
+                 <<" elapsed to last time:" << elapsed_to_last
                  << " elapsed to capture:" << elapsed
                  << ", stitch:" << (int)(end-start)/1000
                  << ", fullsize:" << fullsize

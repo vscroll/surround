@@ -306,7 +306,6 @@ void Capture4WorkerV4l2Impl::onCapture()
              << ", flag:" << flag
              << ", size:" << size
              << ", elapsed to last time:" << elapsed
-             << ", yuv to rgb:" << convert_time
              << ", capture:" << (int)(clock()-timestamp)/1000;
 #endif
 }
