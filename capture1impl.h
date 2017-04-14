@@ -16,7 +16,7 @@ public:
 
     virtual int openDevice();
     virtual int closeDevice();
-    virtual int start(VIDEO_FPS fps);
+    virtual int start(int fps);
     virtual int stop();
     virtual surround_images_t* popOneFrame();
 signals:
@@ -27,7 +27,7 @@ private:
     QTimer mVideoCaptureTimer[VIDEO_CHANNEL_SIZE];
     Capture1WorkerBase *mCaptureWorker[VIDEO_CHANNEL_SIZE];
     QThread mCaptureThread[VIDEO_CHANNEL_SIZE];
-    VIDEO_FPS mFPS;
+    int mFPS;
 };
 
 #endif // CAPTURE1IMPL_H

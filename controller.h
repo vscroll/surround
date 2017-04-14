@@ -15,7 +15,7 @@ public:
 
     void init();
     void uninit();
-    void start(VIDEO_FPS captureFps);
+    void start(int captureFps);
     void stop();
     surround_image_t* dequeueFullImage();
     surround_image_t* dequeueSmallImage(VIDEO_CHANNEL channel);

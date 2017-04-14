@@ -41,7 +41,7 @@ int Capture4Impl::closeDevice()
     return 0;
 }
 
-int Capture4Impl::start(VIDEO_FPS fps)
+int Capture4Impl::start(int fps)
 {
     mFPS = fps;
     mVideoCaptureTimer.start(1000/mFPS);

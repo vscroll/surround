@@ -46,7 +46,7 @@ void Controller::uninit()
     }
 }
 
-void Controller::start(VIDEO_FPS captureFps)
+void Controller::start(int captureFps)
 {
    if (NULL != mCapture)
    {

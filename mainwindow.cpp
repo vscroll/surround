@@ -32,8 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mUpdateFPS = VIDEO_FPS_30;
-    mCaptureFPS = VIDEO_FPS_30;
+    mCaptureFPS = mSettings->mCaptureFps;
+    mUpdateFPS = mSettings->mUpdateFps;
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;

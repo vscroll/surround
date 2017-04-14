@@ -41,7 +41,7 @@ int Capture1Impl::closeDevice()
     return 0;
 }
 
-int Capture1Impl::start(VIDEO_FPS fps)
+int Capture1Impl::start(int fps)
 {
     mFPS = fps;
 
