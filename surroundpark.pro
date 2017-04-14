@@ -28,6 +28,7 @@ SOURCES += main.cpp\
     capture1workerimpl.cpp \
     capture4workerv4l2impl.cpp \
     v4l2.cpp \
+    imxipu.cpp \
     GoOnline.cpp \
     settings.cpp
 
@@ -49,6 +50,7 @@ HEADERS  += mainwindow.h \
     capture1workerimpl.h \
     capture4workerv4l2impl.h \
     v4l2.h \
+    imxipu.h \
     settings.h
 
 FORMS    += mainwindow.ui

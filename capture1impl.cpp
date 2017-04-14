@@ -68,9 +68,9 @@ int Capture1Impl::stop()
     return 0;
 }
 
-surround_image4_t* Capture1Impl::popOneFrame()
+surround_images_t* Capture1Impl::popOneFrame()
 {
-    surround_image4_t* pFrame = NULL;
+    surround_images_t* pFrame = NULL;
     bool isFullFrame = true;
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
@@ -82,14 +82,14 @@ surround_image4_t* Capture1Impl::popOneFrame()
 
     if (isFullFrame)
     {
-        pFrame = new surround_image4_t();
+        pFrame = new surround_images_t();
         pFrame->timestamp = 0;
         for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
-            surround_image1_t* tmp = mCaptureWorker[i]->popOneFrame();
+            surround_image_t* tmp = mCaptureWorker[i]->popOneFrame();
             if (NULL != tmp)
             {
-                pFrame->image[i] = tmp->image;
+                pFrame->frame[i].data = tmp->frame.data;
 
                 // get the earliest one
                 if (pFrame->timestamp == 0

@@ -4,6 +4,7 @@
 #include <opencv/highgui.h>
 #include <QPainter>
 #include <QDir>
+#include <QDebug>
 #include "util.h"
 #include "settings.h"
 
@@ -91,7 +92,7 @@ void MainWindow::updateFullImage()
     }
     mLastUpdateFull = start;
 #endif
-    surround_image1_t* surroundImage = mController.dequeueFullImage();
+    surround_image_t* surroundImage = mController.dequeueFullImage();
 #if DEBUG_UPDATE
     double end = (double)clock();
 #endif
@@ -109,27 +110,14 @@ void MainWindow::updateFullImage()
 
     //if (elapsed < 1000/mUpdateFPS)
     {
-#if DATA_TYPE_IPLIMAGE
-        IplImage* frame = (IplImage*)(surroundImage->image);
-        QImage image((const uchar*)frame->imageData,
-                     frame->width,
-                     frame->height,
-                     QImage::Format_RGB888);
-#else
-        cv::Mat* frame = (cv::Mat*)(surroundImage->image);
+        cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
         QImage image = Util::cvMat2QImage(*frame);
-#endif
         ui->label_video_full->setPixmap(QPixmap::fromImage(image));
         //QPainter painter(this);
         //painter.drawImage(QPoint(20,20), image);
-
-#if DATA_TYPE_IPLIMAGE
-        cvReleaseImage(&frame);
-#else
         delete frame;
-#endif
-        delete surroundImage;
     }
+    delete surroundImage;
 
 #if DEBUG_UPDATE
     double end1 = (double)clock();
@@ -157,7 +145,7 @@ void MainWindow::updateSmallImage()
     }
     mLastUpdateSmall = start;
 #endif
-    surround_image1_t* surroundImage = mController.dequeueSmallImage(mCurVideoChannel);
+    surround_image_t* surroundImage = mController.dequeueSmallImage(mCurVideoChannel);
 #if DEBUG_UPDATE
     double end = (double)clock();
 #endif
@@ -175,25 +163,12 @@ void MainWindow::updateSmallImage()
 
     //if (elapsed < 1000/mUpdateFPS)
     {
-#if DATA_TYPE_IPLIMAGE
-        IplImage* frame = (IplImage*)(surroundImage->image);
-        QImage image((const uchar*)frame->imageData,
-                     frame->width,
-                     frame->height,
-                     QImage::Format_RGB888);
-#else
-        cv::Mat* frame = (cv::Mat*)(surroundImage->image);
+        cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
         QImage image = Util::cvMat2QImage(*frame);
-#endif
         ui->label_video_small->setPixmap(QPixmap::fromImage(image));
-
-#if DATA_TYPE_IPLIMAGE
-        cvReleaseImage(&frame);
-#else
         delete frame;
-#endif
-        delete surroundImage;
     }
+    delete surroundImage;
 
 #if DEBUG_UPDATE
     double end1 = (double)clock();

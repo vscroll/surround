@@ -26,7 +26,7 @@ void V4l2::getVideoCap(int fd)
     }
 }
 
-void V4l2::getVideoFmt(int fd, int* pix_fmt, int* width, int* height)
+void V4l2::getVideoFmt(int fd, unsigned int* pixfmt, unsigned int* width, unsigned int* height)
 {
     struct v4l2_fmtdesc fmtDes;
     memset(&fmtDes, 0, sizeof(fmtDes));
@@ -48,7 +48,7 @@ void V4l2::getVideoFmt(int fd, int* pix_fmt, int* width, int* height)
     {
         *width = fmt.fmt.pix.width;
         *height = fmt.fmt.pix.height;
-        *pix_fmt = fmt.fmt.pix.pixelformat;
+        *pixfmt = fmt.fmt.pix.pixelformat;
         qDebug() << "V4l2::getVideoFmt "
                  << ", current format:" << fmt.fmt.pix.pixelformat
                  << ", width:" << fmt.fmt.pix.width
@@ -65,12 +65,12 @@ void V4l2::getVideoFmt(int fd, int* pix_fmt, int* width, int* height)
              << " V4L2_PIX_FMT_UYVY:" << V4L2_PIX_FMT_UYVY;
 }
 
-int V4l2::setVideoFmt(int fd, int pix_fmt, int width, int height)
+int V4l2::setVideoFmt(int fd, unsigned int pixfmt, unsigned int width, unsigned int height)
 {
     struct v4l2_format fmt;
     memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.pixelformat = pix_fmt;
+    fmt.fmt.pix.pixelformat = pixfmt;
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
     fmt.fmt.pix.width = width;
     fmt.fmt.pix.height = height;
@@ -120,7 +120,7 @@ int V4l2::setFps(int fd, int fps)
     return result;
 }
 
-int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type, int fd_ipu,  unsigned int frame_size)
+int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type, int fd_ipu, unsigned int frame_size)
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
@@ -215,42 +215,6 @@ int V4l2::initV4l2Buf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v
     return 0;
 }
 
-int V4l2::initIpuBuf(int fd_ipu, struct buffer* ipu_buf, unsigned int buf_count, unsigned int frame_size)
-{
-#if USE_IMX_IPU
-    for (unsigned int i = 0; i < buf_count; ++i)
-    {
-        //unsigned int page_size = getpagesize();
-        unsigned int buf_size = frame_size;
-        //buf_size = (buf_size + page_size - 1) & ~(page_size - 1);
-        ipu_buf[i].length = ipu_buf[i].offset = buf_size;
-        if (-1 == ioctl(fd_ipu, IPU_ALLOC, &ipu_buf[i].offset))
-        {
-            qDebug() << "V4l2::initIpuBuf"
-                    << " IPU_ALLOC failed";
-            return -1;
-        }
-
-        ipu_buf[i].start = mmap(0, buf_size, PROT_READ | PROT_WRITE,
-                                MAP_SHARED, fd_ipu, ipu_buf[i].offset);
-        if (NULL == ipu_buf[i].start)
-        {
-            qDebug() << "V4l2::initIpuBuf"
-                    << " ipu map failed";
-            return -1;
-        }
-
-        qDebug() << "V4l2::initIpuBuf"
-                 << " width:" << ipu_buf[i].width
-                 << " height:" << ipu_buf[i].height
-                 << " buf_size:" << buf_size
-                 << " IPU_ALLOC ok";
-    }
-
-#endif
-    return 0;
-}
-
 int V4l2::startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
 {
     unsigned int i = 0;
@@ -305,7 +269,7 @@ int V4l2::readFrame(int fd, struct v4l2_buffer* buf, v4l2_memory mem_type)
     return ioctl(fd, VIDIOC_DQBUF, buf); // 从缓冲区取出一个缓冲帧
 }
 
-void V4l2::v4l2QBuf(int fd, struct v4l2_buffer* buf)
+void V4l2::v4l2QueueBuf(int fd, struct v4l2_buffer* buf)
 {
     ioctl(fd, VIDIOC_QBUF, buf); //再将其入列
 }

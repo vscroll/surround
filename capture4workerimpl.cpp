@@ -2,6 +2,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include "settings.h"
+#include <QDebug>
 
 Capture4WorkerImpl::Capture4WorkerImpl(QObject *parent, int videoChannelNum) :
     Capture4WorkerBase(parent, videoChannelNum)
@@ -57,13 +58,13 @@ void Capture4WorkerImpl::onCapture()
     mLastTimestamp = timestamp;
 #endif
 
-    surround_image4_t* surroundImage = new surround_image4_t();
+    surround_images_t* surroundImage = new surround_images_t();
     surroundImage->timestamp = timestamp;
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
         IplImage* pIplImage = cvQueryFrame(mCaptureArray[i]);
         cv::Mat* image = new cv::Mat(pIplImage, true);
-        surroundImage->image[i] = image;
+        surroundImage->frame[i].data = image;
     }
 
 #if DEBUG_CAPTURE

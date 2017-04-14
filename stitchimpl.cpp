@@ -28,9 +28,9 @@ void StitchImpl::stop()
     }
 }
 
-surround_image1_t* StitchImpl::dequeueFullImage()
+surround_image_t* StitchImpl::dequeueFullImage()
 {
-    surround_image1_t* image = NULL;
+    surround_image_t* image = NULL;
     if (NULL != mWorker)
     {
         image = mWorker->dequeueFullImage();
@@ -38,9 +38,9 @@ surround_image1_t* StitchImpl::dequeueFullImage()
     return image;
 }
 
-surround_image1_t* StitchImpl::dequeueSmallImage(VIDEO_CHANNEL channel)
+surround_image_t* StitchImpl::dequeueSmallImage(VIDEO_CHANNEL channel)
 {
-    surround_image1_t* image = NULL;
+    surround_image_t* image = NULL;
     if (NULL != mWorker)
     {
         image = mWorker->dequeueSmallImage(channel);

@@ -1,11 +1,10 @@
 #include "capture4workerv4l2impl.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include "util.h"
 #include "settings.h"
+#include <QDebug>
 #include <sys/ioctl.h>
 #if USE_IMX_IPU
 #include <linux/ipu.h>
@@ -16,11 +15,26 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannel
 {
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        mWidth[i] = 704;
-        mHeight[i] = 576;
-        mFmt[i] = V4L2_PIX_FMT_UYVY;
-        mIPUFd[i] = -1;
         mVideoFd[i] = -1;
+
+        mIPUFd[i] = -1;
+
+        mInWidth[i] = 704;
+        mInHeight[i] = 574;
+        mInPixfmt[i] = V4L2_PIX_FMT_UYVY;
+
+        mOutWidth[i] = 704;
+        mOutHeight[i] = 574;
+        mOutPixfmt[i] = V4L2_PIX_FMT_BGR24;
+#if USE_IMX_IPU
+        mInIPUBuf[i].width = mInWidth[i];
+        mInIPUBuf[i].height = mInHeight[i];
+        mInIPUBuf[i].pixfmt = mInPixfmt[i];
+
+        mOutIPUBuf[i].width = mOutWidth[i];
+        mOutIPUBuf[i].height = mOutHeight[i];
+        mOutIPUBuf[i].pixfmt = mOutPixfmt[i];
+#endif
     }
 #if USE_IMX_IPU
     mMemType = V4L2_MEMORY_USERPTR;
@@ -31,7 +45,6 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl(QObject *parent, int videoChannel
 
 int Capture4WorkerV4l2Impl::openDevice()
 {
-
     for (int i = 0; i < mVideoChannelNum; ++i)
     {
 #if USE_IMX_IPU
@@ -44,12 +57,13 @@ int Capture4WorkerV4l2Impl::openDevice()
         }
         qDebug() << "Capture4WorkerV4l2Impl::openDevice"
                 << " ipu fd:" << mIPUFd[i];
+
 #endif
 
         int video_channel = Settings::getInstant()->mVideoChanel[i];
         char devName[16] = {0};
         sprintf(devName, "/dev/video%d", video_channel);
-        mVideoFd[i] = open(devName, O_RDWR/* | O_NONBLOCK*/);
+        mVideoFd[i] = open(devName, O_RDWR | O_NONBLOCK);
         if (mVideoFd[i] < 0)
         {
             qDebug() << "Capture4WorkerV4l2Impl::openDevice"
@@ -58,47 +72,61 @@ int Capture4WorkerV4l2Impl::openDevice()
         }
 
         V4l2::getVideoCap(mVideoFd[i]);
-        V4l2::getVideoFmt(mVideoFd[i], &mFmt[i], &mWidth[i], &mHeight[i]);
+        V4l2::getVideoFmt(mVideoFd[i], &mInPixfmt[i], &mInWidth[i], &mInHeight[i]);
         //i don't know why
-        V4l2::setVideoFmt(mVideoFd[i], mFmt[i], mWidth[i]-2, mHeight[i]-2);
-        V4l2::getVideoFmt(mVideoFd[i], &mFmt[i], &mWidth[i], &mHeight[i]);
+        V4l2::setVideoFmt(mVideoFd[i], mInPixfmt[i], mInWidth[i]-2, mInHeight[i]-2);
+        V4l2::getVideoFmt(mVideoFd[i], &mInPixfmt[i], &mInWidth[i], &mInHeight[i]);
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);
 
+#if DEBUG_CAPTURE
         qDebug() << "Capture4WorkerV4l2Impl::openDevice"
-                 << "mem type: " << V4L2_MEMORY_MMAP
+                 << "mem type: " << mMemType
                  << "buf count:" << V4L2_BUF_COUNT
-                << " width:" << mWidth[i]
-                << " height:" << mHeight[i];
+                << " width:" << mInWidth[i]
+                << " height:" << mInHeight[i];
+#endif
 
         for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
         {
-            mV4l2Buf[i][j].width = mWidth[i];
-            mV4l2Buf[i][j].height = mHeight[i];
-            mV4l2Buf[i][j].fmt = mFmt[i];
+            mV4l2Buf[i][j].width = mInWidth[i];
+            mV4l2Buf[i][j].height = mInHeight[i];
+            mV4l2Buf[i][j].pixfmt = mInPixfmt[i];
         }
 
-        unsigned int frame_size = mWidth[i] * mHeight[i] * 2;
-        if (-1 == V4l2::initV4l2Buf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd[i], frame_size))
+        unsigned int in_frame_size = mInWidth[i] * mInHeight[i] * 2;
+        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd[i], in_frame_size))
         {
             return -1;
         }
-#if USE_IMX_IPU
-        mIpuBuf[i].width = mWidth[i];
-        mIpuBuf[i].height = mHeight[i];
-        mIpuBuf[i].fmt = V4L2_PIX_FMT_BGR24;
 
-        frame_size = mIpuBuf[i].width * mIpuBuf[i].height * 3;
-        if (-1 == V4l2::initIpuBuf(mIPUFd[i], &(mIpuBuf[i]), 1, frame_size ))
+#if USE_IMX_IPU
+        unsigned int out_frame_size = mOutIPUBuf[i].width * mOutIPUBuf[i].height * 3;
+        if (-1 == IMXIPU::allocIPUBuf(mIPUFd[i], &(mOutIPUBuf[i]),  out_frame_size))
         {
             return -1;
         }
 #endif
+
+#if DEBUG_CAPTURE
+        qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                 << "initV4l2Buf ok";
+#endif
+
+#if USE_IMX_IPU
+
+#endif
+
         if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], mMemType))
         {
             return -1;
         }
     }
+
+#if DEBUG_CAPTURE
+        qDebug() << "Capture4WorkerV4l2Impl::openDevice"
+                 << "startCapture ok";
+#endif
 
     return 0;
 }
@@ -123,6 +151,7 @@ void Capture4WorkerV4l2Impl::onCapture()
     double start = (double)clock();
     int size = 0;
     int elapsed = 0;
+    int read_time = 0;
     int convert_time = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
     {
@@ -152,6 +181,8 @@ void Capture4WorkerV4l2Impl::onCapture()
         int r = select (mVideoFd[i] + 1, &fds, NULL, NULL, &tv);
         if (-1 == r) {
             if (EINTR == errno)
+                qDebug() << "Capture1WorkerV4l2Impl::onCapture"
+                         << "EINTR";
                 return;
         }
 
@@ -160,15 +191,19 @@ void Capture4WorkerV4l2Impl::onCapture()
                      << " select timeout";
             return;
         }
+
 #if DEBUG_CAPTURE
         double read_start = (double)clock();
 #endif
-
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
+#if DEBUG_CAPTURE
+                read_time = (int)(clock()-read_start)/1000;
+#endif
+
 #if DEBUG_CAPTURE
                 double convert_start = (double)clock();
 #endif
@@ -176,28 +211,28 @@ void Capture4WorkerV4l2Impl::onCapture()
 #if USE_IMX_IPU
                 struct ipu_task task;
                 memset(&task, 0, sizeof(struct ipu_task));
-                task.input.width  = mWidth[i];
-                task.input.height = mHeight[i];
+                task.input.width  = mInWidth[i];
+                task.input.height = mInHeight[i];
                 task.input.crop.pos.x = 0;
                 task.input.crop.pos.y = 0;
-                task.input.crop.w = mWidth[i];
-                task.input.crop.h = mHeight[i];
-                task.input.format = mFmt[i];
+                task.input.crop.w = mInWidth[i];
+                task.input.crop.h = mInHeight[i];
+                task.input.format = mInPixfmt[i];
                 task.input.deinterlace.enable = 1;
                 task.input.deinterlace.motion = 2;
 
-                task.output.width = mWidth[i];
-                task.output.height = mHeight[i];
+                task.output.width = mOutWidth[i];
+                task.output.height = mOutHeight[i];
                 task.output.crop.pos.x = 0;
                 task.output.crop.pos.y = 0;
-                task.output.crop.w = mWidth[i];
-                task.output.crop.h = mHeight[i];
+                task.output.crop.w = mOutWidth[i];
+                task.output.crop.h = mOutHeight[i];
                 //for colour cast
                 //task.output.format = V4L2_PIX_FMT_RGB24;
-                task.output.format = V4L2_PIX_FMT_BGR24;
+                task.output.format = mOutPixfmt[i];
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
-                task.output.paddr = (int)mIpuBuf[i].offset;
+                task.output.paddr = (int)mOutIPUBuf[i].offset;
                 if (ioctl(mIPUFd[i], IPU_QUEUE_TASK, &task) < 0) {
                     qDebug() << "Capture1WorkerV4l2Impl::onCapture"
                         << " ipu task failed:" << mIPUFd[i];
@@ -205,63 +240,46 @@ void Capture4WorkerV4l2Impl::onCapture()
                 }
                 
 #else
-                int imageSize = mWidth[i]*mHeight[i]*3;
+                int imageSize = mOutWidth[i]*mOutHeight[i]*3;
                 unsigned char frame_buffer[imageSize];
-                Util::uyvy_to_rgb24(mWidth[i], mHeight[i], (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
+                Util::uyvy_to_rgb24(mInWidth[i], mInHeight[i], (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
 #endif
 
 #if DEBUG_CAPTURE
                 convert_time = (int)(clock() - convert_start)/1000;
                 qDebug() << "Capture4WorkerV4l2Impl::onCapture"
-                         << ", channel:" << i
+                         << " channel:" << i
+                         <<", read_time:" << read_time
                          << ", yuv to rgb:" << convert_time;
 #endif
 
-#if DATA_TYPE_IPLIMAGE
-                IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
-                if (NULL != pIplImage)
-                {
-                    memcpy(pIplImage->imageData, frame_buffer, imageSize);
-                    flag = flag << 1;
-                    image[i] = pIplImage;
-                }
-#else
-                //matImage[i] = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
-                //IplImage* pIplImage = cvCreateImage(cvSize(mWidth[i], mHeight[i]), IPL_DEPTH_8U, 3);
 #if USE_IMX_IPU                
-                //memcpy(pIplImage->imageData, (void*)(mIpuBuf[i].start), mIpuBuf[i].length);
-                cv::Mat* matImage = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, mIpuBuf[i].start);
+                cv::Mat* matImage = new cv::Mat(mOutHeight[i], mOutWidth[i], CV_8UC3, mOutIPUBuf[i].start);
 #else
-                //memcpy(pIplImage->imageData, frame_buffer, imageSize);
-                cv::Mat* matImage = new cv::Mat(mHeight[i], mWidth[i], CV_8UC3, frame_buffer);
+                cv::Mat* matImage = new cv::Mat(mOutHeight[i], mOutWidth[i], CV_8UC3, frame_buffer);
 #endif
-                //cv::Mat* matImage = new cv::Mat(pIplImage, true);
                 if (NULL != matImage)
                 {
                     flag = flag << 1;
                     image[i] = matImage;
                 }
-                //cvReleaseImage(&pIplImage);
-#endif
             }
         }
 
-#if DEBUG_CAPTURE
-                qDebug() << "Capture4WorkerV4l2Impl::onCapture"
-                         << ", read frame:" << (int)(clock() - read_start)/1000;
-#endif
-
-        V4l2::v4l2QBuf(mVideoFd[i], &buf);
+        V4l2::v4l2QueueBuf(mVideoFd[i], &buf);
     }
 
     //integrity
     if (flag == (1 << mVideoChannelNum))
     {
-        surround_image4_t* surroundImage = new surround_image4_t();
+        surround_images_t* surroundImage = new surround_images_t();
         surroundImage->timestamp = timestamp;
         for (int i = 0; i < mVideoChannelNum; ++i)
         {
-            surroundImage->image[i] = image[i];
+            surroundImage->frame[i].data = image[i];
+            surroundImage->frame[i].width = mOutWidth[i];
+            surroundImage->frame[i].height = mOutHeight[i];
+            surroundImage->frame[i].pixfmt = mOutPixfmt[i];
         }
 
         mMutexQueue.lock();
@@ -277,18 +295,14 @@ void Capture4WorkerV4l2Impl::onCapture()
         {
             if (NULL != image[i])
             {
-#if DATA_TYPE_IPLIMAGE
-                cvReleaseImage((IplImage**)image[i]);
-#else
                 delete (cv::Mat*)image[i];
-#endif
             }
         }
     }
 
 #if DEBUG_CAPTURE
     qDebug() << "Capture4WorkerV4l2Impl::onCapture"
-             << ", channel:" << mVideoChannelNum
+             << "  channel:" << mVideoChannelNum
              << ", flag:" << flag
              << ", size:" << size
              << ", elapsed to last time:" << elapsed

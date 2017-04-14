@@ -2,6 +2,7 @@
 #include "stitch_algorithm.h"
 #include "ICapture.h"
 #include "settings.h"
+#include <QDebug>
 
 StitchWorker::StitchWorker() :
     mIsRunning(true),
@@ -45,7 +46,7 @@ void StitchWorker::run()
             break;
         }
 
-        surround_image4_t* surroundImage = mCapture->popOneFrame();
+        surround_images_t* surroundImage = mCapture->popOneFrame();
         if (NULL == surroundImage)
         {
             continue;
@@ -62,12 +63,12 @@ void StitchWorker::run()
         int elapsed = 0;
         double start = (double)clock();
         elapsed = (int)(start - surroundImage->timestamp)/1000;
-        if (elapsed < 1000)
+        if (elapsed < 1500)
         {
-                stitching(surroundImage->image[VIDEO_CHANNEL_FRONT],
-                  surroundImage->image[VIDEO_CHANNEL_REAR],
-                  surroundImage->image[VIDEO_CHANNEL_LEFT],
-                  surroundImage->image[VIDEO_CHANNEL_RIGHT],
+                stitching(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
+                  surroundImage->frame[VIDEO_CHANNEL_REAR].data,
+                  surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
+                  surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
                   mStitchMap,
                   mMask,
                   &outFull,
@@ -81,13 +82,9 @@ void StitchWorker::run()
 #endif
         for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
-            if (NULL != surroundImage->image[i])
+            if (NULL != surroundImage->frame[i].data)
             {
-#if DATA_TYPE_IPLIMAGE
-                cvReleaseImage((IplImage**)surroundImage->image[i]);
-#else
-                delete (cv::Mat*)surroundImage->image[i];
-#endif
+                delete (cv::Mat*)surroundImage->frame[i].data;
             }
         }
 
@@ -96,8 +93,8 @@ void StitchWorker::run()
 
         if (NULL != outFull)
         {
-            surround_image1_t* tmp = new surround_image1_t();
-            tmp->image = outFull;
+            surround_image_t* tmp = new surround_image_t();
+            tmp->frame.data = outFull;
             tmp->timestamp = timestamp;
             QMutexLocker locker(&mOutputFullImageMutex);
             mOutputFullImageQueue.append(tmp);
@@ -108,8 +105,8 @@ void StitchWorker::run()
 
         if (NULL != outSmall)
         {
-            surround_image1_t* tmp = new surround_image1_t();
-            tmp->image = outSmall;
+            surround_image_t* tmp = new surround_image_t();
+            tmp->frame.data = outSmall;
             tmp->timestamp = timestamp;
             QMutexLocker locker(&mOutputSmallImageMutex);
             mOutputSmallImageQueue.append(tmp);
@@ -131,9 +128,9 @@ void StitchWorker::run()
     }
 }
 
-surround_image1_t* StitchWorker::dequeueFullImage()
+surround_image_t* StitchWorker::dequeueFullImage()
 {
-    surround_image1_t* image = NULL;
+    surround_image_t* image = NULL;
     {
         QMutexLocker locker(&mOutputFullImageMutex);
         if (mOutputFullImageQueue.size() > 0)
@@ -144,7 +141,7 @@ surround_image1_t* StitchWorker::dequeueFullImage()
     return image;
 }
 
-surround_image1_t* StitchWorker::dequeueSmallImage(VIDEO_CHANNEL channel)
+surround_image_t* StitchWorker::dequeueSmallImage(VIDEO_CHANNEL channel)
 {
     if (mVideoChannel != channel
             && channel < VIDEO_CHANNEL_SIZE)
@@ -152,7 +149,7 @@ surround_image1_t* StitchWorker::dequeueSmallImage(VIDEO_CHANNEL channel)
         mVideoChannel = channel;
     }
 
-    surround_image1_t* image = NULL;
+    surround_image_t* image = NULL;
     {
         QMutexLocker locker(&mOutputSmallImageMutex);
         if (mOutputSmallImageQueue.size() > 0)

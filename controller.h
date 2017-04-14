@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QThread>
-
 #include "common.h"
 
 class ICapture;
@@ -18,8 +17,8 @@ public:
     void uninit();
     void start(VIDEO_FPS captureFps);
     void stop();
-    surround_image1_t* dequeueFullImage();
-    surround_image1_t* dequeueSmallImage(VIDEO_CHANNEL channel);
+    surround_image_t* dequeueFullImage();
+    surround_image_t* dequeueSmallImage(VIDEO_CHANNEL channel);
 
 protected:
     void run();

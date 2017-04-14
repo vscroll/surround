@@ -23,10 +23,10 @@ void Capture4WorkerBase::onCapture()
 
 }
 
-surround_image4_t* Capture4WorkerBase::popOneFrame()
+surround_images_t* Capture4WorkerBase::popOneFrame()
 {
 
-    struct surround_image4_t* surroundImage = NULL;
+    struct surround_images_t* surroundImage = NULL;
     {
         QMutexLocker locker(&mMutexQueue);
         if (mSurroundImageQueue.size() > 0)

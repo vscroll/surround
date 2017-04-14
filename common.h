@@ -1,7 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <QDebug>
 #define DEBUG 1
 #define DEBUG_CAPTURE 1
 #define DEBUG_STITCH 1
@@ -9,8 +8,6 @@
 
 #define CAPTURE_4_CHANNEL_ONCE 1
 #define CAPTURE_ON_V4L2 1
-
-#define DATA_TYPE_IPLIMAGE 0
 
 #define DATA_FAKE 0
 
@@ -35,14 +32,21 @@ enum VIDEO_FPS {
     VIDEO_FPS_30 = 30
 };
 
-typedef struct surround_image1_t {
-    void* image;
-    double timestamp;
-} surround_image1_t;
+typedef struct surround_frame_t {
+    void* data;
+    unsigned int width;
+    unsigned int height;
+    unsigned int pixfmt;
+} surround_frame_t;
 
-typedef struct surround_image4_t {
-    void* image[VIDEO_CHANNEL_SIZE];
+typedef struct surround_image_t {
+    surround_frame_t frame;
     double timestamp;
-} surround_image4_t;
+} surround_image_t;
+
+typedef struct surround_images_t {
+    surround_frame_t frame[VIDEO_CHANNEL_SIZE];
+    double timestamp;
+} surround_images_t;
 
 #endif // COMMON_H

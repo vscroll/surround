@@ -17,7 +17,7 @@ void Controller::init()
 {
     if (NULL == mCapture)
     {
-#ifdef CAPTURE_4_CHANNEL_ONCE
+#if CAPTURE_4_CHANNEL_ONCE
         mCapture = new Capture4Impl();
 #else
         mCapture = new Capture1Impl();
@@ -97,9 +97,9 @@ void Controller::run()
     }
 }
 
-surround_image1_t* Controller::dequeueFullImage()
+surround_image_t* Controller::dequeueFullImage()
 {
-    surround_image1_t* tmp = NULL;
+    surround_image_t* tmp = NULL;
     if (NULL != mStitch)
     {
         tmp = mStitch->dequeueFullImage();
@@ -107,9 +107,9 @@ surround_image1_t* Controller::dequeueFullImage()
     return tmp;
 }
 
-surround_image1_t* Controller::dequeueSmallImage(VIDEO_CHANNEL channel)
+surround_image_t* Controller::dequeueSmallImage(VIDEO_CHANNEL channel)
 {
-    surround_image1_t* tmp = NULL;
+    surround_image_t* tmp = NULL;
     if (NULL != mStitch)
     {
         tmp = mStitch->dequeueSmallImage(channel);

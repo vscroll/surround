@@ -1,6 +1,7 @@
 #include "capture1workerimpl.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <QDebug>
 
 Capture1WorkerImpl::Capture1WorkerImpl(QObject *parent, int videoChannel) :
     Capture1WorkerBase(parent, videoChannel),
@@ -67,9 +68,9 @@ void Capture1WorkerImpl::onCapture()
     if (NULL != tmpImage)
     {
         cv::Mat* image = new cv::Mat(tmpImage, true);
-        surround_image1_t* surroundImage = new surround_image1_t();
+        surround_image_t* surroundImage = new surround_image_t();
         surroundImage->timestamp = timestamp;
-        surroundImage->image = image;
+        surroundImage->frame.data = image;
         QMutexLocker locker(&mMutexQueue);
         mSurroundImageQueue.append(surroundImage);
 #if DEBUG_CAPTURE

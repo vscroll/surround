@@ -15,8 +15,8 @@ public:
 
     virtual void start(ICapture* capture);
     virtual void stop();
-    virtual surround_image1_t* dequeueFullImage();
-    virtual surround_image1_t* dequeueSmallImage(VIDEO_CHANNEL channel);
+    virtual surround_image_t* dequeueFullImage();
+    virtual surround_image_t* dequeueSmallImage(VIDEO_CHANNEL channel);
 signals:
 
 public slots:

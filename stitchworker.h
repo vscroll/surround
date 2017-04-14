@@ -19,8 +19,10 @@ public:
     void start(ICapture* capture);
     void stop();
 
-    surround_image1_t* dequeueFullImage();
-    surround_image1_t* dequeueSmallImage(VIDEO_CHANNEL channel);
+    surround_image_t* dequeueFullImage();
+    surround_image_t* dequeueSmallImage(VIDEO_CHANNEL channel);
+
+private:
 
 protected:
     void run();
@@ -34,8 +36,8 @@ private:
     int mFullHeight;
 
     bool mIsRunning;
-    QQueue<surround_image1_t*> mOutputFullImageQueue;
-    QQueue<surround_image1_t*> mOutputSmallImageQueue;
+    QQueue<surround_image_t*> mOutputFullImageQueue;
+    QQueue<surround_image_t*> mOutputSmallImageQueue;
 
     QMutex mOutputFullImageMutex;
     QMutex mOutputSmallImageMutex;

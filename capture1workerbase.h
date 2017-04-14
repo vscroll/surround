@@ -16,7 +16,7 @@ public:
 
     virtual int openDevice();
     virtual void closeDevice();
-    virtual surround_image1_t* popOneFrame();
+    virtual surround_image_t* popOneFrame();
     virtual int getFrameCount();
 
 signals:
@@ -29,7 +29,7 @@ protected:
 
 protected:
     int mVideoChannel;
-    QQueue<surround_image1_t*> mSurroundImageQueue;
+    QQueue<surround_image_t*> mSurroundImageQueue;
     QMutex mMutexQueue;
 
     int mIPUFd;

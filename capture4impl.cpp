@@ -64,9 +64,9 @@ int Capture4Impl::stop()
     return 0;
 }
 
-surround_image4_t* Capture4Impl::popOneFrame()
+surround_images_t* Capture4Impl::popOneFrame()
 {
-    surround_image4_t* pFrame = NULL;
+    surround_images_t* pFrame = NULL;
     if (NULL != mCaptureWorker)
     {
         pFrame = mCaptureWorker->popOneFrame();

@@ -8,6 +8,7 @@
 #include "common.h"
 #include "capture1workerbase.h"
 #include "v4l2.h"
+#include "imxipu.h"
 
 class Capture1WorkerV4l2Impl : public Capture1WorkerBase
 {
@@ -23,18 +24,25 @@ public slots:
     virtual void onCapture();
 
 private:
-    int mWidth;
-    int mHeight;
-    int mFmt;
+    unsigned int mInWidth;
+    unsigned int mInHeight;
+    unsigned int mInPixfmt;
+    unsigned int mOutWidth;
+    unsigned int mOutHeight;
+    unsigned int mOutPixfmt;
+
+    int mIPUFd;
+
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[V4L2_BUF_COUNT];
     int mVideoFd;
-    int mIPUFd;
-    struct V4l2::buffer mIpuBuf;
+
+    struct IMXIPU::buffer mInIPUBuf;
+    struct IMXIPU::buffer mOutIPUBuf;
+
     QMutex mMutexV4l2;
     QMutex mMutexIpu;
 
-    int mDropFrameCount;
     QMutex mMutexDrop;
 };
 

@@ -20,7 +20,7 @@ public:
     virtual int closeDevice();
     virtual int start(VIDEO_FPS fps);
     virtual int stop();
-    virtual surround_image4_t* popOneFrame();
+    virtual surround_images_t* popOneFrame();
 signals:
 
 public slots:

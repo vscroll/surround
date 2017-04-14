@@ -31,10 +31,10 @@ void Capture1WorkerBase::onCapture()
 
 }
 
-surround_image1_t* Capture1WorkerBase::popOneFrame()
+surround_image_t* Capture1WorkerBase::popOneFrame()
 {
 
-    struct surround_image1_t* surroundImage = NULL;
+    struct surround_image_t* surroundImage = NULL;
 
     {
         QMutexLocker locker(&mMutexQueue);

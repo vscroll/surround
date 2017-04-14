@@ -7,6 +7,7 @@
 #include "common.h"
 #include "capture4workerbase.h"
 #include "v4l2.h"
+#include "imxipu.h"
 
 class Capture4WorkerV4l2Impl : public Capture4WorkerBase
 {
@@ -21,16 +22,22 @@ signals:
 
 public slots:
     virtual void onCapture();
+
 private:
-    int mWidth[VIDEO_CHANNEL_SIZE];
-    int mHeight[VIDEO_CHANNEL_SIZE];
-    int mFmt[VIDEO_CHANNEL_SIZE];
+    unsigned int mInWidth[VIDEO_CHANNEL_SIZE];
+    unsigned int mInHeight[VIDEO_CHANNEL_SIZE];
+    unsigned int mInPixfmt[VIDEO_CHANNEL_SIZE];
+    unsigned int mOutWidth[VIDEO_CHANNEL_SIZE];
+    unsigned int mOutHeight[VIDEO_CHANNEL_SIZE];
+    unsigned int mOutPixfmt[VIDEO_CHANNEL_SIZE];
+
+    int mVideoFd[VIDEO_CHANNEL_SIZE];
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[VIDEO_CHANNEL_SIZE][V4L2_BUF_COUNT];
-    int mIPUFd[VIDEO_CHANNEL_SIZE];
-    int mVideoFd[VIDEO_CHANNEL_SIZE];
 
-    struct V4l2::buffer mIpuBuf[VIDEO_CHANNEL_SIZE];
+    int mIPUFd[VIDEO_CHANNEL_SIZE];
+    struct IMXIPU::buffer mInIPUBuf[VIDEO_CHANNEL_SIZE];
+    struct IMXIPU::buffer mOutIPUBuf[VIDEO_CHANNEL_SIZE];
 };
 
 #endif // CAPTURE4WORKERV4L2IMPL_H
