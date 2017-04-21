@@ -9,8 +9,8 @@ Settings::Settings(QObject *parent) :
     QObject(parent)
 {
     memset(mVideoChanel, 0, sizeof(mVideoChanel));
-    mFullWidth = 0;
-    mFullHeight = 0;
+    mPano2DWidth = 0;
+    mPano2DHeight = 0;
 
     mFps = 10;
 }
@@ -53,16 +53,16 @@ void Settings::loadSettings(QString path)
         mVideoChanel[VIDEO_CHANNEL_RIGHT] = value;
     }
 
-    value = settings.value("SIZE/fullwidth").toInt();
+    value = settings.value("SIZE/Pano2DWidth").toInt();
     if (value >= 0)
     {
-        mFullWidth = value;
+        mPano2DWidth = value;
     }
 
-    value = settings.value("SIZE/fullheight").toInt();
+    value = settings.value("SIZE/Pano2DHeight").toInt();
     if (value >= 0)
     {
-        mFullHeight = value;
+        mPano2DHeight = value;
     }
 
     value = settings.value("FPS/capture").toInt();
@@ -76,8 +76,8 @@ void Settings::loadSettings(QString path)
         << " left:" << mVideoChanel[VIDEO_CHANNEL_LEFT]
         << " right:" << mVideoChanel[VIDEO_CHANNEL_RIGHT];
 
-    qDebug() << "full width:" << mFullWidth
-        << " full height:" << mFullHeight
+    qDebug() << "Pano2D width:" << mPano2DWidth
+        << " Pano2D height:" << mPano2DHeight
         << " capture fps:" << mFps;
 }
 

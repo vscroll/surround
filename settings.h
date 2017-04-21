@@ -19,8 +19,8 @@ public:
 
 public:
     int mVideoChanel[VIDEO_CHANNEL_SIZE];
-    int mFullWidth;
-    int mFullHeight;
+    int mPano2DWidth;
+    int mPano2DHeight;
 
     int mFps;
 signals:

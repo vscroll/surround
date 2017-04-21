@@ -3,6 +3,13 @@
 #include "ICapture.h"
 #include "settings.h"
 #include <QDebug>
+#include <opencv/cv.h>
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+using namespace cv;
 
 StitchWorker::StitchWorker() :
     mVideoChannel(VIDEO_CHANNEL_FRONT)
@@ -17,11 +24,31 @@ void StitchWorker::start(ICapture *capture)
         return;
     }
 
-    mFullWidth = Settings::getInstant()->mFullWidth;
-    mFullHeight = Settings::getInstant()->mFullHeight;
+    mPano2DWidth = Settings::getInstant()->mPano2DWidth;
+    mPano2DHeight = Settings::getInstant()->mPano2DHeight;
 
     QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
     stitching_init(path.toStdString(), mStitchMap, mMask);
+
+#if IMX_OPENCL
+    cout<<"mStitchMap rows:"<< mStitchMap.rows  << " cols:" << mStitchMap.cols  << " channel:" << mStitchMap.channels() << endl;
+    cout<<"mMask rows:"<< mMask.rows  << " cols:" << mMask.cols  << " channel:" << mMask.channels() << endl;
+    cout<<"mPano2DHeight:"<< mPano2DHeight  << " mPano2DWidth:" << mPano2DWidth  << endl;
+    int mapX[mPano2DHeight][mPano2DWidth];
+    int mapY[mPano2DHeight][mPano2DWidth];
+    for (int i = 0; i < mPano2DHeight; i++)
+    {
+        for (int j = 0; j < mPano2DWidth; j++)
+        {
+            mapX[i][j] = mStitchMap.ptr<Point2f>(i)[j].x;
+            mapY[i][j] = mStitchMap.ptr<Point2f>(i)[j].y;
+        }
+    }
+    mStitchMapX = Mat(mPano2DHeight, mPano2DWidth, CV_8UC1, mapX);
+    mStitchMapY = Mat(mPano2DHeight, mPano2DWidth, CV_8UC1, mapY);
+    cout<<"mStitchMapX rows:"<< mStitchMapX.rows  << " cols:" << mStitchMapX.cols  << " channel:" << mStitchMapX.channels() << endl;
+    cout<<"mStitchMapY rows:"<< mStitchMapY.rows  << " cols:" << mStitchMapY.cols  << " channel:" << mStitchMapY.channels() << endl;
+#endif
 
     mCapture = capture;
 }
@@ -41,34 +68,55 @@ void StitchWorker::onStitch()
         return;
     }
 
-    void* outSmall = NULL;
-    void* outFull = NULL;
+    void* outSide = NULL;
+    void* outPano2D = NULL;
 #if DEBUG_STITCH
-    int fullsize = 0;
-    int smallsize = 0;
+    int pano2d_size = 0;
+    int side_size = 0;
     double end = 0.0;
 #endif
     timestamp = surroundImage->timestamp;
     int elapsed = 0;
     double start = (double)clock();
     elapsed = (int)(start - surroundImage->timestamp)/1000;
+
     if (elapsed < 1500)
     {
+#if IMX_OPENCL
+        stitching2(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
+                   surroundImage->frame[VIDEO_CHANNEL_REAR].data,
+                   surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
+                   surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
+                   mStitchMapX,
+                   mStitchMapY,
+                   mMask,
+                   &outPano2D,
+                   mPano2DWidth,
+                   mPano2DHeight,
+                   &outSide,
+                   surroundImage->frame[mVideoChannel].width,
+                   surroundImage->frame[mVideoChannel].height,
+                   mVideoChannel);
+#else
         stitching(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
                   surroundImage->frame[VIDEO_CHANNEL_REAR].data,
                   surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
                   surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
                   mStitchMap,
                   mMask,
-                  &outFull,
-                  mFullWidth,
-                  mFullHeight,
-                  &outSmall,
+                  &outPano2D,
+                  mPano2DWidth,
+                  mPano2DHeight,
+                  &outSide,
+                  surroundImage->frame[mVideoChannel].width,
+                  surroundImage->frame[mVideoChannel].height,
                   mVideoChannel);
+#endif
     }
 #if DEBUG_STITCH
     end = (double)clock();
 #endif
+
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         if (NULL != surroundImage->frame[i].data)
@@ -80,27 +128,27 @@ void StitchWorker::onStitch()
     delete surroundImage;
     surroundImage = NULL;
 
-    if (NULL != outFull)
+    if (NULL != outPano2D)
     {
         surround_image_t* tmp = new surround_image_t();
-        tmp->frame.data = outFull;
+        tmp->frame.data = outPano2D;
         tmp->timestamp = timestamp;
         QMutexLocker locker(&mOutputFullImageMutex);
         mOutputFullImageQueue.append(tmp);
 #if DEBUG_STITCH
-        fullsize = mOutputFullImageQueue.size();
+        pano2d_size = mOutputFullImageQueue.size();
 #endif
     }
 
-    if (NULL != outSmall)
+    if (NULL != outSide)
     {
         surround_image_t* tmp = new surround_image_t();
-        tmp->frame.data = outSmall;
+        tmp->frame.data = outSide;
         tmp->timestamp = timestamp;
         QMutexLocker locker(&mOutputSmallImageMutex);
         mOutputSmallImageQueue.append(tmp);
 #if DEBUG_STITCH
-        smallsize = mOutputSmallImageQueue.size();
+        side_size = mOutputSmallImageQueue.size();
 #endif
     }
 
@@ -116,9 +164,9 @@ void StitchWorker::onStitch()
              <<" elapsed to last time:" << elapsed_to_last
             << " elapsed to capture:" << elapsed
             << ", stitch:" << (int)(end-start)/1000
-            << ", fullsize:" << fullsize
+            << ", pano2d_size:" << pano2d_size
             << ", channel" << mVideoChannel
-            << ", smallsize:" << smallsize;
+            << ", side_size:" << side_size;
 #endif
 
 }

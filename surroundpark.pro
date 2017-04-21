@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     v4l2.cpp \
     imxipu.cpp \
     GoOnline.cpp \
-    settings.cpp
+    settings.cpp \
+    stitch_cl.cpp
 
 HEADERS  += mainwindow.h \
     common.h \
@@ -51,6 +52,7 @@ HEADERS  += mainwindow.h \
     capture4workerv4l2impl.h \
     v4l2.h \
     imxipu.h \
-    settings.h
+    settings.h \
+    stitch_cl.h
 
 FORMS    += mainwindow.ui

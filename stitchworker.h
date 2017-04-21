@@ -32,8 +32,8 @@ public slots:
     virtual void onStitch();
 
 private:
-    int mFullWidth;
-    int mFullHeight;
+    int mPano2DWidth;
+    int mPano2DHeight;
 
     QQueue<surround_image_t*> mOutputFullImageQueue;
     QQueue<surround_image_t*> mOutputSmallImageQueue;
@@ -46,6 +46,8 @@ private:
     ICapture *mCapture;
 
     cv::Mat mStitchMap;
+    cv::Mat mStitchMapX;
+    cv::Mat mStitchMapY;
     cv::Mat mMask;
 
     double mLastTimestamp;

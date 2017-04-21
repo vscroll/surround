@@ -13,7 +13,14 @@
 
 #define USE_IMX_IPU 1
 
+#define IMX_OPENCL 1
+
 #define V4L2_BUF_COUNT 1
+
+#define VIDEO_SIDE_RES_X 720
+#define VIDEO_SIDE_RES_Y 576
+#define VIDEO_PANO2D_RES_X 424
+#define VIDEO_PANO2D_RES_Y 600
 
 enum VIDEO_CHANNEL {
     VIDEO_CHANNEL_FRONT = 0,
