@@ -54,7 +54,13 @@ void stitching_init(const string config_path, Mat& map, Mat& mask)
     cout << ".......Initialization done......" << endl;
 
 #if IMX_OPENCL
+
+#if CL_HELLOWORLD
+    stitch_cl_init("hello_world.cl", "hello_world");
+#else
     stitch_cl_init("stitch.cl", "stitch_2d");
+#endif
+
 #endif
 
     return;
@@ -114,13 +120,24 @@ void CarPano2(const std::vector<cv::Mat>& fishImgs,
 {
 #if IMX_OPENCL
 
+#if CL_HELLOWORLD
+
+    int helloworld_in[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
+    int helloworld_out[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
+    stitch_cl_new_helloworld_buffer(VIDEO_PANO2D_RES_X_MAX, VIDEO_PANO2D_RES_Y_MAX);
+    stitch_cl_helloworld(helloworld_in, helloworld_out,VIDEO_PANO2D_RES_X_MAX, VIDEO_PANO2D_RES_Y_MAX );
+    stitch_cl_delete_helloworld_buffer();
+#else
+
     int out_image_pano2d[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
     stitch_cl_new_pano2d_buffer(fishImgs[0].cols, fishImgs[0].rows,
             outSideWidth, outSideHeight,
             outPano2DWidth, outPano2DHeight);
     stitch_cl_2d(fishImgs, mapX, mapY, mask,fishImgs[0].cols, fishImgs[0].rows, outPano2DWidth, outPano2DHeight, out_image_pano2d);
     *outPano2D = new Mat(outPano2DHeight, outPano2DWidth, CV_8UC3, out_image_pano2d);
-    stitch_cl_free_pano2d_buffer();
+    stitch_cl_delete_pano2d_buffer();
+
+#endif
 
 #endif
     *outSide = new Mat(fishImgs[outSideChannel]);

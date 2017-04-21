@@ -37,7 +37,7 @@ static cl_mem g_image_pano2d = NULL;
 static int g_dimension = 2;
 
 // our problem size
-static size_t g_global = 512;
+static size_t g_global = 16;
 
 // preferred work-group size
 static size_t g_local = 16;
@@ -47,6 +47,72 @@ static cl_int cl_print_info (cl_platform_id platform_id, cl_device_id device_id)
 static cl_int cl_init (cl_platform_id *platform_id, cl_device_id *device_id, cl_context *context, cl_command_queue *cq);
 static cl_int cl_load_kernel_source (char *filename, kernel_src_str *kernel_src);
 
+#if CL_HELLOWORLD
+static cl_mem g_helloworld_in = NULL;
+static cl_mem g_helloworld_out = NULL;
+
+int stitch_cl_new_helloworld_buffer(int width, int height)
+{
+    cl_int ret;
+    printf ("\nAllocating buffers...");
+    g_helloworld_in = clCreateBuffer (g_context, CL_MEM_READ_ONLY, width*height*sizeof(int), NULL, &ret);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("Failed Allocation  g_helloworld_in buffer\n");
+        return -1;
+    }
+
+    g_helloworld_out = clCreateBuffer (g_context, CL_MEM_WRITE_ONLY, width*height*sizeof(int), NULL, &ret);
+    if (ret != CL_SUCCESS)
+    {
+         printf ("Failed Allocation hello_world output buffer\n");
+         return -1;
+    }
+    else
+    {
+        printf (" Ok\n");
+    }
+
+    clSetKernelArg (g_kernel, 0, sizeof(cl_mem), &g_helloworld_in);
+    clSetKernelArg (g_kernel, 1, sizeof(cl_mem), &g_helloworld_out);
+    clSetKernelArg (g_kernel, 2, sizeof(cl_int), &width);
+    clSetKernelArg (g_kernel, 3, sizeof(cl_int), &height);
+}
+
+int stitch_cl_delete_helloworld_buffer()
+{
+    clReleaseMemObject (g_helloworld_in);
+    clReleaseMemObject (g_helloworld_out);
+}
+
+int stitch_cl_helloworld(int helloworld_in[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX],
+                         int helloworld_out[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX],
+                         int width,
+                         int height)
+{
+    cl_int ret;
+    ret = clEnqueueWriteBuffer(g_cq, g_helloworld_in, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)helloworld_in, 0, NULL, NULL);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("\nError writing input buffer\n");
+    }
+
+   ret = clEnqueueNDRangeKernel (g_cq, g_kernel, g_dimension, NULL, &g_global, &g_local, 0, NULL, NULL);
+   if  (ret == CL_SUCCESS)
+   {
+       ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_helloworld_out, 0, NULL, NULL);
+       printf ("\nOk reading output buffer\n");
+   }
+   else
+   {
+       printf ("\nError reading output buffer\n");
+   }
+
+   clFlush(g_cq);
+   clFinish(g_cq);
+}
+
+#endif
 
 int stitch_cl_init(char* cl_file_name, char* cl_kernel_name)
 {
@@ -188,7 +254,7 @@ int stitch_cl_new_pano2d_buffer(int in_side_width, int in_side_height,
     clSetKernelArg (g_kernel, 9, sizeof(cl_mem), &g_image_pano2d);
 }
 
-void stitch_cl_free_pano2d_buffer()
+void stitch_cl_delete_pano2d_buffer()
 {
     clReleaseMemObject (g_image_front);
     clReleaseMemObject (g_image_rear);
@@ -322,6 +388,7 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
     if  (ret == CL_SUCCESS)
     {
         ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)image_pano2d, 0, NULL, NULL);
+        printf ("\nOk reading output buffer\n");
     }
     else
     {
@@ -341,7 +408,7 @@ void stitch_cl_uninit()
     clReleaseCommandQueue(g_cq);
     clReleaseKernel (g_kernel);
 
-    stitch_cl_free_pano2d_buffer();
+    stitch_cl_delete_pano2d_buffer();
 }
 
 cl_int cl_init (cl_platform_id *platform_id, cl_device_id *device_id, cl_context *context, cl_command_queue *cq)

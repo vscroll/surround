@@ -1,12 +1,15 @@
 // author: Andre Silva 
 // email: andreluizeng@yahoo.com.br
 
-__kernel void hello_world	(__global uchar *input, 
-				 __global uchar *output)
+__kernel void hello_world	(__global int *input, 
+				 __global int *output,
+                 int width,
+                 int height)
 {
 	// gets the global id
-	int id = get_global_id (0);
+	int row = get_global_id (1);
+	int col = get_global_id (0);
 
 	// copy the input to output
-	output[id] = input[id];
+	output[row*width+col] = input[row*width+col];
 }
