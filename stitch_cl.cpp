@@ -34,10 +34,10 @@ static cl_mem g_image_map_y = NULL;
 static cl_mem g_image_pano2d = NULL;
 
 // one dimensional work-items
-static int g_dimension = 2;
+static int g_dimension = 1;
 
 // our problem size
-static size_t g_global = 16;
+static size_t g_global = 512;
 
 // preferred work-group size
 static size_t g_local = 16;
@@ -75,8 +75,8 @@ int stitch_cl_new_helloworld_buffer(int width, int height)
 
     clSetKernelArg (g_kernel, 0, sizeof(cl_mem), &g_helloworld_in);
     clSetKernelArg (g_kernel, 1, sizeof(cl_mem), &g_helloworld_out);
-    clSetKernelArg (g_kernel, 2, sizeof(cl_int), &width);
-    clSetKernelArg (g_kernel, 3, sizeof(cl_int), &height);
+    clSetKernelArg (g_kernel, 2, sizeof(int), &width);
+    clSetKernelArg (g_kernel, 3, sizeof(int), &height);
 }
 
 int stitch_cl_delete_helloworld_buffer()
@@ -91,7 +91,7 @@ int stitch_cl_helloworld(int helloworld_in[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_
                          int height)
 {
     cl_int ret;
-    ret = clEnqueueWriteBuffer(g_cq, g_helloworld_in, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)helloworld_in, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(g_cq, g_helloworld_in, CL_TRUE, 0, width*height*sizeof(int), (void*)helloworld_in, 0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         printf ("\nError writing input buffer\n");
@@ -100,7 +100,7 @@ int stitch_cl_helloworld(int helloworld_in[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_
    ret = clEnqueueNDRangeKernel (g_cq, g_kernel, g_dimension, NULL, &g_global, &g_local, 0, NULL, NULL);
    if  (ret == CL_SUCCESS)
    {
-       ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_helloworld_out, 0, NULL, NULL);
+       ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, width*height*sizeof(int), (void*)g_helloworld_out, 0, NULL, NULL);
        printf ("\nOk reading output buffer\n");
    }
    else
