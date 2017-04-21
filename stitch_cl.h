@@ -4,7 +4,7 @@
 #include "common.h"
 #include <opencv/cv.h>
 
-#define CL_HELLOWORLD 1
+#define CL_HELLOWORLD 0
 
 int stitch_cl_init(char* cl_file, char* cl_kernel_name);
 

@@ -33,15 +33,6 @@ static cl_mem g_image_map_x = NULL;
 static cl_mem g_image_map_y = NULL;
 static cl_mem g_image_pano2d = NULL;
 
-// one dimensional work-items
-static int g_dimension = 1;
-
-// our problem size
-static size_t g_global = 512;
-
-// preferred work-group size
-static size_t g_local = 16;
-
 static cl_int cl_build_program (cl_program *program, cl_device_id *device_id, cl_context context, kernel_src_str *kernel);
 static cl_int cl_print_info (cl_platform_id platform_id, cl_device_id device_id);
 static cl_int cl_init (cl_platform_id *platform_id, cl_device_id *device_id, cl_context *context, cl_command_queue *cq);
@@ -97,7 +88,8 @@ int stitch_cl_helloworld(int helloworld_in[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_
         printf ("\nError writing input buffer\n");
     }
 
-   ret = clEnqueueNDRangeKernel (g_cq, g_kernel, g_dimension, NULL, &g_global, &g_local, 0, NULL, NULL);
+   size_t global[2] = {width, height};
+   ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, NULL, 0, NULL, NULL);
    if  (ret == CL_SUCCESS)
    {
        ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, width*height*sizeof(int), (void*)g_helloworld_out, 0, NULL, NULL);
@@ -249,8 +241,8 @@ int stitch_cl_new_pano2d_buffer(int in_side_width, int in_side_height,
     clSetKernelArg (g_kernel, 4, sizeof(cl_mem), &g_image_mask);
     clSetKernelArg (g_kernel, 5, sizeof(cl_mem), &g_image_map_x);
     clSetKernelArg (g_kernel, 6, sizeof(cl_mem), &g_image_map_y);
-    clSetKernelArg (g_kernel, 7, sizeof(cl_mem), &out_pano2d_width);
-    clSetKernelArg (g_kernel, 8, sizeof(cl_mem), &out_pano2d_height);
+    clSetKernelArg (g_kernel, 7, sizeof(int), &out_pano2d_width);
+    clSetKernelArg (g_kernel, 8, sizeof(int), &out_pano2d_height);
     clSetKernelArg (g_kernel, 9, sizeof(cl_mem), &g_image_pano2d);
 }
 
@@ -342,52 +334,53 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
     }
 
      cl_int ret;
-     ret = clEnqueueWriteBuffer(g_cq, g_image_front, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_front_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_front, CL_TRUE, 0, in_side_width*in_side_height*sizeof(int), (void*)g_image_front_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_rear, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_rear_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_rear, CL_TRUE, 0, in_side_width*in_side_height*sizeof(int), (void*)g_image_rear_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_left, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_left_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_left, CL_TRUE, 0, in_side_width*in_side_height*sizeof(int), (void*)g_image_left_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_right, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_right_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_right, CL_TRUE, 0, in_side_width*in_side_height*sizeof(int), (void*)g_image_right_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_mask, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mask_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_mask, CL_TRUE, 0, out_pano2d_width*out_pano2d_height*sizeof(int), (void*)g_image_mask_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_map_x, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mapx_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_map_x, CL_TRUE, 0, out_pano2d_width*out_pano2d_height*sizeof(int), (void*)g_image_mapx_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_map_y, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mapy_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_map_y, CL_TRUE, 0, out_pano2d_width*out_pano2d_height*sizeof(int), (void*)g_image_mapy_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-    ret = clEnqueueNDRangeKernel (g_cq, g_kernel, g_dimension, NULL, &g_global, &g_local, 0, NULL, NULL);
+    size_t global[2] = {out_pano2d_width, out_pano2d_height};
+    ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, NULL, 0, NULL, NULL);
     if  (ret == CL_SUCCESS)
     {
-        ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)image_pano2d, 0, NULL, NULL);
+        ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, out_pano2d_width*out_pano2d_height*sizeof(int), (void*)image_pano2d, 0, NULL, NULL);
         printf ("\nOk reading output buffer\n");
     }
     else
