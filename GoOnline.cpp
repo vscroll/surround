@@ -114,13 +114,11 @@ void CarPano2(const std::vector<cv::Mat>& fishImgs,
 {
 #if IMX_OPENCL
 
-    int out_image_pano2d[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X];
+    int out_image_pano2d[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
     stitch_cl_new_pano2d_buffer(fishImgs[0].cols, fishImgs[0].rows,
             outSideWidth, outSideHeight,
             outPano2DWidth, outPano2DHeight);
-    cout << ".......stitch_cl_2d start......" << endl;
-    stitch_cl_2d(fishImgs, mapX, mapY, mask, outPano2DWidth, outPano2DHeight, out_image_pano2d);
-     cout << ".......stitch_cl_2d done......" << endl;
+    stitch_cl_2d(fishImgs, mapX, mapY, mask,fishImgs[0].cols, fishImgs[0].rows, outPano2DWidth, outPano2DHeight, out_image_pano2d);
     *outPano2D = new Mat(outPano2DHeight, outPano2DWidth, CV_8UC3, out_image_pano2d);
     stitch_cl_free_pano2d_buffer();
 

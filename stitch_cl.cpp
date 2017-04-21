@@ -202,117 +202,117 @@ void stitch_cl_free_pano2d_buffer()
     printf ("\nfree buffers ok");
 }
 
-int g_image_front_array[VIDEO_SIDE_RES_Y][VIDEO_SIDE_RES_X];
-int g_image_rear_array[VIDEO_SIDE_RES_Y][VIDEO_SIDE_RES_X];
-int g_image_left_array[VIDEO_SIDE_RES_Y][VIDEO_SIDE_RES_X];
-int g_image_right_array[VIDEO_SIDE_RES_Y][VIDEO_SIDE_RES_X];
-int g_image_mapx_array[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X];
-int g_image_mapy_array[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X];
-int g_image_mask_array[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X];
+int g_image_front_array[VIDEO_SIDE_RES_Y_MAX][VIDEO_SIDE_RES_X_MAX];
+int g_image_rear_array[VIDEO_SIDE_RES_Y_MAX][VIDEO_SIDE_RES_X_MAX];
+int g_image_left_array[VIDEO_SIDE_RES_Y_MAX][VIDEO_SIDE_RES_X_MAX];
+int g_image_right_array[VIDEO_SIDE_RES_Y_MAX][VIDEO_SIDE_RES_X_MAX];
+int g_image_mapx_array[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
+int g_image_mapy_array[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
+int g_image_mask_array[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX];
 
-int stitch_cl_2d(const std::vector<cv::Mat>& fishImgs,
-                 const cv::Mat& mapX, const cv::Mat& mapY,
+int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
+                 const cv::Mat& map_x, const cv::Mat& map_y,
                  const cv::Mat& mask,
-                 int width, int height,
-                 int image_pano2d[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X]
+                 int in_side_width, int in_side_height,
+                 int out_pano2d_width, int out_pano2d_height,
+                 int image_pano2d[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX]
                  )
 {
-    for (int i = 0; i < fishImgs[0].rows; ++i)
+    for (int i = 0; i < side_imgs[0].rows; ++i)
     {
-        for (int j = 0; j < fishImgs[0].cols; ++j)
+        for (int j = 0; j < side_imgs[0].cols; ++j)
         {
-            g_image_front_array[i][j] = fishImgs[0].ptr<int>(i)[j];
+            g_image_front_array[i][j] = side_imgs[0].ptr<int>(i)[j];
         }
     }
 
-    for (int i = 0; i < fishImgs[1].rows; ++i)
+    for (int i = 0; i < side_imgs[1].rows; ++i)
     {
-        for (int j = 0; j < fishImgs[1].cols; ++j)
+        for (int j = 0; j < side_imgs[1].cols; ++j)
         {
-            g_image_rear_array[i][j] = fishImgs[1].ptr<int>(i)[j];
+            g_image_rear_array[i][j] = side_imgs[1].ptr<int>(i)[j];
         }
     }
 
-    for (int i = 0; i < fishImgs[2].rows; ++i)
+    for (int i = 0; i < side_imgs[2].rows; ++i)
     {
-        for (int j = 0; j < fishImgs[2].cols; ++j)
+        for (int j = 0; j < side_imgs[2].cols; ++j)
         {
-            g_image_left_array[i][j] = fishImgs[2].ptr<int>(i)[j];
+            g_image_left_array[i][j] = side_imgs[2].ptr<int>(i)[j];
         }
     }
 
-    for (int i = 0; i < fishImgs[3].rows; ++i)
+    for (int i = 0; i < side_imgs[3].rows; ++i)
     {
-        for (int j = 0; j < fishImgs[3].cols; ++j)
+        for (int j = 0; j < side_imgs[3].cols; ++j)
         {
-            g_image_right_array[i][j] = fishImgs[3].ptr<int>(i)[j];
+            g_image_right_array[i][j] = side_imgs[3].ptr<int>(i)[j];
         }
     }
 
-    for (int i = 0; i <height; ++i)
+    for (int i = 0; i < out_pano2d_height; ++i)
     {
-        for (int j = 0; j < width;  ++j)
+        for (int j = 0; j < out_pano2d_width;  ++j)
         {
             int flag = mask.ptr<uchar>(i)[j];
             g_image_mask_array[i][j] = flag;
         }
     }
 
-    for (int i = 0; i < height; ++i)
+    for (int i = 0; i < out_pano2d_height; ++i)
     {
-        for (int j = 0; j < width; ++j)
+        for (int j = 0; j < out_pano2d_width; ++j)
         {
-            g_image_mapx_array[i][j] = mapX.ptr<int>(i)[j];
+            g_image_mapx_array[i][j] = map_x.ptr<int>(i)[j];
         }
     }
 
-    for (int i = 0; i < height; ++i)
+    for (int i = 0; i < out_pano2d_height; ++i)
     {
-        for (int j = 0; j < width; ++j)
+        for (int j = 0; j < out_pano2d_width; ++j)
         {
-            g_image_mapy_array[i][j] = mapY.ptr<int>(i)[j];
+            g_image_mapy_array[i][j] = map_y.ptr<int>(i)[j];
         }
     }
-
 
      cl_int ret;
-     ret = clEnqueueWriteBuffer(g_cq, g_image_front, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_front_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_front, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_front_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_rear, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_rear_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_rear, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_rear_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_left, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_left_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_left, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_left_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_right, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_right_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_right, CL_TRUE, 0, sizeof(in_side_width*in_side_height*sizeof(int)), (void*)g_image_right_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_mask, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_mask_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_mask, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mask_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_map_x, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_mapx_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_map_x, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mapx_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
      }
 
-     ret = clEnqueueWriteBuffer(g_cq, g_image_map_y, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)g_image_mapy_array, 0, NULL, NULL);
+     ret = clEnqueueWriteBuffer(g_cq, g_image_map_y, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)g_image_mapy_array, 0, NULL, NULL);
      if (ret != CL_SUCCESS)
      {
          printf ("\nError writing input buffer\n");
@@ -321,7 +321,7 @@ int stitch_cl_2d(const std::vector<cv::Mat>& fishImgs,
     ret = clEnqueueNDRangeKernel (g_cq, g_kernel, g_dimension, NULL, &g_global, &g_local, 0, NULL, NULL);
     if  (ret == CL_SUCCESS)
     {
-        ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(width*height*sizeof(int)), (void*)image_pano2d, 0, NULL, NULL);
+        ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0, sizeof(out_pano2d_width*out_pano2d_height*sizeof(int)), (void*)image_pano2d, 0, NULL, NULL);
     }
     else
     {

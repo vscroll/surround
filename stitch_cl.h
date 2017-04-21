@@ -13,11 +13,12 @@ int stitch_cl_new_pano2d_buffer(int in_side_width, int in_side_height,
                                 int out_pano2d_width, int  out_pano2d_height);
 void stitch_cl_free_pano2d_buffer();
 
-int stitch_cl_2d(const std::vector<cv::Mat>& fishImgs,
-                 const cv::Mat& mapX, const cv::Mat& mapY,
+int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
+                 const cv::Mat& map_x, const cv::Mat& map_y,
                  const cv::Mat& mask,
-                 int width, int height,
-                 int image_pano2d[VIDEO_PANO2D_RES_Y][VIDEO_PANO2D_RES_X]
+                 int in_side_width, int in_side_height,
+                 int out_pano2d_width, int out_pano2d_height,
+                 int image_pano2d[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX]
                  );
 
 #endif // STITCH_CL_H
