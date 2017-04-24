@@ -3,13 +3,11 @@ __kernel void stitch_2d	(__global uchar* image_front,
                                 __global uchar* image_left,
                                 __global uchar* image_right,
                                 int side_width,
-                                int side_height,
                                 __global uchar* mask,
                                 __global int *map_x,
                                 __global int *map_y,
                                 __global uchar* pano2d,
-                                int pano2d_width,
-                                int pano2d_height)
+                                int pano2d_width)
 {
     // gets the global id
     int col = get_global_id(0);

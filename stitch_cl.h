@@ -10,11 +10,6 @@ int stitch_cl_init(char* cl_file, char* cl_kernel_name);
 
 void stitch_cl_uninit();
 
-int stitch_cl_new_pano2d_buffer(int in_side_width, int in_side_height,
-                                int out_side_width, int out_side_height,
-                                int out_pano2d_width, int  out_pano2d_height);
-void stitch_cl_delete_pano2d_buffer();
-
 int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
                  const cv::Mat& map_x, const cv::Mat& map_y,
                  const cv::Mat& mask,
