@@ -44,8 +44,9 @@ void StitchWorker::start(ICapture *capture)
             mapY[i][j] = mStitchMap.ptr<Point2f>(i)[j].y;
         }
     }
-    mStitchMapX = Mat(mPano2DHeight, mPano2DWidth, CV_8UC1, mapX);
-    mStitchMapY = Mat(mPano2DHeight, mPano2DWidth, CV_8UC1, mapY);
+
+    mStitchMapX = Mat(mPano2DHeight, mPano2DWidth, CV_32SC1, mapX);
+    mStitchMapY = Mat(mPano2DHeight, mPano2DWidth, CV_32SC1, mapY);
     cout<<"mStitchMapX rows:"<< mStitchMapX.rows  << " cols:" << mStitchMapX.cols  << " channel:" << mStitchMapX.channels() << endl;
     cout<<"mStitchMapY rows:"<< mStitchMapY.rows  << " cols:" << mStitchMapY.cols  << " channel:" << mStitchMapY.channels() << endl;
 #endif

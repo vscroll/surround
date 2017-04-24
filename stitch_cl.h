@@ -18,9 +18,7 @@ void stitch_cl_delete_pano2d_buffer();
 int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
                  const cv::Mat& map_x, const cv::Mat& map_y,
                  const cv::Mat& mask,
-                 int in_side_width, int in_side_height,
-                 int out_pano2d_width, int out_pano2d_height,
-                 int image_pano2d[VIDEO_PANO2D_RES_Y_MAX][VIDEO_PANO2D_RES_X_MAX]
+                 cv::Mat& image_pano2d
                  );
 
 #if CL_HELLOWORLD
