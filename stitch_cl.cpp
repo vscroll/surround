@@ -184,79 +184,84 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                 const cv::Mat& mask,
                                 cv::Mat& image_pano2d)
 {
+#if IMX_OPENCL_ALLOC_ONCE
+    //allocation once
     if (g_buffer_ready)
     {
         return 0;
     }
+#endif
+
+    printf ("Allocation buffer start\n");
 
     cl_int ret;
     g_image_front = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                     side_imgs[0].channels()*side_imgs[0].cols*side_imgs[0].rows*sizeof(uchar),
-                                   NULL,
+                                    NULL,
                                    &ret);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed Allocation  image_front buffer\n");
+        printf ("Failed Allocation  image_front buffer ret=%d %d %d %d\n", ret, side_imgs[0].channels(), side_imgs[0].cols, side_imgs[0].rows);
         return -1;
     }
 
     g_image_rear = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                    side_imgs[1].channels()*side_imgs[1].cols*side_imgs[1].rows*sizeof(uchar),
-                                   NULL,
+                                    NULL,
                                   &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_rear buffer\n");
+         printf ("Failed Allocation  image_rear buffer ret=%d %d %d %d\n",  ret, side_imgs[1].channels(), side_imgs[1].cols, side_imgs[1].rows);
          return -1;
     }
 
     g_image_left = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                    side_imgs[2].channels()*side_imgs[2].cols*side_imgs[2].rows*sizeof(uchar),
-                                   NULL,
+                                    NULL,
                                   &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_left buffer\n");
+         printf ("Failed Allocation  image_left buffer ret=%d %d %d %d\n", ret, side_imgs[2].channels(), side_imgs[2].cols, side_imgs[2].rows);
          return -1;
     }
 
     g_image_right = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                     side_imgs[3].channels()*side_imgs[3].cols*side_imgs[3].rows*sizeof(uchar),
-                                   NULL,
+                                    NULL,
                                    &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_right buffer\n");
+         printf ("Failed Allocation  image_right buffer ret=%d %d %d %d\n", ret, side_imgs[3].channels(), side_imgs[3].cols, side_imgs[3].rows);
          return -1;
     }
 
     g_image_mask  = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                     mask.channels()*mask.cols*mask.rows*sizeof(uchar),
-                                   NULL,
+                                    NULL,
                                     &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_right buffer\n");
+         printf ("Failed Allocation  image_right buffer ret=%d %d %d %d\n", ret, mask.channels(), mask.cols, mask.rows);
          return -1;
     }
 
     g_image_map_x = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                     map_x.channels()*map_x.cols*map_x.rows*sizeof(int),
-                                   NULL,
+                                    NULL,
                                     &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_right buffer\n");
+         printf ("Failed Allocation  image_right buffer ret=%d %d %d %d\n", ret, map_x.channels(), map_x.cols, map_x.rows);
          return -1;
     }
 
     g_image_map_y = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
                                     map_y.channels()*map_y.cols*map_y.rows*sizeof(int),
-                                   NULL,
+                                    NULL,
                                     &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation  image_right buffer\n");
+         printf ("Failed Allocation  image_right buffer ret=%d %d %d %d\n", ret, map_y.channels(), map_y.cols, map_y.rows);
          return -1;
     }
 
@@ -266,7 +271,7 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                      &ret);
     if (ret != CL_SUCCESS)
     {
-         printf ("Failed Allocation hello_world output buffer\n");
+         printf ("Failed Allocation g_image_pano2d output buffer ret=%d %d %d %d\n", ret, image_pano2d.channels(), image_pano2d.cols, image_pano2d.rows);
          return -1;
     }
 
@@ -286,6 +291,8 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
          return -1;
     }
 
+    g_buffer_ready = TRUE;
+    printf ("Allocation buffer ok\n");
     return 0;
 }
 
@@ -301,23 +308,25 @@ void stitch_cl_delete_pano2d_buffer()
     clReleaseMemObject (g_image_pano2d);
 
     g_buffer_ready = FALSE;
-    printf ("\ndelete buffers ok");
+    printf ("delete buffers ok \n");
 }
 
 int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                        const cv::Mat& map_x, const cv::Mat& map_y,
                                        const cv::Mat& mask)
 {
+    printf ("start write buffer \n");
+
     cl_int ret;
     ret = clEnqueueWriteBuffer(g_cq,
                                g_image_front,
                                CL_TRUE, 0,
                                side_imgs[0].channels()*side_imgs[0].cols*side_imgs[0].rows*sizeof(uchar),
-                               (void*)(side_imgs[0].ptr<uchar>(0)),
+                               (void*)(side_imgs[0].data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_front \n");
+        printf ("Failed write buffer g_image_front ret=%d %d %d %d\n", ret, side_imgs[0].channels(), side_imgs[0].cols, side_imgs[0].rows);
         return -1;
     }
 
@@ -325,11 +334,11 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_rear,
                                CL_TRUE, 0,
                                side_imgs[1].channels()*side_imgs[1].cols*side_imgs[1].rows*sizeof(uchar),
-                               (void*)(side_imgs[1].ptr<uchar>(0)),
+                               (void*)(side_imgs[1].data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_rear \n");
+        printf ("Failed write buffer g_image_rear ret=%d %d %d %d\n",  ret, side_imgs[1].channels(), side_imgs[1].cols, side_imgs[1].rows);
         return -1;
     }
 
@@ -337,11 +346,11 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_left,
                                CL_TRUE, 0,
                                side_imgs[2].channels()*side_imgs[2].cols*side_imgs[2].rows*sizeof(uchar),
-                               (void*)(side_imgs[2].ptr<uchar>(0)),
+                               (void*)(side_imgs[2].data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_left \n");
+        printf ("Failed write buffer g_image_left ret=%d %d %d %d\n", ret, side_imgs[2].channels(), side_imgs[2].cols, side_imgs[2].rows);
         return -1;
     }
 
@@ -349,11 +358,11 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_right,
                                CL_TRUE, 0,
                                side_imgs[3].channels()*side_imgs[3].cols*side_imgs[3].rows*sizeof(uchar),
-                               (void*)(side_imgs[3].ptr<uchar>(0)),
+                               (void*)(side_imgs[3].data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_right \n");
+        printf ("Failed write buffer g_image_right ret=%d %d %d %d\n", ret, side_imgs[3].channels(), side_imgs[3].cols, side_imgs[3].rows);
         return -1;
     }
 
@@ -361,11 +370,11 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_map_x,
                                CL_TRUE, 0,
                                map_x.channels()*map_x.cols*map_x.rows*sizeof(int),
-                               (void*)(map_x.ptr<int>(0)),
+                               (void*)(map_x.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_map_x \n");
+        printf ("Failed write buffer g_image_map_x ret=%d %d %d %d\n", ret, map_x.channels(), map_x.cols, map_x.rows);
         return -1;
     }
 
@@ -373,11 +382,11 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_map_y,
                                CL_TRUE, 0,
                                map_y.channels()*map_y.cols*map_y.rows*sizeof(int),
-                               (void*)(map_y.ptr<int>(0)),
+                               (void*)(map_y.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_map_x \n");
+        printf ("Failed write buffer g_image_map_y ret=%d %d %d %d\n", ret, map_y.channels(), map_y.cols, map_y.rows);
         return -1;
     }
 
@@ -385,13 +394,15 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
                                g_image_mask,
                                CL_TRUE, 0,
                                mask.channels()*mask.cols*mask.rows*sizeof(uchar),
-                               (void*)(mask.ptr<uchar>(0)),
+                               (void*)(mask.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
-        printf ("Failed write buffer g_image_mask \n");
+        printf ("Failed write buffer g_image_mask ret=%d %d %d %d\n", ret, mask.channels(), mask.cols, mask.rows);
         return -1;
     }
+
+    printf ("write buffer ok \n");
 
     return 0;
 }
@@ -416,8 +427,7 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
      }
 
      size_t global[2] = {image_pano2d.cols, image_pano2d.rows};
-     const size_t local[2]={8,8};
-     ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, local, 0, NULL, NULL);
+     ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, NULL, 0, NULL, NULL);
      if  (ret == CL_SUCCESS)
      {
          ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0,
@@ -430,17 +440,14 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
          printf ("\nError reading output buffer\n");
      }
 
-     clReleaseMemObject (g_image_front);
-     clReleaseMemObject (g_image_rear);
-     clReleaseMemObject (g_image_left);
-     clReleaseMemObject (g_image_right);
-     clReleaseMemObject (g_image_mask);
-     clReleaseMemObject (g_image_map_x);
-     clReleaseMemObject (g_image_map_y);
-     clReleaseMemObject (g_image_pano2d);
+     // Allocate once
+#if IMX_OPENCL_ALLOC_ONCE
+#else
+     stitch_cl_delete_pano2d_buffer();
+#endif
 
-    //clFlush(g_cq);
-    //clFinish(g_cq);
+     //clFlush(g_cq);
+     //clFinish(g_cq);
 
     return 0;
 }
