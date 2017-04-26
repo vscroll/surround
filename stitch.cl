@@ -9,7 +9,7 @@ __kernel void stitch_2d	(__global uchar* image_front,
                                 __global int *map_y,
                                 __global uchar* pano2d,
                                 int pano2d_width,
-                                itn pano2d_height)
+                                int pano2d_height)
 {
     // gets the global id
     int col = get_global_id(0);

@@ -13,7 +13,6 @@
 
 #define USE_IMX_IPU 1
 
-#define IMX_OPENCL 1
 #define IMX_OPENCL_ALLOC_ONCE 1
 
 #define V4L2_BUF_COUNT 1

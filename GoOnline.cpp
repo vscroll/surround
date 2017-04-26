@@ -4,10 +4,7 @@
 #include <time.h>
 #include "stitch_algorithm.h"
 #include "common.h"
-
-#if IMX_OPENCL
 #include "stitch_cl.h"
-#endif
 
 using namespace std;
 using namespace cv;
@@ -41,7 +38,7 @@ int main()
 
 #endif
 
-void stitching_init(const string config_path, Mat& map, Mat& mask)
+void stitching_init(const string config_path, Mat& map, Mat& mask, bool enableOpenCL)
 {
     cout << "System Initialization:" << config_path << endl;
     FileStorage fs(config_path, FileStorage::READ);
@@ -53,15 +50,14 @@ void stitching_init(const string config_path, Mat& map, Mat& mask)
     fs.release();
     cout << ".......Initialization done......" << endl;
 
-#if IMX_OPENCL
-
+    if (enableOpenCL)
+    {
 #if CL_HELLOWORLD
-    stitch_cl_init("hello_world.cl", "hello_world");
+        stitch_cl_init("hello_world.cl", "hello_world");
 #else
-    stitch_cl_init("stitch.cl", "stitch_2d");
+        stitch_cl_init("stitch.cl", "stitch_2d");
 #endif
-
-#endif
+    }
 
     return;
 }
@@ -113,12 +109,11 @@ void CarPano(const std::vector<cv::Mat>& fishImgs,
     *outSide = new Mat(fishImgs[outSideChanne]);
 }
 
-void CarPano2(const std::vector<cv::Mat>& fishImgs,
+void CarPano_cl(const std::vector<cv::Mat>& fishImgs,
               const cv::Mat& mapX, const cv::Mat& mapY, const cv::Mat& mask,
               cv::Mat** outPano2D, int outPano2DWidth, int outPano2DHeight,
               cv::Mat** outSide, int outSideWidth, int outSideHeight, int outSideChannel)
 {
-#if IMX_OPENCL
 
 #if CL_HELLOWORLD
 
@@ -133,6 +128,5 @@ void CarPano2(const std::vector<cv::Mat>& fishImgs,
     stitch_cl_2d(fishImgs, mapX, mapY, mask, **outPano2D);
 #endif
 
-#endif
     *outSide = new Mat(fishImgs[outSideChannel]);
 }

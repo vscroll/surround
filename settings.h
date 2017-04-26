@@ -19,10 +19,12 @@ public:
 
 public:
     int mVideoChanel[VIDEO_CHANNEL_SIZE];
+    int mFps;
+
     int mPano2DWidth;
     int mPano2DHeight;
 
-    int mFps;
+    int mEnableOpenCL;
 signals:
 
 public slots:

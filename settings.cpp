@@ -13,6 +13,7 @@ Settings::Settings(QObject *parent) :
     mPano2DHeight = 0;
 
     mFps = 10;
+    mEnableOpenCL = 0;
 }
 
 Settings* Settings::getInstant()
@@ -29,56 +30,65 @@ void Settings::loadSettings(QString path)
 {
     QSettings settings(path, QSettings::IniFormat);
 
-    int value = settings.value("CHN/front").toInt();
+    int value = settings.value("INPUT/FrontCHN").toInt();
     if (value >= 0)
     {
         mVideoChanel[VIDEO_CHANNEL_FRONT] = value;
     }
 
-    value = settings.value("CHN/rear").toInt();
+    value = settings.value("INPUT/RearCHN").toInt();
     if (value >= 0)
     {
         mVideoChanel[VIDEO_CHANNEL_REAR] = value;
     }
 
-    value = settings.value("CHN/left").toInt();
+    value = settings.value("INPUT/LeftCHN").toInt();
     if (value >= 0)
     {
         mVideoChanel[VIDEO_CHANNEL_LEFT] = value;
     }
 
-    value = settings.value("CHN/right").toInt();
+    value = settings.value("INPUT/RightCHN").toInt();
     if (value >= 0)
     {
         mVideoChanel[VIDEO_CHANNEL_RIGHT] = value;
     }
 
-    value = settings.value("SIZE/Pano2DWidth").toInt();
-    if (value >= 0)
-    {
-        mPano2DWidth = value;
-    }
-
-    value = settings.value("SIZE/Pano2DHeight").toInt();
-    if (value >= 0)
-    {
-        mPano2DHeight = value;
-    }
-
-    value = settings.value("FPS/capture").toInt();
+    value = settings.value("INPUT/CaptureFPS").toInt();
     if (value >= 0)
     {
         mFps = value;
     }
 
-    qDebug() << "front:" << mVideoChanel[VIDEO_CHANNEL_FRONT]
-        << " rear:" << mVideoChanel[VIDEO_CHANNEL_REAR]
-        << " left:" << mVideoChanel[VIDEO_CHANNEL_LEFT]
-        << " right:" << mVideoChanel[VIDEO_CHANNEL_RIGHT];
+    value = settings.value("OUTPUT/Pano2DWidth").toInt();
+    if (value >= 0)
+    {
+        mPano2DWidth = value;
+    }
+
+    value = settings.value("OUTPUT/Pano2DHeight").toInt();
+    if (value >= 0)
+    {
+        mPano2DHeight = value;
+    }
+
+    value = settings.value("ACCEL/EnableOpenCL").toInt();
+    if (value >= 0)
+    {
+        mEnableOpenCL = value;
+    }
+
+
+    qDebug() << "FrontCHN:" << mVideoChanel[VIDEO_CHANNEL_FRONT]
+        << " RearCHN:" << mVideoChanel[VIDEO_CHANNEL_REAR]
+        << " LeftCHN:" << mVideoChanel[VIDEO_CHANNEL_LEFT]
+        << " RightCHN:" << mVideoChanel[VIDEO_CHANNEL_RIGHT]
+        << " CaptureFPS:" << mFps;
 
     qDebug() << "Pano2D width:" << mPano2DWidth
-        << " Pano2D height:" << mPano2DHeight
-        << " capture fps:" << mFps;
+        << " Pano2D height:" << mPano2DHeight;
+
+    qDebug() << "EnableOpenCL:" << mEnableOpenCL;
 }
 
 QString Settings::getApplicationPath()

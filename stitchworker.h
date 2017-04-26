@@ -51,6 +51,8 @@ private:
     cv::Mat mMask;
 
     double mLastTimestamp;
+
+    bool mEnableOpenCL;
 };
 
 #endif // STITCHWORKER_H
