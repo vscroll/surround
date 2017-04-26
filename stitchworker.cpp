@@ -79,9 +79,9 @@ void StitchWorker::onStitch()
     double end = 0.0;
 #endif
     timestamp = surroundImage->timestamp;
-    int elapsed = 0;
+    double elapsed = 0;
     double start = (double)clock();
-    elapsed = (int)(start - surroundImage->timestamp)/1000;
+    elapsed = (start - surroundImage->timestamp)/CLOCKS_PER_SEC;
 
     if (elapsed < 1500)
     {
@@ -159,17 +159,17 @@ void StitchWorker::onStitch()
     }
 
 #if DEBUG_STITCH
-    int elapsed_to_last = 0;
+    double elapsed_to_last = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed_to_last = (int)(start - mLastTimestamp)/1000;
+        elapsed_to_last = (start - mLastTimestamp)/CLOCKS_PER_SEC;
     }
     mLastTimestamp = start;
 
     qDebug() << "StitchWorke::run"
              <<" elapsed to last time:" << elapsed_to_last
             << " elapsed to capture:" << elapsed
-            << ", stitch:" << (int)(end-start)/1000
+            << ", stitch:" << (end-start)/CLOCKS_PER_SEC
             << ", pano2d_size:" << pano2d_size
             << ", channel" << mVideoChannel
             << ", side_size:" << side_size;

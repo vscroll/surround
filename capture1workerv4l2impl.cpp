@@ -138,12 +138,12 @@ void Capture1WorkerV4l2Impl::onCapture()
     double start = (double)clock();
 #if DEBUG_CAPTURE
     int size = 0;
-    int elapsed = 0;
-    int read_time = 0;
+    double elapsed = 0;
+    double read_time = 0;
     double convert_time = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed = (int)(start - mLastTimestamp)/1000;
+        elapsed = (int)(start - mLastTimestamp)/CLOCKS_PER_SEC;
     }
 #endif
     mLastTimestamp = start;
@@ -155,7 +155,7 @@ void Capture1WorkerV4l2Impl::onCapture()
         if (buf.index < V4L2_BUF_COUNT)
         {
 #if DEBUG_CAPTURE
-            read_time = (int)(clock()-read_start)/1000;
+            read_time = (clock()-read_start)/CLOCKS_PER_SEC;
 #endif
 
 #if DEBUG_CAPTURE
@@ -207,7 +207,7 @@ void Capture1WorkerV4l2Impl::onCapture()
             Util::uyvy_to_rgb24(mInWidth, mInHeight, buffer, frame_buffer);
 #endif
 #if DEBUG_CAPTURE
-            convert_time = (int)(clock() - convert_start)/1000;
+            convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
 #endif
 
 #if USE_IMX_IPU
@@ -241,6 +241,6 @@ void Capture1WorkerV4l2Impl::onCapture()
              << ", elapsed to last time:" << elapsed
              << ", read time:" << read_time
              << ", yuv to rgb:" << convert_time
-             << ", capture:" << (int)(clock()-read_start)/1000;
+             << ", capture:" << (clock()-read_start)/CLOCKS_PER_SEC;
 #endif
 }

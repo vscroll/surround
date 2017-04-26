@@ -82,10 +82,10 @@ void MainWindow::updateFullImage()
 #if DEBUG_UPDATE
     double timestamp = 0.0;
     double start = (double)clock();
-    int showElapsed = 0;
+    double showElapsed = 0;
     if (qAbs(mLastUpdateFull) > 0.00001f)
     {
-        showElapsed = (int)(start - mLastUpdateFull)/1000;
+        showElapsed = (int)(start - mLastUpdateFull)/CLOCKS_PER_SEC;
     }
     mLastUpdateFull = start;
 #endif
@@ -99,7 +99,7 @@ void MainWindow::updateFullImage()
         return;
     }
 
-    int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
+    double elapsed = (int)((double)clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
     double start1 = (double)clock();
@@ -124,8 +124,8 @@ void MainWindow::updateFullImage()
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", read:" << (int)(end-start)/1000
-             << ", show:" << (int)(end1-start1)/1000;
+             << ", read:" << (end-start)/CLOCKS_PER_SEC
+             << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 
 #endif
 }
@@ -135,10 +135,10 @@ void MainWindow::updateSmallImage()
 #if DEBUG_UPDATE
     double timestamp = 0.0;
     double start = (double)clock();
-    int showElapsed = 0;
+    double showElapsed = 0;
     if (qAbs(mLastUpdateSmall) > 0.00001f)
     {
-        showElapsed = (int)(start - mLastUpdateSmall)/1000;
+        showElapsed = (start - mLastUpdateSmall)/CLOCKS_PER_SEC;
     }
     mLastUpdateSmall = start;
 #endif
@@ -152,7 +152,7 @@ void MainWindow::updateSmallImage()
         return;
     }
 
-    int elapsed = (int)((double)clock() - surroundImage->timestamp)/1000;
+    double elapsed = (clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
     double start1 = (double)clock();
@@ -174,8 +174,8 @@ void MainWindow::updateSmallImage()
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", read:" << (int)(end-start)/1000
-             << ", show:" << (int)(end1-start1)/1000;
+             << ", read:" << (end-start)/CLOCKS_PER_SEC
+             << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 #endif
 }
 

@@ -50,10 +50,10 @@ void Capture4WorkerImpl::onCapture()
     double timestamp = (double)clock();
 #if DEBUG_CAPTURE
     int size = 0;
-    int elapsed = 0;
+    double elapsed = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed = (int)(timestamp - mLastTimestamp)/1000;
+        elapsed = (int)(timestamp - mLastTimestamp)/CLOCKS_PER_SEC;
     }
     mLastTimestamp = timestamp;
 #endif
@@ -88,7 +88,7 @@ void Capture4WorkerImpl::onCapture()
              << " channel:" << mVideoChannelNum
              << ", size: "<< size
              << ", elapsed to last time:" << elapsed
-             << ", capture:" << (int)(end0-mLastTimestamp)/1000
-             << ", write:" << (int)(end1-end0)/1000;
+             << ", capture:" << (end0-mLastTimestamp)/CLOCKS_PER_SEC
+             << ", write:" << (end1-end0)/CLOCKS_PER_SEC;
 #endif
 }

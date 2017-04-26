@@ -150,12 +150,12 @@ void Capture4WorkerV4l2Impl::onCapture()
 #if DEBUG_CAPTURE
     double start = (double)clock();
     int size = 0;
-    int elapsed = 0;
-    int read_time = 0;
-    int convert_time = 0;
+    double elapsed = 0;
+    double read_time = 0;
+    double convert_time = 0;
     if (qAbs(mLastTimestamp) > 0.00001f)
     {
-        elapsed = (int)(start - mLastTimestamp)/1000;
+        elapsed = (int)(start - mLastTimestamp)/CLOCKS_PER_SEC;
     }
     mLastTimestamp = start;
 #endif
@@ -201,7 +201,7 @@ void Capture4WorkerV4l2Impl::onCapture()
             if (buf.index < V4L2_BUF_COUNT)
             {
 #if DEBUG_CAPTURE
-                read_time = (int)(clock()-read_start)/1000;
+                read_time = (clock()-read_start)/CLOCKS_PER_SEC;
 #endif
 
 #if DEBUG_CAPTURE
@@ -246,7 +246,7 @@ void Capture4WorkerV4l2Impl::onCapture()
 #endif
 
 #if DEBUG_CAPTURE
-                convert_time = (int)(clock() - convert_start)/1000;
+                convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
                 qDebug() << "Capture4WorkerV4l2Impl::onCapture"
                          << " channel:" << i
                          <<", read_time:" << read_time
@@ -306,6 +306,6 @@ void Capture4WorkerV4l2Impl::onCapture()
              << ", flag:" << flag
              << ", size:" << size
              << ", elapsed to last time:" << elapsed
-             << ", capture:" << (int)(clock()-timestamp)/1000;
+             << ", capture:" << (clock()-timestamp)/CLOCKS_PER_SEC;
 #endif
 }
