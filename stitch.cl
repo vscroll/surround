@@ -3,21 +3,33 @@ __kernel void stitch_2d	(__global uchar* image_front,
                                 __global uchar* image_left,
                                 __global uchar* image_right,
                                 int side_width,
+                                int side_height,
                                 __global uchar* mask,
                                 __global int *map_x,
                                 __global int *map_y,
                                 __global uchar* pano2d,
-                                int pano2d_width)
+                                int pano2d_width,
+                                itn pano2d_height)
 {
     // gets the global id
     int col = get_global_id(0);
     int row = get_global_id(1);
+    if (col >= pano2d_width
+            || row >= pano2d_height)
+    {
+        return;
+    }
 
     // copy the input to output
     int id = row*pano2d_width+col;
     int flag = mask[id];
     int x = map_x[id];
     int y = map_y[id];
+    if (x >= side_width
+            || y >= side_height)
+    {
+        return;
+    }
 
     int in_id = y*side_width*3+x*3;
     int out_id = row*pano2d_width*3+col*3;

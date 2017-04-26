@@ -280,11 +280,13 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
     ret |= clSetKernelArg (g_kernel, 2, sizeof(cl_mem), &g_image_left);
     ret |= clSetKernelArg (g_kernel, 3, sizeof(cl_mem), &g_image_right);
     ret |= clSetKernelArg (g_kernel, 4, sizeof(int), &(side_imgs[0].cols));
-    ret |= clSetKernelArg (g_kernel, 5, sizeof(cl_mem), &g_image_mask);
-    ret |= clSetKernelArg (g_kernel, 6, sizeof(cl_mem), &g_image_map_x);
-    ret |= clSetKernelArg (g_kernel, 7, sizeof(cl_mem), &g_image_map_y);
-    ret |= clSetKernelArg (g_kernel, 8, sizeof(cl_mem), &g_image_pano2d);
-    ret |= clSetKernelArg (g_kernel, 9, sizeof(int), &(image_pano2d.cols));
+    ret |= clSetKernelArg (g_kernel, 5, sizeof(int), &(side_imgs[0].rows));
+    ret |= clSetKernelArg (g_kernel, 6, sizeof(cl_mem), &g_image_mask);
+    ret |= clSetKernelArg (g_kernel, 7, sizeof(cl_mem), &g_image_map_x);
+    ret |= clSetKernelArg (g_kernel, 8, sizeof(cl_mem), &g_image_map_y);
+    ret |= clSetKernelArg (g_kernel, 9, sizeof(cl_mem), &g_image_pano2d);
+    ret |= clSetKernelArg (g_kernel, 10, sizeof(int), &(image_pano2d.cols));
+    ret |= clSetKernelArg (g_kernel, 11, sizeof(int), &(image_pano2d.rows));
     if (ret != CL_SUCCESS)
     {
          printf ("Failed set kernel arg\n");
@@ -426,7 +428,7 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
          return -1;
      }
 
-     size_t global[2] = {image_pano2d.cols, image_pano2d.rows};
+     size_t global[2] = {side_imgs[0].cols, side_imgs[0].rows};
      ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, NULL, 0, NULL, NULL);
      if  (ret == CL_SUCCESS)
      {
