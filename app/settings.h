@@ -19,7 +19,8 @@ public:
 
 public:
     unsigned int mVideoChanel[VIDEO_CHANNEL_SIZE];
-    unsigned int mFps;
+    unsigned int mCaptureFps;
+    unsigned int mUpdateFps;
 
     unsigned int mPano2DWidth;
     unsigned int mPano2DHeight;

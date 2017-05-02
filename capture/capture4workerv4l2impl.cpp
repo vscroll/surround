@@ -259,12 +259,14 @@ void Capture4WorkerV4l2Impl::run()
 #endif
 
 #if DEBUG_CAPTURE
+/*
                 convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
                 std::cout << "Capture4WorkerV4l2Impl::onCapture"
                          << ", channel:" << i
                          << ", read_time:" << read_time
                          << ", yuv to rgb:" << convert_time
 			 << std::endl;
+*/
 #endif
 
 #if USE_IMX_IPU                

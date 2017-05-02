@@ -11,12 +11,12 @@ void* thread_func(void* args)
 
     Thread* pThread = static_cast<Thread*>(args);
 
-    //double lastTimestamp = 0.0;
-    //double elapsed = 0.0;
+    double lastTimestamp = 0.0;
+    double elapsed = 0.0;
     while(true)
     {
 	pthread_testcancel();
-/*
+
         if (lastTimestamp > 0.00001f)
         {
             elapsed = (clock() - lastTimestamp)/CLOCKS_PER_SEC;
@@ -29,10 +29,10 @@ void* thread_func(void* args)
 	}
 
 	lastTimestamp = clock();
-*/
+
 	pThread->run();
-	//usleep(10);
-	usleep(pThread->mInterval);
+	usleep(5);
+	//usleep(pThread->mInterval);
     }
     return NULL;   
 }

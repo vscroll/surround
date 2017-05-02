@@ -55,7 +55,8 @@ private:
 
     unsigned int mCurVideoChannel;
 
-    int mFPS;
+    unsigned int mCaptureFPS;
+    unsigned int mUpdateFPS;
     Controller mController;
 
     double mLastUpdateSmall;

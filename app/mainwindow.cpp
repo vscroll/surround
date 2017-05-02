@@ -31,7 +31,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mFPS = mSettings->mFps;
+    mCaptureFPS = mSettings->mCaptureFps;
+    mUpdateFPS = mSettings->mUpdateFps;
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
@@ -95,14 +96,14 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 
 void MainWindow::start()
 {
-    mVideoUpdateTimer.start(1000/mFPS);
+    mVideoUpdateTimer.start(1000/mUpdateFPS);
     int pano2DWidth = Settings::getInstant()->mPano2DWidth;
     int pano2DHeight = Settings::getInstant()->mPano2DHeight;
     bool enableOpenCL = (Settings::getInstant()->mEnableOpenCL == 1);
 
     QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
 
-    mController.start(mFPS,
+    mController.start(mCaptureFPS,
 			pano2DWidth,
 			pano2DHeight,
 			(char*)path.toStdString().c_str(),
@@ -135,17 +136,17 @@ void MainWindow::updateFullImage()
 {
 #if DEBUG_UPDATE
     double timestamp = 0.0;
-    double start = (double)clock();
+    double start = clock();
     double showElapsed = 0;
-    if (qAbs(mLastUpdateFull) > 0.00001f)
+    if (mLastUpdateFull > 0.00001f)
     {
-        showElapsed = (int)(start - mLastUpdateFull)/CLOCKS_PER_SEC;
+        showElapsed = (start - mLastUpdateFull)/CLOCKS_PER_SEC;
     }
     mLastUpdateFull = start;
 #endif
     surround_image_t* surroundImage = mController.dequeuePano2DImage();
 #if DEBUG_UPDATE
-    double end = (double)clock();
+    double end = clock();
 #endif
 
     if (NULL == surroundImage)
@@ -153,28 +154,34 @@ void MainWindow::updateFullImage()
         return;
     }
 
-    double elapsed = (int)((double)clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
+    double elapsed = (clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
-    double start1 = (double)clock();
+    double start1 = clock();
 #endif
 
-    //if (elapsed < 1000/mUpdateFPS)
+    cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
+    if (NULL != frame)
     {
-        cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
-        QImage image = cvMat2QImage(*frame);
-        ui->label_video_full->setPixmap(QPixmap::fromImage(image));
-        //QPainter painter(this);
-        //painter.drawImage(QPoint(20,20), image);
+	//if ((int)(elapsed*1000) < 1000/mFPS)
+    	{
+            QImage image = cvMat2QImage(*frame);
+            ui->label_video_full->setPixmap(QPixmap::fromImage(image));
+            //QPainter painter(this);
+            //painter.drawImage(QPoint(20,20), image);
+	}
+
         delete frame;
     }
+
     delete surroundImage;
 
 #if DEBUG_UPDATE
-    double end1 = (double)clock();
+    double end1 = clock();
 
     qDebug() << "MainWindow::onUpdateFullImage"
-             << ", fps:" << mFPS
+             << ", capture fps:" << mCaptureFPS
+             << ", update fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
@@ -188,9 +195,9 @@ void MainWindow::updateSmallImage()
 {
 #if DEBUG_UPDATE
     double timestamp = 0.0;
-    double start = (double)clock();
+    double start = clock();
     double showElapsed = 0;
-    if (qAbs(mLastUpdateSmall) > 0.00001f)
+    if (mLastUpdateSmall > 0.00001f)
     {
         showElapsed = (start - mLastUpdateSmall)/CLOCKS_PER_SEC;
     }
@@ -198,7 +205,7 @@ void MainWindow::updateSmallImage()
 #endif
     surround_image_t* surroundImage = mController.dequeueSideImage(mCurVideoChannel);
 #if DEBUG_UPDATE
-    double end = (double)clock();
+    double end = clock();
 #endif
 
     if (NULL == surroundImage)
@@ -209,22 +216,27 @@ void MainWindow::updateSmallImage()
     double elapsed = (clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
     timestamp = surroundImage->timestamp;
-    double start1 = (double)clock();
+    double start1 = clock();
 #endif
 
-    //if (elapsed < 1000/mUpdateFPS)
+    cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
+    if (NULL != frame)
     {
-        cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
-        QImage image = cvMat2QImage(*frame);
-        ui->label_video_small->setPixmap(QPixmap::fromImage(image));
+	//if ((int)(elapsed*1000) < 1000/mFPS)
+        {
+            QImage image = cvMat2QImage(*frame);
+            ui->label_video_small->setPixmap(QPixmap::fromImage(image));
+        }
+
         delete frame;
     }
     delete surroundImage;
 
 #if DEBUG_UPDATE
-    double end1 = (double)clock();
+    double end1 = clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
-             << ", fps:" << mFPS
+             << ", capture fps:" << mCaptureFPS
+             << ", update fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed

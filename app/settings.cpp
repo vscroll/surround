@@ -12,7 +12,8 @@ Settings::Settings(QObject *parent) :
     mPano2DWidth = 0;
     mPano2DHeight = 0;
 
-    mFps = 10;
+    mCaptureFps = 15;
+    mUpdateFps = 15;
     mEnableOpenCL = 0;
 }
 
@@ -57,7 +58,13 @@ void Settings::loadSettings(QString path)
     value = settings.value("INPUT/CaptureFPS").toInt();
     if (value >= 0)
     {
-        mFps = value;
+        mCaptureFps = value;
+    }
+
+    value = settings.value("INPUT/UpdateFPS").toInt();
+    if (value >= 0)
+    {
+        mUpdateFps = value;
     }
 
     value = settings.value("OUTPUT/Pano2DWidth").toInt();
@@ -83,7 +90,8 @@ void Settings::loadSettings(QString path)
         << " RearCHN:" << mVideoChanel[VIDEO_CHANNEL_REAR]
         << " LeftCHN:" << mVideoChanel[VIDEO_CHANNEL_LEFT]
         << " RightCHN:" << mVideoChanel[VIDEO_CHANNEL_RIGHT]
-        << " CaptureFPS:" << mFps;
+        << " CaptureFPS:" << mCaptureFps
+	<< " mUpdateFps:" << mUpdateFps;
 
     qDebug() << "Pano2D width:" << mPano2DWidth
         << " Pano2D height:" << mPano2DHeight;

@@ -83,11 +83,20 @@ void StitchWorker::run()
     double end = 0.0;
 #endif
     timestamp = surroundImage->timestamp;
-    int elapsed = 0;
+    double elapsed = 0;
     double start = clock();
-    elapsed = ((start - surroundImage->timestamp)/CLOCKS_PER_SEC)*1000;
+    elapsed = ((start - surroundImage->timestamp)/CLOCKS_PER_SEC);
 
-    if (elapsed < 500)
+#if DEBUG_STITCH
+    double elapsed_to_last = 0;
+    if (mLastTimestamp > 0.00001f)
+    {
+        elapsed_to_last = (start - mLastTimestamp)/CLOCKS_PER_SEC;
+    }
+    mLastTimestamp = start;
+#endif
+
+    if ((int)(elapsed*1000) < 500)
     {
         if (mEnableOpenCL)
         {
@@ -165,12 +174,6 @@ void StitchWorker::run()
     }
 
 #if DEBUG_STITCH
-    double elapsed_to_last = 0;
-    if (mLastTimestamp > 0.00001f)
-    {
-        elapsed_to_last = (start - mLastTimestamp)/CLOCKS_PER_SEC;
-    }
-    mLastTimestamp = start;
 
     std::cout << "StitchWorke::run"
              <<", elapsed to last time:" << elapsed_to_last
