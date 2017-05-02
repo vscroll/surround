@@ -1,9 +1,10 @@
 #before buildint it don't forget to export ROOTF_DIR and TOOLCHAIN (only if they are uncommented here)
 
 # needs to source /opt/poky/x.x.x/environmentsetup.sh
+TARGET_SO		= controller_test_so
 TARGET			= controller_test
 
-RM			= rm -rf
+RM				= rm -rf
  
 
 #ROOTFS_DIR = $(SDKTARGETSYSROOT)
@@ -29,8 +30,15 @@ CFLAGS			= -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv7-a -mfpu=ne
 			  -I$(HOME)/my-imx6/02_source/linux-3.14.52/include/uapi \
 			  -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include
 
+LFLAGS_SO		= -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) -lm \
+			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../controller -lcontroller
+
+SRCS_SO			= $(wildcard ./*.cpp )
+
+OBJS_SO 			= $(patsubst %.cpp, %.o, $(SRCS_SO))
+
 LFLAGS			= -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) -lm \
-			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui
+			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../controller -lcontroller
 
 SRCS 			= $(wildcard ./*.cpp )
 SRCS 		       += $(wildcard ../common/*.cpp)
@@ -40,13 +48,18 @@ SRCS 		       += $(wildcard ../capture/*.cpp)
 SRCS 		       += $(wildcard ../stitch/*.cpp)
 
 OBJS 			= $(patsubst %.cpp, %.o, $(SRCS))
-
 first: all
 
-all: $(TARGET)
+all: $(TARGET) $(TARGET_SO)
+
+$(TARGET_SO) : $(OBJS_SO)
+	$(CXX) $(LFLAGS_SO) $^ -o $@  
+  
+$(OBJS_SO):%.o : %.cpp
+	$(CXX) $(CFLAGS) -c $< -o $@
 
 $(TARGET) : $(OBJS)
-	$(CXX) $(SHARE) $(LFLAGS) $^ -o $@  
+	$(CXX) $(LFLAGS) $^ -o $@  
   
 $(OBJS):%.o : %.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@
