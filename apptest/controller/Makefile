@@ -8,16 +8,16 @@ RM				= rm -rf
  
 
 #ROOTFS_DIR = $(SDKTARGETSYSROOT)
-ROOTFS_DIR = $(HOME)/my-imx6/05_rootfs/distro-fsl-image
+ROOTFS_DIR 					= $(HOME)/my-imx6/05_rootfs/distro-fsl-image
 
-TARGET_PATH_LIB 	= $(ROOTFS_DIR)/usr/lib
-TARGET_PATH_INCLUDE 	= $(ROOTFS_DIR)/usr/include 
+TARGET_PATH_LIB 			= $(ROOTFS_DIR)/usr/lib
+TARGET_PATH_INCLUDE 		= $(ROOTFS_DIR)/usr/include 
 
-CONTROLLER_PATH_INCLUDE	= ../controller
-COMMON_PATH_INCLUDE	= ../common
-THREAD_PATH_INCLUDE	= ../thread
-CAPTURE_PATH_INCLUDE	= ../capture
-STITCH_PATH_INCLUDE	= ../stitch
+CONTROLLER_PATH_INCLUDE		= ../../controller
+COMMON_PATH_INCLUDE			= ../../common
+THREAD_PATH_INCLUDE			= ../../thread
+CAPTURE_PATH_INCLUDE		= ../../capture
+STITCH_PATH_INCLUDE			= ../../stitch
 
 CFLAGS			= -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv7-a -mfpu=neon -mthumb-interwork -mtune=cortex-a9 -mfpu=vfp -mfloat-abi=hard \
 			  -DEGL_API_FB -DGPU_TYPE_VIV -DGL_GLEXT_PROTOTYPES -DENABLE_GPU_RENDER_20 \
@@ -31,21 +31,21 @@ CFLAGS			= -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv7-a -mfpu=ne
 			  -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include
 
 LFLAGS_SO		= -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) -lm \
-			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../controller -lcontroller
+			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../../controller -lcontroller
 
 SRCS_SO			= $(wildcard ./*.cpp )
 
 OBJS_SO 			= $(patsubst %.cpp, %.o, $(SRCS_SO))
 
 LFLAGS			= -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) -lm \
-			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../controller -lcontroller
+			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui
 
-SRCS 			= $(wildcard ./*.cpp )
-SRCS 		       += $(wildcard ../common/*.cpp)
-SRCS 		       += $(wildcard ../controller/*.cpp)
-SRCS 		       += $(wildcard ../thread/*.cpp)
-SRCS 		       += $(wildcard ../capture/*.cpp)
-SRCS 		       += $(wildcard ../stitch/*.cpp)
+SRCS 				= $(wildcard ./*.cpp )
+SRCS 		       += $(wildcard ../../common/*.cpp)
+SRCS 		       += $(wildcard ../../controller/*.cpp)
+SRCS 		       += $(wildcard ../../thread/*.cpp)
+SRCS 		       += $(wildcard ../../capture/*.cpp)
+SRCS 		       += $(wildcard ../../stitch/*.cpp)
 
 OBJS 			= $(patsubst %.cpp, %.o, $(SRCS))
 first: all
