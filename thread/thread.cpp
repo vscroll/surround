@@ -12,6 +12,11 @@ void* thread_func(void* args)
 
     Thread* pThread = static_cast<Thread*>(args);
 
+    if (pThread->mBindCPUNo >= 0)
+    {
+        pThread->bindCPU(pThread->mBindCPUNo);
+    }
+
     double lastTimestamp = 0.0;
     double elapsed = 0.0;
     while(true)
@@ -42,6 +47,7 @@ Thread::Thread()
 {
     mThreadId = 0;
     mInterval = 10;
+    mBindCPUNo = -1;
 }
 
 Thread::~Thread()
@@ -49,9 +55,10 @@ Thread::~Thread()
 
 }
 
-bool Thread::start(unsigned int interval)
+bool Thread::start(unsigned int interval, int bindCPUNo)
 {
     mInterval = interval;
+    mBindCPUNo = bindCPUNo;
     return pthread_create(&mThreadId, NULL, thread_func, this) == 0;
 }
 
@@ -69,4 +76,24 @@ pthread_t Thread::getThreadID()
 long int Thread::getTID()
 {
     return syscall(__NR_gettid);
+}
+
+int Thread::getCPUNumber()
+{
+    return sysconf(_SC_NPROCESSORS_CONF);
+}
+
+void Thread::bindCPU(int cpuNo)
+{
+    cpu_set_t mask;  
+    CPU_ZERO(&mask);  
+  
+    CPU_SET(cpuNo, &mask);  
+  
+    std::cout << std::endl
+              << "thread id:" << getTID()
+              << ", CPU number:" << getCPUNumber()
+              << ", cpuNo:" << cpuNo
+              << std::endl; 
+    pthread_setaffinity_np(pthread_self(), sizeof(mask), &mask);
 }

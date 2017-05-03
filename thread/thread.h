@@ -10,14 +10,17 @@ public:
     virtual ~Thread();
     virtual void run() = 0;
 
-    bool start(unsigned int interval);
+    bool start(unsigned int interval, int bindCPUNo = -1);
     void stop();
     pthread_t getThreadID();
     long int getTID();
-
+    static int getCPUNumber();
 private:
+    void bindCPU(int cpuNo);
+
     pthread_t mThreadId;
     unsigned int mInterval;
+    int mBindCPUNo;
     //static void* thread_func(void * args);
     friend void* thread_func(void * args);
 }; 
