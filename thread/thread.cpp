@@ -17,6 +17,11 @@ void* thread_func(void* args)
         pThread->bindCPU(pThread->mBindCPUNo);
     }
 
+    std::cout << "Thread id:" << pThread->getTID()
+              << " BindCPUNo:" << pThread->mBindCPUNo
+              << " interval:" << pThread->mInterval
+              << std::endl;
+
     double lastTimestamp = 0.0;
     double elapsed = 0.0;
     while(true)
