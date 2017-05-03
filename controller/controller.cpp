@@ -58,7 +58,7 @@ void Controller::start(unsigned int fps,
    if (NULL != mStitch)
    {
        mStitch->start(mCapture,
-			200,
+			fps*2,
 			pano2DWidth,
 			pano2DHeight,
 			configFilePath,
