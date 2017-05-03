@@ -176,6 +176,7 @@ void StitchWorker::run()
 #if DEBUG_STITCH
 
     std::cout << "StitchWorke::run"
+	     << " thread id:" << getTID()
              <<", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << elapsed
             << ", stitch:" << (end-start)/CLOCKS_PER_SEC

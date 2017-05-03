@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
+#include <sys/syscall.h>
 
 void* thread_func(void* args)
 {
@@ -63,4 +64,9 @@ void Thread::stop()
 pthread_t Thread::getThreadID()
 {
     return mThreadId;
+}
+
+long int Thread::getTID()
+{
+    return syscall(__NR_gettid);
 }

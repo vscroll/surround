@@ -318,6 +318,7 @@ void Capture4WorkerV4l2Impl::run()
 
 #if DEBUG_CAPTURE
     std::cout << "Capture4WorkerV4l2Impl::onCapture"
+	     << " thread id:" << getTID()
              << ", channel:" << mVideoChannelNum
              << ", flag:" << (int)flag
              << ", size:" << size

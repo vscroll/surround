@@ -13,6 +13,7 @@ public:
     bool start(unsigned int interval);
     void stop();
     pthread_t getThreadID();
+    long int getTID();
 
 private:
     pthread_t mThreadId;
