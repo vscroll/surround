@@ -15,6 +15,7 @@ public:
 public:
     virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual void closeDevice();
+    virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
     virtual void run();
 
 private:

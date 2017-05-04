@@ -45,3 +45,8 @@ unsigned int Capture4WorkerBase::getFrameCount()
     pthread_mutex_unlock(&mMutexQueue);
     return size;
 }
+
+void Capture4WorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+{
+
+}

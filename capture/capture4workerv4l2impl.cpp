@@ -155,6 +155,15 @@ void Capture4WorkerV4l2Impl::closeDevice()
     }
 }
 
+void Capture4WorkerV4l2Impl::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+{
+    if (channelIndex < VIDEO_CHANNEL_SIZE)
+    {
+        *width = mInWidth[channelIndex];
+        *height = mInHeight[channelIndex];
+    }
+}
+
 void Capture4WorkerV4l2Impl::run()
 {
 #if DEBUG_CAPTURE

@@ -59,6 +59,14 @@ int Capture4Impl::stop()
     return 0;
 }
 
+void Capture4Impl::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+{
+    if (NULL != mCaptureWorker)
+    {
+        mCaptureWorker->getResolution(channelIndex, width, height);
+    }
+}
+
 surround_images_t* Capture4Impl::popOneFrame()
 {
     surround_images_t* pFrame = NULL;

@@ -11,6 +11,7 @@ public:
     virtual int closeDevice() = 0;
     virtual int start(unsigned int fps) = 0;
     virtual int stop() = 0;
+    virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height) = 0;
     virtual surround_images_t* popOneFrame() = 0;
 };
 
