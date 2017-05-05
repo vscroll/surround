@@ -40,9 +40,11 @@ private:
     ICapture *mCapture;
 
     cv::Mat mStitchMap;
-    cv::Mat mStitchMapX;
-    cv::Mat mStitchMapY;
-    cv::Mat mMask;
+    cv::Mat mStitchMask;
+
+    cv::Mat mStitchMapAlignX;
+    cv::Mat mStitchMapAlignY;
+    cv::Mat mStitchMaskAlign;
 
     double mLastTimestamp;
 

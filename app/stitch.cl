@@ -5,8 +5,8 @@ __kernel void stitch_2d	(__global uchar* image_front,
                                 int side_width,
                                 int side_height,
                                 __global uchar* mask,
-                                __global int *map_x,
-                                __global int *map_y,
+                                __global uchar* map_x,
+                                __global uchar* map_y,
                                 __global uchar* pano2d,
                                 int pano2d_width,
                                 int pano2d_height)
@@ -21,16 +21,16 @@ __kernel void stitch_2d	(__global uchar* image_front,
     }
 
     // copy the input to output
-    int id = row*pano2d_width+col;
+    int id = row*side_width*3+col*3;
     int flag = mask[id];
-    int x = map_x[id];
-    int y = map_y[id];
+    int x = map_x[id]*255 + map_x[id+1];
+    int y = map_y[id]*255 + map_y[id+1];
     if (x >= side_width
             || y >= side_height)
     {
         return;
     }
-
+    
     int in_id = y*side_width*3+x*3;
     int out_id = row*pano2d_width*3+col*3;
     switch (flag)

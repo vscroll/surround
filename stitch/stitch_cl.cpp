@@ -9,7 +9,7 @@
 #define TRUE 	1
 #define FALSE 	0
 
-#define USE_MEM_VERSION_0 1
+#define USE_MEM_VERSION_0 0
 
 using namespace std;
 
@@ -247,7 +247,7 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
     g_image_map_x = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
-                                    map_x.channels()*map_x.cols*map_x.rows*sizeof(int),
+                                    map_x.channels()*map_x.cols*map_x.rows*sizeof(uchar),
                                     NULL,
                                     &ret);
     if (ret != CL_SUCCESS)
@@ -257,7 +257,7 @@ int stitch_cl_new_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
     g_image_map_y = clCreateBuffer (g_context, CL_MEM_READ_ONLY,
-                                    map_y.channels()*map_y.cols*map_y.rows*sizeof(int),
+                                    map_y.channels()*map_y.cols*map_y.rows*sizeof(uchar),
                                     NULL,
                                     &ret);
     if (ret != CL_SUCCESS)
@@ -369,7 +369,7 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
     ret = clEnqueueWriteBuffer(g_cq,
                                g_image_map_x,
                                CL_TRUE, 0,
-                               map_x.channels()*map_x.cols*map_x.rows*sizeof(int),
+                               map_x.channels()*map_x.cols*map_x.rows*sizeof(uchar),
                                (void*)(map_x.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
@@ -381,7 +381,7 @@ int stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_imgs,
     ret = clEnqueueWriteBuffer(g_cq,
                                g_image_map_y,
                                CL_TRUE, 0,
-                               map_y.channels()*map_y.cols*map_y.rows*sizeof(int),
+                               map_y.channels()*map_y.cols*map_y.rows*sizeof(uchar),
                                (void*)(map_y.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
@@ -451,7 +451,7 @@ int stitch_cl_write_pano2d_buffer2(const std::vector<cv::Mat>& side_imgs,
         return -1;
     }
 
-    g_image_mask  = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+    g_image_mask  = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             mask.channels()*mask.cols*mask.rows*sizeof(uchar),
             (void*)(mask.data),
             &ret);
@@ -461,7 +461,7 @@ int stitch_cl_write_pano2d_buffer2(const std::vector<cv::Mat>& side_imgs,
         return -1;
     }
 
-    g_image_map_x = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+    g_image_map_x = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             map_x.channels()*map_x.cols*map_x.rows*sizeof(uchar),
             (void*)(map_x.data),
             &ret);
@@ -471,7 +471,7 @@ int stitch_cl_write_pano2d_buffer2(const std::vector<cv::Mat>& side_imgs,
         return -1;
     }
 
-    g_image_map_y = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+    g_image_map_y = clCreateBuffer (g_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             map_y.channels()*map_y.cols*map_y.rows*sizeof(uchar),
             (void*)(map_y.data),
             &ret);

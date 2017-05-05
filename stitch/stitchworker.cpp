@@ -38,29 +38,125 @@ void StitchWorker::init(ICapture *capture,
     mPano2DHeight = pano2DHeight;
     mEnableOpenCL = enableOpenCL;
 
-    stitching_init(configFilePath, mStitchMap, mMask, mEnableOpenCL);
+    stitching_init(configFilePath, mStitchMap, mStitchMask, mEnableOpenCL);
 
     if (mEnableOpenCL)
     {
-        std::cout <<"mStitchMap rows:"<< mStitchMap.rows  << " cols:" << mStitchMap.cols  << " channel:" << mStitchMap.channels() << std::endl;
-        std::cout <<"mMask rows:"<< mMask.rows  << " cols:" << mMask.cols  << " channel:" << mMask.channels() << std::endl;
-        std::cout <<"mPano2DHeight:"<< mPano2DHeight  << " mPano2DWidth:" << mPano2DWidth  << std::endl;
-        int mapX[mPano2DHeight][mPano2DWidth];
-        int mapY[mPano2DHeight][mPano2DWidth];
-        for (unsigned int i = 0; i < mPano2DHeight; i++)
+        // align to input image frame for CL: CL_MEM_USE_HOST_PTR
+	unsigned int inWidth = 0;
+	unsigned int inHeight = 0;
+	capture->getResolution(VIDEO_CHANNEL_FRONT, &inWidth, &inHeight);
+#if DEBUG_STITCH
+        std::cout << "map rows:" << mStitchMap.rows  << " cols:" << mStitchMap.cols  << " channel:" << mStitchMap.channels() << std::endl;
+        std::cout << "mask rows:" << mStitchMask.rows  << " cols:" << mStitchMask.cols  << " channel:" << mStitchMask.channels() << std::endl;
+        std::cout << "height:" << inHeight  << " width:" << inWidth  << std::endl;
+#endif
+	mStitchMapAlignX = Mat(inHeight, inWidth, CV_8UC3);
+	mStitchMapAlignY = Mat(inHeight, inWidth, CV_8UC3);
+	mStitchMaskAlign = Mat(inHeight, inWidth, CV_8UC3);
+
+        for (int i = 0; i < mStitchMaskAlign.rows; i++)
         {
-            for (unsigned int j = 0; j < mPano2DWidth; j++)
+	    if (i >= mStitchMask.rows)
+	    {
+		continue;
+	    }
+
+	    uchar* data = mStitchMaskAlign.ptr<uchar>(i);
+            for (int j = 0; j < mStitchMaskAlign.cols; j++)
             {
-                mapX[i][j] = mStitchMap.ptr<Point2f>(i)[j].x;
-                mapY[i][j] = mStitchMap.ptr<Point2f>(i)[j].y;
+	        if (j >= mStitchMask.cols)
+	        {
+		    continue;
+	        }
+
+		*(data+j*3) = mStitchMask.ptr<uchar>(i)[j];
+		//*(data+j*3+1) = 0;
+		//*(data+j*3+2) = 0;
             }
         }
 
-        mStitchMapX = Mat(mPano2DHeight, mPano2DWidth, CV_32SC1, mapX);
-        mStitchMapY = Mat(mPano2DHeight, mPano2DWidth, CV_32SC1, mapY);
-        std::cout <<"mStitchMapX rows:"<< mStitchMapX.rows  << " cols:" << mStitchMapX.cols  << " channel:" << mStitchMapX.channels() << std::endl;
-        std::cout <<"mStitchMapY rows:"<< mStitchMapY.rows  << " cols:" << mStitchMapY.cols  << " channel:" << mStitchMapY.channels() << std::endl;
+        for (int i = 0; i < mStitchMapAlignX.rows; i++)
+        {
+	    if (i >= mStitchMap.rows)
+	    {
+		continue;
+	    }
+
+	    uchar* dataX = mStitchMapAlignX.ptr<uchar>(i);
+	    uchar* dataY = mStitchMapAlignY.ptr<uchar>(i);
+            for (int j = 0; j < mStitchMapAlignX.cols; j++)
+            {
+	        if (j >= mStitchMap.cols)
+	        {
+		    continue;
+	        }
+
+		int x = mStitchMap.ptr<Point2f>(i)[j].x;
+		*(dataX+j*3) = x/255;
+		*(dataX+j*3+1) = x - (x/255)*255;
+		//*(dataX+j*3+2) = 0;
+
+		int y = mStitchMap.ptr<Point2f>(i)[j].y;
+		*(dataY+j*3) = y/255;
+		*(dataY+j*3+1) = y - (y/255)*255;
+		//*(dataY+j*3+2) = 0;
+            }
+        }
+#if DEBUG_STITCH
+        std::cout << "mStitchMapAlignX isContinuous:" << mStitchMapAlignX.isContinuous()
+		  << " rows:"<< mStitchMapAlignX.rows
+		  << " cols:" << mStitchMapAlignX.cols
+		  << " channel:" << mStitchMapAlignX.channels()
+		  << std::endl;
+        std::cout << "mStitchMapAlignY isContinuous:" << mStitchMapAlignY.isContinuous()
+		  << " rows:"<< mStitchMapAlignY.rows
+		  << " cols:" << mStitchMapAlignY.cols
+		  << " channel:" << mStitchMapAlignY.channels()
+                  << std::endl;
+        std::cout << "mStitchMaskAlign isContinuous:" << mStitchMaskAlign.isContinuous()
+                  << " rows:"<< mStitchMaskAlign.rows
+                  << " cols:" << mStitchMaskAlign.cols
+                  << " channel:" << mStitchMaskAlign.channels()
+                  << std::endl;
+#endif
     }
+
+#if 0
+    uchar* data0 = mStitchMaskAlign.ptr<uchar>(0);
+    uchar* dataX0 = mStitchMapAlignX.ptr<uchar>(0);
+    uchar* dataY0 = mStitchMapAlignY.ptr<uchar>(0);
+    for (int i = 0; i < 3; i++)
+    {
+        uchar* data = mStitchMaskAlign.ptr<uchar>(i);
+        uchar* dataX = mStitchMapAlignX.ptr<uchar>(i);
+        uchar* dataY = mStitchMapAlignY.ptr<uchar>(i);
+        for (int j = 0; j < mStitchMaskAlign.cols; j++)
+        {
+	    printf("\n %d %d", i, j);
+            printf(" org: %d mask0:%d %d %d mask1:%d %d %d",
+		    mStitchMask.ptr<uchar>(i)[j],
+		    *(data0+i*mStitchMaskAlign.cols*3+j*3),
+		    *(data0+i*mStitchMaskAlign.cols*3+j*3+1),
+                    *(data0+i*mStitchMaskAlign.cols*3+j*3+2),
+		    *(data+j*3), *(data+j*3+1), *(data+j*3+2));
+
+            printf(" org: %d mapx0:%d %d %d mapx1:%d %d %d",
+                    (int)(mStitchMap.ptr<Point2f>(i)[j].x),
+		    *(dataX0+i*mStitchMapAlignX.cols*3+j*3),
+		    *(dataX0+i*mStitchMapAlignX.cols*3+j*3+1),
+                    *(dataX0+i*mStitchMapAlignX.cols*3+j*3+2),
+                    *(dataX+j*3), *(dataX+j*3+1), *(dataX+j*3+2));
+
+            printf(" org: %d mapy0:%d %d %d mapy1:%d %d %d\n",
+                    (int)(mStitchMap.ptr<Point2f>(i)[j].y),
+		    *(dataY0+i*mStitchMapAlignY.cols*3+j*3),
+		    *(dataY0+i*mStitchMapAlignY.cols*3+j*3+1),
+                    *(dataY0+i*mStitchMapAlignY.cols*3+j*3+2),
+                    *(dataY+j*3), *(dataY+j*3+1), *(dataY+j*3+2));
+        }
+    }
+#endif
 
     mCapture = capture;
 }
@@ -104,9 +200,9 @@ void StitchWorker::run()
                          surroundImage->frame[VIDEO_CHANNEL_REAR].data,
                          surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
                          surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
-                         mStitchMapX,
-                         mStitchMapY,
-                         mMask,
+                         mStitchMapAlignX,
+                         mStitchMapAlignY,
+                         mStitchMaskAlign,
                          &outPano2D,
                          mPano2DWidth,
                          mPano2DHeight,
@@ -122,7 +218,7 @@ void StitchWorker::run()
                       surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
                       surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
                       mStitchMap,
-                      mMask,
+                      mStitchMask,
                       &outPano2D,
                       mPano2DWidth,
                       mPano2DHeight,
