@@ -519,6 +519,7 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
                  )
 {
      cl_int ret;
+
 #if USE_MEM_VERSION_0
     if (stitch_cl_new_pano2d_buffer(side_imgs, map_x, map_y, mask, image_pano2d) < 0)
     {
@@ -543,13 +544,10 @@ int stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
      global[0] = side_imgs[0].cols;
      global[1] = side_imgs[0].rows;
      ret = clEnqueueNDRangeKernel (g_cq, g_kernel, 2, NULL, global, NULL, 0, NULL, NULL);
-     if  (ret == CL_SUCCESS)
-     {
-         ret = clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0,
-                                   image_pano2d.channels()*image_pano2d.cols*image_pano2d.rows*sizeof(uchar),
-                                   (void*)(image_pano2d.ptr<uchar>(0)), 0, NULL, NULL);
-     }
-     else
+     ret |= clEnqueueReadBuffer(g_cq, g_image_pano2d, CL_TRUE, 0,
+			image_pano2d.channels()*image_pano2d.cols*image_pano2d.rows*sizeof(uchar),
+                        (void*)(image_pano2d.ptr<uchar>(0)), 0, NULL, NULL);
+     if  (ret != CL_SUCCESS)
      {
          printf ("\nError reading output buffer\n");
      }
