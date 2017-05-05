@@ -59,6 +59,10 @@ private:
     unsigned int mUpdateFPS;
     Controller mController;
 
+    double mStartTime;
+    double mStatDuration;
+    unsigned long mRealFrameCount;
+
     double mLastUpdateSmall;
     double mLastUpdateFull;
 };

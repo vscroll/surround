@@ -39,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mController.init(Settings::getInstant()->mVideoChanel, VIDEO_CHANNEL_SIZE);
     start();
+
+    mRealFrameCount = 0;
 }
 
 MainWindow::~MainWindow()
@@ -169,6 +171,19 @@ void MainWindow::updateFullImage()
             ui->label_video_full->setPixmap(QPixmap::fromImage(image));
             //QPainter painter(this);
             //painter.drawImage(QPoint(20,20), image);
+ #if DEBUG_UPDATE
+	    if (mRealFrameCount == 0)
+	    {
+		mStartTime = clock();
+	    }
+
+	    mRealFrameCount++;
+            mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
+	    if (mStatDuration >= 5*60)
+            {
+		mRealFrameCount = 0;
+            }
+#endif        
 	}
 
         delete frame;
@@ -182,10 +197,11 @@ void MainWindow::updateFullImage()
     qDebug() << "MainWindow::onUpdateFullImage"
              << ", capture fps:" << mCaptureFPS
              << ", update fps:" << mUpdateFPS
+             << ", real update fps:" << mRealFrameCount/mStatDuration
              << ", elapsed to last update:" << showElapsed
-             << ", timestamp:" << timestamp
+             //<< ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", read:" << (end-start)/CLOCKS_PER_SEC
+             //<< ", read:" << (end-start)/CLOCKS_PER_SEC
              << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 
 #endif
@@ -238,9 +254,9 @@ void MainWindow::updateSmallImage()
              << ", capture fps:" << mCaptureFPS
              << ", update fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
-             << ", timestamp:" << timestamp
+             //<< ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", read:" << (end-start)/CLOCKS_PER_SEC
+             //<< ", read:" << (end-start)/CLOCKS_PER_SEC
              << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 #endif
 }
