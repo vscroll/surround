@@ -13,8 +13,6 @@
 
 #define USE_IMX_IPU 1
 
-#define IMX_OPENCL_ALLOC_ONCE 1
-
 #define V4L2_BUF_COUNT 1
 
 #define VIDEO_SIDE_RES_X_MAX 720
