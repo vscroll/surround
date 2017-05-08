@@ -7,6 +7,7 @@
 #include <queue>
 
 class ICapture;
+class CLPano2D;
 class StitchWorker : public Thread
 {
 public:
@@ -25,6 +26,18 @@ public:
 public:
     virtual void run();
 
+private:
+    void stitching_init(const std::string config_path, cv::Mat& map, cv::Mat& mask, bool enableOpenCL);
+
+    void stitching(const void* front, const void* rear, const void* left, const void* right,
+               const cv::Mat& map, const cv::Mat& mask,
+               void** outPano2D, int outPano2DWidth, int outPano2DHeight,
+               void** outSide, int outSideWidth, int outSideHeight, int outSideChannel);
+
+    void stitching_cl(const void* front, const void* rear, const void* left, const void* right,
+                const cv::Mat& mapX, const cv::Mat& mapY, const cv::Mat& mask,
+                void** outPano2D, int outPano2DWidth, int outPano2DHeight,
+                void** outSide, int outSideWidth, int outSideHeight, int outSideChannel);
 private:
     unsigned int mPano2DWidth;
     unsigned int mPano2DHeight;
@@ -49,6 +62,7 @@ private:
     double mLastTimestamp;
 
     bool mEnableOpenCL;
+    CLPano2D* mCLPano2D;
 };
 
 #endif // STITCHWORKER_H
