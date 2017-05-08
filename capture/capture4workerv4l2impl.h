@@ -16,6 +16,7 @@ public:
     virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual void closeDevice();
     virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual int getFPS(unsigned int* fps);
     virtual void run();
 
 private:
@@ -30,9 +31,14 @@ private:
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[VIDEO_CHANNEL_SIZE][V4L2_BUF_COUNT];
 
-    int mIPUFd;
+    int mIPUFd[VIDEO_CHANNEL_SIZE];
     struct IMXIPU::buffer mInIPUBuf[VIDEO_CHANNEL_SIZE];
     struct IMXIPU::buffer mOutIPUBuf[VIDEO_CHANNEL_SIZE];
+
+    unsigned int mRealFPS;
+    double mStartTime;
+    double mStatDuration;
+    unsigned long mRealFrameCount;
 };
 
 #endif // CAPTURE4WORKERV4L2IMPL_H

@@ -15,6 +15,7 @@ public:
     pthread_t getThreadID();
     long int getTID();
     static int getCPUNumber();
+    unsigned int getInterval() { return mInterval; }
 private:
     void bindCPU(int cpuNo);
 

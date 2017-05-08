@@ -50,3 +50,8 @@ void Capture4WorkerBase::getResolution(unsigned int channelIndex, unsigned int* 
 {
 
 }
+
+int Capture4WorkerBase::getFPS(unsigned int* fps)
+{
+    return -1;
+}

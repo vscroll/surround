@@ -67,6 +67,16 @@ void Capture4Impl::getResolution(unsigned int channelIndex, unsigned int* width,
     }
 }
 
+int Capture4Impl::getFPS(unsigned int* fps)
+{
+    if (NULL != mCaptureWorker)
+    {
+	return mCaptureWorker->getFPS(fps);
+    }
+
+    return -1;
+}
+
 surround_images_t* Capture4Impl::popOneFrame()
 {
     surround_images_t* pFrame = NULL;

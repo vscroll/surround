@@ -11,11 +11,11 @@
 Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl() :
     Capture4WorkerBase()
 {
-    mIPUFd = -1;
-
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mVideoFd[i] = -1;
+
+        mIPUFd[i] = -1;
 
         mInWidth[i] = 704;
         mInHeight[i] = 574;
@@ -39,6 +39,11 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl() :
 #else
     mMemType = V4L2_MEMORY_MMAP;
 #endif
+
+    mRealFPS = 0;
+    mStartTime = 0.0;
+    mStatDuration = 0.0;
+    mRealFrameCount = 0;
 }
 
 Capture4WorkerV4l2Impl::~Capture4WorkerV4l2Impl()
@@ -48,24 +53,24 @@ Capture4WorkerV4l2Impl::~Capture4WorkerV4l2Impl()
 
 int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int channelNum)
 {
-#if USE_IMX_IPU
-    mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
-    if (mIPUFd < 0)
-    {
-        std::cout << "Capture4WorkerV4l2Impl::openDevice"
-                  << " open ipu failed"
-	          << std::endl;
-        return -1;
-    }
-    std::cout << "Capture4WorkerV4l2Impl::openDevice"
-              << " ipu fd:" << mIPUFd
-	      << std::endl;
-
-#endif
-
     mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
     {
+#if USE_IMX_IPU
+        mIPUFd[i] = open("/dev/mxc_ipu", O_RDWR, 0);
+        if (mIPUFd[i] < 0)
+        {
+            std::cout << "Capture4WorkerV4l2Impl::openDevice"
+                    << " open ipu failed"
+		    << std::endl;
+            return -1;
+        }
+        std::cout << "Capture4WorkerV4l2Impl::openDevice"
+                << " ipu fd:" << mIPUFd[i]
+		<< std::endl;
+
+#endif
+
         int videoChannel = channel[i];
         char devName[16] = {0};
         sprintf(devName, "/dev/video%d", videoChannel);
@@ -103,14 +108,14 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int chan
         }
 
         unsigned int in_frame_size = mInWidth[i] * mInHeight[i] * 2;
-        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd, in_frame_size))
+        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd[i], in_frame_size))
         {
             return -1;
         }
 
 #if USE_IMX_IPU
         unsigned int out_frame_size = mOutIPUBuf[i].width * mOutIPUBuf[i].height * 3;
-        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]),  out_frame_size))
+        if (-1 == IMXIPU::allocIPUBuf(mIPUFd[i], &(mOutIPUBuf[i]),  out_frame_size))
         {
             return -1;
         }
@@ -162,6 +167,27 @@ void Capture4WorkerV4l2Impl::getResolution(unsigned int channelIndex, unsigned i
         *width = mInWidth[channelIndex];
         *height = mInHeight[channelIndex];
     }
+}
+
+int Capture4WorkerV4l2Impl::getFPS(unsigned int* fps)
+{
+#if 0
+    unsigned int interval = getInterval();
+    if (interval > 0)
+    {
+        *fps = 1000/interval;
+	return 0;
+    }
+#eles
+    if (mRealFPS > 0)
+    {
+        *fps = mRealFPS;
+	return 0;
+    }
+
+#endif
+
+    return -1;
 }
 
 void Capture4WorkerV4l2Impl::run()
@@ -254,9 +280,9 @@ void Capture4WorkerV4l2Impl::run()
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
                 task.output.paddr = (int)mOutIPUBuf[i].offset;
-                if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
+                if (ioctl(mIPUFd[i], IPU_QUEUE_TASK, &task) < 0) {
                     std::cout << "Capture1WorkerV4l2Impl::onCapture"
-                        << ", ipu task failed:" << mIPUFd
+                        << ", ipu task failed:" << mIPUFd[i]
 			<< std::endl;
                     continue;
                 }
@@ -313,6 +339,19 @@ void Capture4WorkerV4l2Impl::run()
         size = mSurroundImageQueue.size();
 #endif
         pthread_mutex_unlock(&mMutexQueue);
+
+	if (mRealFrameCount == 0)
+	{
+	    mStartTime = clock();
+	}
+
+	mRealFrameCount++;
+        mRealFPS = mRealFrameCount/mStatDuration;
+        mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
+	if (mStatDuration >= 5*60)
+        {
+	    mRealFrameCount = 0;
+        }
     }
     else
     {
@@ -333,6 +372,7 @@ void Capture4WorkerV4l2Impl::run()
              << ", size:" << size
              << ", elapsed to last time:" << elapsed
              << ", capture:" << (clock()-timestamp)/CLOCKS_PER_SEC
+             << ", fps:" << mRealFPS
 	     << std::endl;
 #endif
 }

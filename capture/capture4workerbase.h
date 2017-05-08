@@ -17,6 +17,7 @@ public:
     virtual unsigned int getFrameCount();
     virtual unsigned int getVideoChannelNum() { return mVideoChannelNum; }
     virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual int getFPS(unsigned int* fps);
 protected:
     unsigned int mVideoChannelNum;
     unsigned int mChannel[VIDEO_CHANNEL_SIZE];

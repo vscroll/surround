@@ -16,6 +16,7 @@ public:
     virtual int start(unsigned int fps);
     virtual int stop();
     virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual int getFPS(unsigned int* fps);
     virtual surround_images_t* popOneFrame();
 
 private:
