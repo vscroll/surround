@@ -30,7 +30,7 @@ private:
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[VIDEO_CHANNEL_SIZE][V4L2_BUF_COUNT];
 
-    int mIPUFd[VIDEO_CHANNEL_SIZE];
+    int mIPUFd;
     struct IMXIPU::buffer mInIPUBuf[VIDEO_CHANNEL_SIZE];
     struct IMXIPU::buffer mOutIPUBuf[VIDEO_CHANNEL_SIZE];
 };
