@@ -179,7 +179,8 @@ void MainWindow::updateFullImage()
 
 	    mRealFrameCount++;
             mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
-	    if (mStatDuration >= 5*60)
+	    if (mStatDuration > 5*60
+		|| mStatDuration < 0)
             {
 		mRealFrameCount = 0;
             }

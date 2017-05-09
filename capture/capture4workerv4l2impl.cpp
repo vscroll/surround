@@ -348,7 +348,8 @@ void Capture4WorkerV4l2Impl::run()
 	mRealFrameCount++;
         mRealFPS = mRealFrameCount/mStatDuration;
         mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
-	if (mStatDuration >= 5*60)
+	if (mStatDuration > 5*60
+		|| mStatDuration < 0)
         {
 	    mRealFrameCount = 0;
         }
