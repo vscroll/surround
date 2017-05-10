@@ -11,11 +11,13 @@ public:
     Capture4Impl();
     virtual ~Capture4Impl();
 
-    virtual int openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum);
+    virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum);
+    virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual int closeDevice();
     virtual int start(unsigned int fps);
     virtual int stop();
-    virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual void getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual void getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
     virtual int getFPS(unsigned int* fps);
     virtual surround_images_t* popOneFrame();
 

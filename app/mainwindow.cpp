@@ -37,22 +37,30 @@ MainWindow::MainWindow(QWidget *parent) :
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
 
-    struct cap_info_t capInfo[VIDEO_CHANNEL_SIZE];
+    struct cap_sink_t capSink[VIDEO_CHANNEL_SIZE];
+    struct cap_src_t sideSrc[VIDEO_CHANNEL_SIZE];
+    struct cap_src_t panoSrc[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-	capInfo[i].in_pixfmt = IN_PIX_FMT_UYVY;
-	capInfo[i].in_width = 704;
-	capInfo[i].in_height = 576;
-	capInfo[i].in_crop_x = 0;
-	capInfo[i].in_crop_y = 0;
-	capInfo[i].in_crop_width = 704;
-	capInfo[i].in_crop_height = 576;
-	capInfo[i].out_pixfmt = OUT_PIX_FMT_BGR24;
-	capInfo[i].out_width = 704;
-	capInfo[i].out_height = 576;
+	capSink[i].pixfmt = IN_PIX_FMT_UYVY;
+	capSink[i].width = 704;
+	capSink[i].height = 574;
+	capSink[i].crop_x = 0;
+	capSink[i].crop_y = 0;
+	capSink[i].crop_w = 704;
+	capSink[i].crop_h = 574;
+
+	sideSrc[i].pixfmt = OUT_PIX_FMT_BGR24;
+	sideSrc[i].width = 704;
+	sideSrc[i].height = 574;
+
+	panoSrc[i].pixfmt = OUT_PIX_FMT_BGR24;
+	panoSrc[i].width = 704;
+	panoSrc[i].height = 574;
     }
 
-    mController.init(Settings::getInstant()->mVideoChanel, capInfo, VIDEO_CHANNEL_SIZE);
+    mController.init(Settings::getInstant()->mVideoChanel, VIDEO_CHANNEL_SIZE,
+			capSink, sideSrc, panoSrc);
     start();
 
     mRealFrameCount = 0;

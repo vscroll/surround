@@ -40,18 +40,21 @@
 #define OUT_PIX_FMT_BGR24 	V4L2_PIX_FMT_BGR24
 #define OUT_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
 
-typedef struct cap_info_t {
-  unsigned int in_pixfmt;
-  unsigned int in_width;
-  unsigned int in_height;
-  unsigned int in_crop_x;
-  unsigned int in_crop_y;
-  unsigned int in_crop_width;
-  unsigned int in_crop_height;
-  unsigned int out_pixfmt;
-  unsigned int out_width;
-  unsigned int out_height;
-} cap_info_t;
+typedef struct cap_sink_t {
+  unsigned int pixfmt;
+  unsigned int width;
+  unsigned int height;
+  unsigned int crop_x;
+  unsigned int crop_y;
+  unsigned int crop_w;
+  unsigned int crop_h;
+} cap_sink_t;
+
+typedef struct cap_src_t {
+  unsigned int pixfmt;
+  unsigned int width;
+  unsigned int height;
+} cap_src_t;
 
 typedef struct surround_frame_t {
     void* data;

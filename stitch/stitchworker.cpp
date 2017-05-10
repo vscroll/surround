@@ -42,17 +42,17 @@ void StitchWorker::init(ICapture *capture,
     if (mEnableOpenCL)
     {
         // align to input image frame for CL: CL_MEM_USE_HOST_PTR
-	unsigned int inWidth = 0;
-	unsigned int inHeight = 0;
-	capture->getResolution(VIDEO_CHANNEL_FRONT, &inWidth, &inHeight);
+	unsigned int width = 0;
+	unsigned int height = 0;
+	capture->getSideResolution(VIDEO_CHANNEL_FRONT, &width, &height);
 #if DEBUG_STITCH
         std::cout << "map rows:" << mStitchMap.rows  << " cols:" << mStitchMap.cols  << " channel:" << mStitchMap.channels() << std::endl;
         std::cout << "mask rows:" << mStitchMask.rows  << " cols:" << mStitchMask.cols  << " channel:" << mStitchMask.channels() << std::endl;
-        std::cout << "height:" << inHeight  << " width:" << inWidth  << std::endl;
+        std::cout << "height:" << height  << " width:" << width  << std::endl;
 #endif
-	mStitchMapAlignX = Mat(inHeight, inWidth, CV_8UC3);
-	mStitchMapAlignY = Mat(inHeight, inWidth, CV_8UC3);
-	mStitchMaskAlign = Mat(inHeight, inWidth, CV_8UC3);
+	mStitchMapAlignX = Mat(height, width, CV_8UC3);
+	mStitchMapAlignY = Mat(height, width, CV_8UC3);
+	mStitchMaskAlign = Mat(height, width, CV_8UC3);
 
         for (int i = 0; i < mStitchMaskAlign.rows; i++)
         {

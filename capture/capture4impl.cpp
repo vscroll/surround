@@ -4,7 +4,11 @@
 
 Capture4Impl::Capture4Impl()
 {
-    mCaptureWorker = NULL;
+#ifdef CAPTURE_ON_V4L2
+    mCaptureWorker = new Capture4WorkerV4l2Impl();
+#else
+    mCaptureWorker = new Capture4WorkerImpl();
+#endif
 }
 
 Capture4Impl::~Capture4Impl()
@@ -12,16 +16,19 @@ Capture4Impl::~Capture4Impl()
 
 }
 
-int Capture4Impl::openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum)
+void Capture4Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum)
 {
-    if (NULL == mCaptureWorker)
+    if (NULL != mCaptureWorker)
     {
-#ifdef CAPTURE_ON_V4L2
-        mCaptureWorker = new Capture4WorkerV4l2Impl();
-#else
-        mCaptureWorker = new Capture4WorkerImpl();
-#endif
-        mCaptureWorker->openDevice(channel, capInfo, channelNum);
+        mCaptureWorker->setCapCapacity(sink, sideSrc, panoSrc, channelNum);
+    }
+}
+
+int Capture4Impl::openDevice(unsigned int channel[], unsigned int channelNum)
+{
+    if (NULL != mCaptureWorker)
+    {
+        mCaptureWorker->openDevice(channel, channelNum);
     }
 
     return 0;
@@ -59,11 +66,19 @@ int Capture4Impl::stop()
     return 0;
 }
 
-void Capture4Impl::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+void Capture4Impl::getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
 {
     if (NULL != mCaptureWorker)
     {
-        mCaptureWorker->getResolution(channelIndex, width, height);
+        mCaptureWorker->getSideResolution(channelIndex, width, height);
+    }
+}
+
+void Capture4Impl::getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+{
+    if (NULL != mCaptureWorker)
+    {
+        mCaptureWorker->getPanoResolution(channelIndex, width, height);
     }
 }
 
