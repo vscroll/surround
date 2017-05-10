@@ -99,8 +99,7 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], struct cap_info_t
             mV4l2Buf[i][j].pixfmt = mCapInfo[i].in_pixfmt;
         }
 
-	if (mCapInfo[i].in_pixfmt == IN_PIX_FMT_RGB565
-		|| mCapInfo[i].in_pixfmt == IN_PIX_FMT_UYVY)
+	if (mCapInfo[i].in_pixfmt == IN_PIX_FMT_UYVY)
 	{
 	     mInFrameSize = mCapInfo[i].in_width * mCapInfo[i].in_height * 2;        
 	}
@@ -111,8 +110,7 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], struct cap_info_t
         }
 
 #if USE_IMX_IPU
-	if (mCapInfo[i].out_pixfmt == OUT_PIX_FMT_RGB565
-		|| mCapInfo[i].out_pixfmt == OUT_PIX_FMT_UYVY)
+	if (mCapInfo[i].out_pixfmt == OUT_PIX_FMT_UYVY)
 	{
 	    mOutFrameSize = mCapInfo[i].out_width * mCapInfo[i].out_height * 2;        
 	}

@@ -35,12 +35,10 @@
 #define VIDEO_FPS_25		25
 #define VIDEO_FPS_3		30
 
-#define IN_PIX_FMT_RGB565	V4L2_PIX_FMT_RGB565
 #define IN_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
 
 #define OUT_PIX_FMT_BGR24 	V4L2_PIX_FMT_BGR24
 #define OUT_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
-#define OUT_PIX_FMT_RGB565	V4L2_PIX_FMT_RGB565
 
 typedef struct cap_info_t {
   unsigned int in_pixfmt;
