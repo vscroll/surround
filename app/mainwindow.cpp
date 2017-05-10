@@ -106,8 +106,8 @@ void MainWindow::start()
     QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
 
     mController.start(mCaptureFPS,
-			pano2DWidth,
-			pano2DHeight,
+			0, 0, pano2DWidth, pano2DHeight,
+			0, 0, 0, 0,
 			(char*)path.toStdString().c_str(),
 			enableOpenCL);
 }

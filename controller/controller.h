@@ -5,6 +5,7 @@
 
 class ICapture;
 class IStitch;
+class IRender;
 class Controller
 {
 public:
@@ -14,8 +15,14 @@ public:
     void init(unsigned int channel[], unsigned int channelNum);
     void uninit();
     void start(unsigned int fps,
+		unsigned int pano2DLeft,
+		unsigned int pano2DTop,
 		unsigned int pano2DWidth,
 		unsigned int pano2DHeight,
+		unsigned int sideLeft,
+		unsigned int sideTop,
+		unsigned int sideWidth,
+		unsigned int sideHeight,
 		char* configFilePath,
 		bool enableOpenCL);
     void stop();
@@ -25,6 +32,7 @@ public:
 private:
     ICapture* mCapture;
     IStitch* mStitch;
+    IRender* mRender;
 };
 
 #endif // CONTROLLER_H
