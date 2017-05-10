@@ -18,11 +18,9 @@ Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl() :
         mVideoFd[i] = -1;
 
 	memset(&mSink[i], 0, sizeof(mSink[i]));
-	memset(&mSideSrc[i], 0, sizeof(mSideSrc[i]));
-	memset(&mPanoSrc[i], 0, sizeof(mPanoSrc[i]));
+	memset(&mSource[i], 0, sizeof(mSource[i]));
         mSinkFrameSize[i] = 0;
-        mSideSrcFrameSize[i] = 0;
-        mPanoSrcFrameSize[i] = 0;
+        mSourceFrameSize[i] = 0;
     }
 #if USE_IMX_IPU
     mMemType = V4L2_MEMORY_USERPTR;
@@ -41,14 +39,13 @@ Capture4WorkerV4l2Impl::~Capture4WorkerV4l2Impl()
 
 }
 
-void Capture4WorkerV4l2Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum)
+void Capture4WorkerV4l2Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
     mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
     {
 	memcpy(&mSink[i], sink, sizeof(mSink[i]));
-	memcpy(&mSideSrc[i], sideSrc, sizeof(mSideSrc[i]));
-	memcpy(&mPanoSrc[i], panoSrc, sizeof(mPanoSrc[i]));
+	memcpy(&mSource[i], source, sizeof(mSource[i]));
     }	
 }
 
@@ -104,33 +101,21 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int chan
                 << " in_height:" << mSink[i].height
 		<< std::endl;
 #endif
-	mSideSrc[i].width = mSink[i].width;
-	mSideSrc[i].height = mSink[i].height;
-
-	mPanoSrc[i].width = mSink[i].width;
-	mPanoSrc[i].height = mSink[i].height;
+	mSource[i].width = mSink[i].width;
+	mSource[i].height = mSink[i].height;
 
 	if (mSink[i].pixfmt == IN_PIX_FMT_UYVY)
 	{
 	     mSinkFrameSize[i] = mSink[i].width * mSink[i].height * 2;        
 	}
 
-	if (mSideSrc[i].pixfmt == OUT_PIX_FMT_UYVY)
+	if (mSource[i].pixfmt == OUT_PIX_FMT_UYVY)
 	{
-	    mSideSrcFrameSize[i] = mSideSrc[i].width * mSideSrc[i].height * 2;        
+	    mSourceFrameSize[i] = mSource[i].width * mSource[i].height * 2;        
 	}
-	else if (mSideSrc[i].pixfmt == OUT_PIX_FMT_BGR24)
+	else if (mSource[i].pixfmt == OUT_PIX_FMT_BGR24)
 	{
-	    mSideSrcFrameSize[i] = mSideSrc[i].width * mSideSrc[i].height * 3;
-	}
-
-	if (mPanoSrc[i].pixfmt == OUT_PIX_FMT_UYVY)
-	{
-	    mPanoSrcFrameSize[i] = mPanoSrc[i].width * mPanoSrc[i].height * 2;        
-	}
-	else if (mPanoSrc[i].pixfmt == OUT_PIX_FMT_BGR24)
-	{
-	    mPanoSrcFrameSize[i] = mPanoSrc[i].width * mPanoSrc[i].height * 3;
+	    mSourceFrameSize[i] = mSource[i].width * mSource[i].height * 3;
 	}
 
         for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
@@ -146,7 +131,7 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int chan
         }
 
 #if USE_IMX_IPU
-        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mPanoSrcFrameSize[i]))
+        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mSourceFrameSize[i]))
         {
             return -1;
         }
@@ -191,21 +176,12 @@ void Capture4WorkerV4l2Impl::closeDevice()
     }
 }
 
-void Capture4WorkerV4l2Impl::getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+void Capture4WorkerV4l2Impl::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
 {
     if (channelIndex < VIDEO_CHANNEL_SIZE)
     {
-        *width = mSideSrc[channelIndex].width;
-        *height = mSideSrc[channelIndex].height;
-    }
-}
-
-void Capture4WorkerV4l2Impl::getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
-{
-    if (channelIndex < VIDEO_CHANNEL_SIZE)
-    {
-        *width = mPanoSrc[channelIndex].width;
-        *height = mPanoSrc[channelIndex].height;
+        *width = mSource[channelIndex].width;
+        *height = mSource[channelIndex].height;
     }
 }
 
@@ -308,15 +284,15 @@ void Capture4WorkerV4l2Impl::run()
                 task.input.deinterlace.enable = 1;
                 task.input.deinterlace.motion = 2;
 
-                task.output.width = mPanoSrc[i].width;
-                task.output.height = mPanoSrc[i].height;
+                task.output.width = mSource[i].width;
+                task.output.height = mSource[i].height;
                 task.output.crop.pos.x = 0;
                 task.output.crop.pos.y = 0;
-                task.output.crop.w = mPanoSrc[i].width;
-                task.output.crop.h = mPanoSrc[i].height;
+                task.output.crop.w = mSource[i].width;
+                task.output.crop.h = mSource[i].height;
                 //for colour cast
                 //task.output.format = V4L2_PIX_FMT_RGB24;
-                task.output.format = mPanoSrc[i].pixfmt;
+                task.output.format = mSource[i].pixfmt;
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
                 task.output.paddr = (int)mOutIPUBuf[i].offset;
@@ -344,9 +320,9 @@ void Capture4WorkerV4l2Impl::run()
 #endif
 
 #if USE_IMX_IPU                
-                cv::Mat* matImage = new cv::Mat(mPanoSrc[i].height, mPanoSrc[i].width, CV_8UC3, mOutIPUBuf[i].start);
+                cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, mOutIPUBuf[i].start);
 #else
-                cv::Mat* matImage = new cv::Mat(mPanoSrc[i].height, mPanoSrc[i].width, CV_8UC3, frame_buffer);
+                cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, frame_buffer);
 #endif
                 if (NULL != matImage)
                 {
@@ -367,9 +343,9 @@ void Capture4WorkerV4l2Impl::run()
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
             surroundImage->frame[i].data = image[i];
-            surroundImage->frame[i].width = mPanoSrc[i].width;
-            surroundImage->frame[i].height = mPanoSrc[i].height;
-            surroundImage->frame[i].pixfmt = mPanoSrc[i].pixfmt;
+            surroundImage->frame[i].width = mSource[i].width;
+            surroundImage->frame[i].height = mSource[i].height;
+            surroundImage->frame[i].pixfmt = mSource[i].pixfmt;
         }
 
         pthread_mutex_lock(&mMutexQueue);

@@ -16,11 +16,11 @@ Capture4Impl::~Capture4Impl()
 
 }
 
-void Capture4Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum)
+void Capture4Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
     if (NULL != mCaptureWorker)
     {
-        mCaptureWorker->setCapCapacity(sink, sideSrc, panoSrc, channelNum);
+        mCaptureWorker->setCapCapacity(sink, source, channelNum);
     }
 }
 
@@ -66,19 +66,11 @@ int Capture4Impl::stop()
     return 0;
 }
 
-void Capture4Impl::getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+void Capture4Impl::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
 {
     if (NULL != mCaptureWorker)
     {
-        mCaptureWorker->getSideResolution(channelIndex, width, height);
-    }
-}
-
-void Capture4Impl::getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
-{
-    if (NULL != mCaptureWorker)
-    {
-        mCaptureWorker->getPanoResolution(channelIndex, width, height);
+        mCaptureWorker->getResolution(channelIndex, width, height);
     }
 }
 

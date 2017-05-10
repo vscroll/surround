@@ -44,7 +44,7 @@ void StitchWorker::init(ICapture *capture,
         // align to input image frame for CL: CL_MEM_USE_HOST_PTR
 	unsigned int width = 0;
 	unsigned int height = 0;
-	capture->getSideResolution(VIDEO_CHANNEL_FRONT, &width, &height);
+	capture->getResolution(VIDEO_CHANNEL_FRONT, &width, &height);
 #if DEBUG_STITCH
         std::cout << "map rows:" << mStitchMap.rows  << " cols:" << mStitchMap.cols  << " channel:" << mStitchMap.channels() << std::endl;
         std::cout << "mask rows:" << mStitchMask.rows  << " cols:" << mStitchMask.cols  << " channel:" << mStitchMask.channels() << std::endl;

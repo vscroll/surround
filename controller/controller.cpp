@@ -21,7 +21,7 @@ Controller::~Controller()
 }
 
 void Controller::init(unsigned int channel[], unsigned int channelNum,
-		struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[])
+		struct cap_sink_t sink[], struct cap_src_t source[])
 {
     if (NULL == mCapture)
     {
@@ -30,7 +30,7 @@ void Controller::init(unsigned int channel[], unsigned int channelNum,
 #else
         mCapture = new Capture1Impl();
 #endif
-	mCapture->setCapCapacity(sink, sideSrc, panoSrc, channelNum);
+	mCapture->setCapCapacity(sink, source, channelNum);
         mCapture->openDevice(channel, channelNum);
     }
 

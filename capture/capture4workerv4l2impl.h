@@ -13,21 +13,18 @@ public:
     virtual ~Capture4WorkerV4l2Impl();
 
 public:
-    virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum);
+    virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
     virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual void closeDevice();
-    virtual void getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
-    virtual void getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
+    virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
     virtual int getFPS(unsigned int* fps);
     virtual void run();
 
 private:
     struct cap_sink_t mSink[VIDEO_CHANNEL_SIZE];
-    struct cap_src_t mSideSrc[VIDEO_CHANNEL_SIZE];
-    struct cap_src_t mPanoSrc[VIDEO_CHANNEL_SIZE];
+    struct cap_src_t mSource[VIDEO_CHANNEL_SIZE];
     unsigned int mSinkFrameSize[VIDEO_CHANNEL_SIZE];
-    unsigned int mSideSrcFrameSize[VIDEO_CHANNEL_SIZE];
-    unsigned int mPanoSrcFrameSize[VIDEO_CHANNEL_SIZE];
+    unsigned int mSourceFrameSize[VIDEO_CHANNEL_SIZE];
 
     int mVideoFd[VIDEO_CHANNEL_SIZE];
     v4l2_memory mMemType;

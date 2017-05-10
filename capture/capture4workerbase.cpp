@@ -11,7 +11,7 @@ Capture4WorkerBase::~Capture4WorkerBase()
 
 }
 
-void Capture4WorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[], unsigned int channelNum)
+void Capture4WorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
 
 }
@@ -51,12 +51,7 @@ unsigned int Capture4WorkerBase::getFrameCount()
     return size;
 }
 
-void Capture4WorkerBase::getSideResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
-{
-
-}
-
-void Capture4WorkerBase::getPanoResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+void Capture4WorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
 {
 
 }

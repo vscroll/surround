@@ -13,7 +13,7 @@ public:
     virtual ~Controller();
 
     void init(unsigned int channel[], unsigned int channelNum,
-		struct cap_sink_t sink[], struct cap_src_t sideSrc[], struct cap_src_t panoSrc[]);
+		struct cap_sink_t sink[], struct cap_src_t source[]);
     void uninit();
     void start(unsigned int fps,
 		unsigned int pano2DLeft,
