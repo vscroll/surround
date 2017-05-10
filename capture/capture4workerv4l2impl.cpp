@@ -11,11 +11,11 @@
 Capture4WorkerV4l2Impl::Capture4WorkerV4l2Impl() :
     Capture4WorkerBase()
 {
+    mIPUFd = -1;
+
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mVideoFd[i] = -1;
-
-        mIPUFd[i] = -1;
 
 	memset(&mSink[i], 0, sizeof(mSink[i]));
 	memset(&mSideSrc[i], 0, sizeof(mSideSrc[i]));
@@ -54,27 +54,27 @@ void Capture4WorkerV4l2Impl::setCapCapacity(struct cap_sink_t sink[], struct cap
 
 int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int channelNum)
 {
+#if USE_IMX_IPU
+    mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
+    if (mIPUFd < 0)
+    {
+        std::cout << "Capture4WorkerV4l2Impl::openDevice"
+                  << " open ipu failed"
+	          << std::endl;
+        return -1;
+    }
+    std::cout << "Capture4WorkerV4l2Impl::openDevice"
+              << " ipu fd:" << mIPUFd
+	      << std::endl;
+
+#endif
+
     unsigned int pixfmt;
     unsigned int width;
     unsigned int height;
     mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
     {
-#if USE_IMX_IPU
-        mIPUFd[i] = open("/dev/mxc_ipu", O_RDWR, 0);
-        if (mIPUFd[i] < 0)
-        {
-            std::cout << "Capture4WorkerV4l2Impl::openDevice"
-                    << " open ipu failed"
-		    << std::endl;
-            return -1;
-        }
-        std::cout << "Capture4WorkerV4l2Impl::openDevice"
-                << " ipu fd:" << mIPUFd[i]
-		<< std::endl;
-
-#endif
-
         int videoChannel = channel[i];
         char devName[16] = {0};
         sprintf(devName, "/dev/video%d", videoChannel);
@@ -140,13 +140,13 @@ int Capture4WorkerV4l2Impl::openDevice(unsigned int channel[], unsigned int chan
             mV4l2Buf[i][j].pixfmt = mSink[i].pixfmt;
         }
 
-        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd[i], mSinkFrameSize[i]))
+        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd, mSinkFrameSize[i]))
         {
             return -1;
         }
 
 #if USE_IMX_IPU
-        if (-1 == IMXIPU::allocIPUBuf(mIPUFd[i], &(mOutIPUBuf[i]),  mPanoSrcFrameSize[i]))
+        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mPanoSrcFrameSize[i]))
         {
             return -1;
         }
@@ -320,9 +320,9 @@ void Capture4WorkerV4l2Impl::run()
 
                 task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
                 task.output.paddr = (int)mOutIPUBuf[i].offset;
-                if (ioctl(mIPUFd[i], IPU_QUEUE_TASK, &task) < 0) {
+                if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
                     std::cout << "Capture4WorkerV4l2Impl::onCapture"
-                        << ", ipu task failed:" << mIPUFd[i]
+                        << ", ipu task failed:" << mIPUFd
 			<< std::endl;
                     continue;
                 }
