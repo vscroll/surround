@@ -13,19 +13,16 @@ public:
     virtual ~Capture4WorkerV4l2Impl();
 
 public:
-    virtual int openDevice(unsigned int channel[], unsigned int channelNum);
+    virtual int openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum);
     virtual void closeDevice();
     virtual void getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
     virtual int getFPS(unsigned int* fps);
     virtual void run();
 
 private:
-    unsigned int mInWidth[VIDEO_CHANNEL_SIZE];
-    unsigned int mInHeight[VIDEO_CHANNEL_SIZE];
-    unsigned int mInPixfmt[VIDEO_CHANNEL_SIZE];
-    unsigned int mOutWidth[VIDEO_CHANNEL_SIZE];
-    unsigned int mOutHeight[VIDEO_CHANNEL_SIZE];
-    unsigned int mOutPixfmt[VIDEO_CHANNEL_SIZE];
+    struct cap_info_t mCapInfo[VIDEO_CHANNEL_SIZE];
+    unsigned mInFrameSize;
+    unsigned mOutFrameSize;
 
     int mVideoFd[VIDEO_CHANNEL_SIZE];
     v4l2_memory mMemType;

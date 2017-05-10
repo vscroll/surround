@@ -20,7 +20,7 @@ Controller::~Controller()
 
 }
 
-void Controller::init(unsigned int channel[], unsigned int channelNum)
+void Controller::init(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum)
 {
     if (NULL == mCapture)
     {
@@ -29,7 +29,7 @@ void Controller::init(unsigned int channel[], unsigned int channelNum)
 #else
         mCapture = new Capture1Impl();
 #endif
-        mCapture->openDevice(channel, channelNum);
+        mCapture->openDevice(channel, capInfo, channelNum);
     }
 
     if (NULL == mStitch)

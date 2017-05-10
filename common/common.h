@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <linux/videodev2.h>
+
 #define DEBUG 1
 #define DEBUG_CAPTURE 1
 #define DEBUG_STITCH 1
@@ -32,6 +34,26 @@
 #define VIDEO_FPS_20		20
 #define VIDEO_FPS_25		25
 #define VIDEO_FPS_3		30
+
+#define IN_PIX_FMT_RGB565	V4L2_PIX_FMT_RGB565
+#define IN_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
+
+#define OUT_PIX_FMT_BGR24 	V4L2_PIX_FMT_BGR24
+#define OUT_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
+#define OUT_PIX_FMT_RGB565	V4L2_PIX_FMT_RGB565
+
+typedef struct cap_info_t {
+  unsigned int in_pixfmt;
+  unsigned int in_width;
+  unsigned int in_height;
+  unsigned int in_crop_x;
+  unsigned int in_crop_y;
+  unsigned int in_crop_width;
+  unsigned int in_crop_height;
+  unsigned int out_pixfmt;
+  unsigned int out_width;
+  unsigned int out_height;
+} cap_info_t;
 
 typedef struct surround_frame_t {
     void* data;

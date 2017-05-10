@@ -11,7 +11,7 @@ public:
     Capture4WorkerBase();
     virtual ~Capture4WorkerBase();
 
-    virtual int openDevice(unsigned int channel[], unsigned int channelNum);
+    virtual int openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum);
     virtual void closeDevice();
     virtual surround_images_t* popOneFrame();
     virtual unsigned int getFrameCount();

@@ -7,7 +7,7 @@ class ICapture
 {
 public:
     virtual ~ICapture() {}
-    virtual int openDevice(unsigned int channel[], unsigned int channelNum) = 0;
+    virtual int openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum) = 0;
     virtual int closeDevice() = 0;
     virtual int start(unsigned int fps) = 0;
     virtual int stop() = 0;

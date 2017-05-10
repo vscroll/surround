@@ -11,7 +11,7 @@ public:
     Capture4Impl();
     virtual ~Capture4Impl();
 
-    virtual int openDevice(unsigned int channel[], unsigned int channelNum);
+    virtual int openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum);
     virtual int closeDevice();
     virtual int start(unsigned int fps);
     virtual int stop();

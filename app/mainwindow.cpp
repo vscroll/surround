@@ -37,7 +37,22 @@ MainWindow::MainWindow(QWidget *parent) :
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
 
-    mController.init(Settings::getInstant()->mVideoChanel, VIDEO_CHANNEL_SIZE);
+    struct cap_info_t capInfo[VIDEO_CHANNEL_SIZE];
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+	capInfo[i].in_pixfmt = IN_PIX_FMT_UYVY;
+	capInfo[i].in_width = 704;
+	capInfo[i].in_height = 576;
+	capInfo[i].in_crop_x = 0;
+	capInfo[i].in_crop_y = 0;
+	capInfo[i].in_crop_width = 704;
+	capInfo[i].in_crop_height = 576;
+	capInfo[i].out_pixfmt = OUT_PIX_FMT_BGR24;
+	capInfo[i].out_width = 704;
+	capInfo[i].out_height = 576;
+    }
+
+    mController.init(Settings::getInstant()->mVideoChanel, capInfo, VIDEO_CHANNEL_SIZE);
     start();
 
     mRealFrameCount = 0;

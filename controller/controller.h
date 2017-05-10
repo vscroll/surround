@@ -12,7 +12,7 @@ public:
     Controller();
     virtual ~Controller();
 
-    void init(unsigned int channel[], unsigned int channelNum);
+    void init(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum);
     void uninit();
     void start(unsigned int fps,
 		unsigned int pano2DLeft,

@@ -12,7 +12,7 @@ Capture4Impl::~Capture4Impl()
 
 }
 
-int Capture4Impl::openDevice(unsigned int channel[], unsigned int channelNum)
+int Capture4Impl::openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum)
 {
     if (NULL == mCaptureWorker)
     {
@@ -21,7 +21,7 @@ int Capture4Impl::openDevice(unsigned int channel[], unsigned int channelNum)
 #else
         mCaptureWorker = new Capture4WorkerImpl();
 #endif
-        mCaptureWorker->openDevice(channel, channelNum);
+        mCaptureWorker->openDevice(channel, capInfo, channelNum);
     }
 
     return 0;

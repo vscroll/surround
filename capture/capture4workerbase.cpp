@@ -11,7 +11,7 @@ Capture4WorkerBase::~Capture4WorkerBase()
 
 }
 
-int Capture4WorkerBase::openDevice(unsigned int channel[], unsigned int channelNum)
+int Capture4WorkerBase::openDevice(unsigned int channel[], struct cap_info_t capInfo[], unsigned int channelNum)
 {
     return -1;
 }
