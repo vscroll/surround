@@ -30,7 +30,7 @@ SHMUtil::~SHMUtil()
 int SHMUtil::create(key_t key, unsigned int size)
 {
     mSemId = sem_create(key);
-    if (mSemId <= 0)
+    if (mSemId < 0)
     {
         perror("sem_open");
         return -1;
@@ -69,7 +69,7 @@ void SHMUtil::destroy()
 int SHMUtil::write(unsigned char* buf, unsigned int size)
 {
     if (NULL == mSHMAddr
-	|| mSemId <= 0)
+	|| mSemId < 0)
     {
 	return -1;
     }
@@ -84,7 +84,7 @@ int SHMUtil::write(unsigned char* buf, unsigned int size)
 int SHMUtil::read(unsigned char* buf, unsigned int size)
 {
     if (NULL == mSHMAddr
-	|| mSemId <= 0)
+	|| mSemId < 0)
     {
 	return -1;
     }
