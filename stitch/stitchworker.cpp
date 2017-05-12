@@ -191,6 +191,9 @@ void StitchWorker::run()
     mLastTimestamp = start;
 #endif
 
+    unsigned int sideWidth = surroundImage->frame[mCurChannelIndex].width;
+    unsigned int sideHeight = surroundImage->frame[mCurChannelIndex].height; 
+
     if ((int)(elapsed*1000) < 500)
     {
         if (mEnableOpenCL)
@@ -206,8 +209,8 @@ void StitchWorker::run()
                          mPano2DWidth,
                          mPano2DHeight,
                          &outSide,
-                         surroundImage->frame[mCurChannelIndex].width,
-                         surroundImage->frame[mCurChannelIndex].height,
+                         sideWidth,
+                         sideHeight,
                          mCurChannelIndex);
         }
         else
@@ -222,8 +225,8 @@ void StitchWorker::run()
                       mPano2DWidth,
                       mPano2DHeight,
                       &outSide,
-                      surroundImage->frame[mCurChannelIndex].width,
-                      surroundImage->frame[mCurChannelIndex].height,
+                      sideWidth,
+                      sideHeight,
                       mCurChannelIndex);
         }
     }
@@ -245,6 +248,8 @@ void StitchWorker::run()
     if (NULL != outPano2D)
     {
         surround_image_t* tmp = new surround_image_t();
+	tmp->frame.width = mPano2DWidth;
+	tmp->frame.height = mPano2DHeight;
         tmp->frame.data = outPano2D;
         tmp->timestamp = timestamp;
         pthread_mutex_lock(&mOutputPano2DImageMutex);
@@ -258,6 +263,8 @@ void StitchWorker::run()
     if (NULL != outSide)
     {
         surround_image_t* tmp = new surround_image_t();
+	tmp->frame.width = sideWidth;
+	tmp->frame.height = sideHeight;
         tmp->frame.data = outSide;
         tmp->timestamp = timestamp;
         pthread_mutex_lock(&mOutputSideImageMutex);

@@ -15,7 +15,7 @@ CXX           = $(OE_QMAKE_CXX)
 DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe $(OE_QMAKE_CFLAGS) -O2 -DLINUX=1 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe $(OE_QMAKE_CXXFLAGS) -O2 -DLINUX=1 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5 -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtWidgets -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtGui -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtCore -I. -I. -I/opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/lib/qt5/mkspecs/linux-oe-g++ -I../controller -I../common
+INCPATH       = -I. -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5 -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtWidgets -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtGui -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtCore -I. -I. -I/opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/lib/qt5/mkspecs/linux-oe-g++ -I../shm -I../common
 QMAKE         = /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/x86_64-pokysdk-linux/usr/bin/qt5/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -40,7 +40,7 @@ ROOTFS_DIR = $(HOME)/my-imx6/05_rootfs/distro-fsl-image
 TARGET_PATH_LIB = $(ROOTFS_DIR)/usr/lib
 LIBS          = $(SUBLIBS) \
 			    -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
-				-lopencv_core -lopencv_highgui -lQt5Widgets -lQt5Gui -lQt5Core -lGLESv2 -lEGL -lpthread -L../controller -lcontroller
+				-lopencv_core -lopencv_highgui -lQt5Widgets -lQt5Gui -lQt5Core -lGLESv2 -lEGL -lpthread -L../shm -limageshm
 AR            = $(OE_QMAKE_AR) cqs
 RANLIB        = 
 SED           = sed

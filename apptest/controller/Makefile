@@ -18,6 +18,8 @@ COMMON_PATH_INCLUDE			= ../../common
 THREAD_PATH_INCLUDE			= ../../thread
 CAPTURE_PATH_INCLUDE		= ../../capture
 STITCH_PATH_INCLUDE			= ../../stitch
+RENDER_PATH_INCLUDE			= ../../render
+SHMUTIL_PATH_INCLUDE			= ../../shm
 
 CFLAGS			= -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv7-a -mfpu=neon -mthumb-interwork -mtune=cortex-a9 -mfpu=vfp -mfloat-abi=hard \
 			  -DEGL_API_FB -DGPU_TYPE_VIV -DGL_GLEXT_PROTOTYPES -DENABLE_GPU_RENDER_20 \
@@ -27,11 +29,13 @@ CFLAGS			= -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv7-a -mfpu=ne
 			  -I$(THREAD_PATH_INCLUDE) \
 			  -I$(CAPTURE_PATH_INCLUDE) \
 			  -I$(STITCH_PATH_INCLUDE) \
+			  -I$(RENDER_PATH_INCLUDE) \
+			  -I$(SHMUTIL_PATH_INCLUDE) \
 			  -I$(HOME)/my-imx6/02_source/linux-3.14.52/include/uapi \
 			  -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include
 
 LFLAGS_SO		= -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) -lm \
-			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L../../controller -lcontroller
+			   -lCLC -lOpenCL -lpthread -lopencv_core -lopencv_highgui -L$(CONTROLLER_PATH_INCLUDE) -lcontroller -L$(SHMUTIL_PATH_INCLUDE) -limageshm
 
 SRCS_SO			= $(wildcard ./*.cpp )
 
@@ -46,11 +50,13 @@ SRCS 		       += $(wildcard ../../controller/*.cpp)
 SRCS 		       += $(wildcard ../../thread/*.cpp)
 SRCS 		       += $(wildcard ../../capture/*.cpp)
 SRCS 		       += $(wildcard ../../stitch/*.cpp)
+SRCS 		       += $(wildcard ../../shm/*.cpp)
 
 OBJS 			= $(patsubst %.cpp, %.o, $(SRCS))
 first: all
 
-all: $(TARGET) $(TARGET_SO)
+#all: $(TARGET) $(TARGET_SO)
+all: $(TARGET_SO)
 
 $(TARGET_SO) : $(OBJS_SO)
 	$(CXX) $(LFLAGS_SO) $^ -o $@  

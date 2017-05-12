@@ -17,26 +17,27 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_video_small->setAttribute(Qt::WA_NoBackground);
     ui->label_video_full->setAttribute(Qt::WA_NoBackground);
 
-    mSettings = Settings::getInstant();
-    QString path = mSettings->getApplicationPath() + "/config.ini";
-    qDebug() << "path " << path;
-    mSettings->loadSettings(path);
+    //mSettings = Settings::getInstant();
+    //QString path = mSettings->getApplicationPath() + "/config.ini";
+    //qDebug() << "path " << path;
+    //mSettings->loadSettings(path);
 
-    mCurVideoChannel = VIDEO_CHANNEL_FRONT;
+    //mCurVideoChannel = VIDEO_CHANNEL_FRONT;
     connect(&mVideoUpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdate()));
-    connect(&mVideoUpdateSmallTimer, SIGNAL(timeout()), this, SLOT(onUpdateSmallImage()));
-    connect(&mVideoUpdateFullTimer, SIGNAL(timeout()), this, SLOT(onUpdateFullImage()));
+    //connect(&mVideoUpdateSmallTimer, SIGNAL(timeout()), this, SLOT(onUpdateSmallImage()));
+    //connect(&mVideoUpdateFullTimer, SIGNAL(timeout()), this, SLOT(onUpdateFullImage()));
     connect(ui->pb_front, SIGNAL(clicked()), this, SLOT(onClickFront()));
     connect(ui->pb_rear, SIGNAL(clicked()), this, SLOT(onClickRear()));
     connect(ui->pb_left, SIGNAL(clicked()), this, SLOT(onClickLeft()));
     connect(ui->pb_right, SIGNAL(clicked()), this, SLOT(onClickRight()));
 
-    mCaptureFPS = mSettings->mCaptureFps;
-    mUpdateFPS = mSettings->mUpdateFps;
+    //mCaptureFPS = mSettings->mCaptureFps;
+    //mUpdateFPS = mSettings->mUpdateFps;
+    mUpdateFPS = 15;
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
-
+/*
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -56,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mController.init(Settings::getInstant()->mVideoChanel, VIDEO_CHANNEL_SIZE,
 			sink, source);
+*/
     start();
 
     mRealFrameCount = 0;
@@ -116,7 +118,8 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 
 void MainWindow::start()
 {
-    mVideoUpdateTimer.start(1000/mUpdateFPS);
+//    mVideoUpdateTimer.start(1000/mUpdateFPS);
+/*
     int pano2DWidth = Settings::getInstant()->mPano2DWidth;
     int pano2DHeight = Settings::getInstant()->mPano2DHeight;
     bool enableOpenCL = (Settings::getInstant()->mEnableOpenCL == 1);
@@ -128,16 +131,20 @@ void MainWindow::start()
 			0, 0, 0, 0,
 			(char*)path.toStdString().c_str(),
 			enableOpenCL);
+*/
+    mVideoUpdateTimer.start(1000/mUpdateFPS);
+    mSideSHM.create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+    mPanoSHM.create((key_t)SHM_PANO2D_ID, SHM_PANO2D_SIZE);
 }
 
 void MainWindow::stop()
 {
-    mController.stop();
+ //   mController.stop();
 }
 
 void MainWindow::onControllerQuit()
 {
-    mController.uninit();
+ //   mController.uninit();
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
@@ -164,63 +171,48 @@ void MainWindow::updateFullImage()
     }
     mLastUpdateFull = start;
 #endif
-    surround_image_t* surroundImage = mController.dequeuePano2DImage();
-#if DEBUG_UPDATE
-    double end = clock();
-#endif
+    unsigned char imageBuf[SHM_PANO2D_SIZE] = {};
+    mPanoSHM.readImage(imageBuf, sizeof(imageBuf));
+    image_shm_header_t* header = (image_shm_header_t*)imageBuf;
 
-    if (NULL == surroundImage)
-    {
-        return;
-    }
-
-    double elapsed = (clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
+    double elapsed = (clock() - header->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
-    timestamp = surroundImage->timestamp;
+    timestamp = header->timestamp;
     double start1 = clock();
 #endif
 
-    cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
-    if (NULL != frame)
+    //if ((int)(elapsed*1000) < 1000/mFPS)
     {
-	//if ((int)(elapsed*1000) < 1000/mFPS)
-    	{
-            QImage image = cvMat2QImage(*frame);
-            ui->label_video_full->setPixmap(QPixmap::fromImage(image));
-            //QPainter painter(this);
-            //painter.drawImage(QPoint(20,20), image);
+        cv::Mat side = cv::Mat(header->height, header->width, CV_8UC3, imageBuf+sizeof(image_shm_header_t));
+        QImage image = cvMat2QImage(side);
+        ui->label_video_full->setPixmap(QPixmap::fromImage(image));
+        //QPainter painter(this);
+        //painter.drawImage(QPoint(20,20), image);
  #if DEBUG_UPDATE
-	    if (mRealFrameCount == 0)
-	    {
-		mStartTime = clock();
-	    }
-
-	    mRealFrameCount++;
-            mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
-	    if (mStatDuration > 5*60
-		|| mStatDuration < 0)
-            {
-		mRealFrameCount = 0;
-            }
-#endif        
+	if (mRealFrameCount == 0)
+	{
+	    mStartTime = clock();
 	}
 
-        delete frame;
+	mRealFrameCount++;
+        mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
+	if (mStatDuration > 5*60
+		|| mStatDuration < 0)
+        {
+	    mRealFrameCount = 0;
+        }
+#endif        
     }
-
-    delete surroundImage;
 
 #if DEBUG_UPDATE
     double end1 = clock();
 
     qDebug() << "MainWindow::onUpdateFullImage"
-             << ", capture fps:" << mCaptureFPS
              << ", update fps:" << mUpdateFPS
              << ", real update fps:" << mRealFrameCount/mStatDuration
              << ", elapsed to last update:" << showElapsed
-             //<< ", timestamp:" << timestamp
+             << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             //<< ", read:" << (end-start)/CLOCKS_PER_SEC
              << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 
 #endif
@@ -238,44 +230,29 @@ void MainWindow::updateSmallImage()
     }
     mLastUpdateSmall = start;
 #endif
-    surround_image_t* surroundImage = mController.dequeueSideImage(mCurVideoChannel);
-#if DEBUG_UPDATE
-    double end = clock();
-#endif
+    unsigned char imageBuf[SHM_SIDE_SIZE] = {};
+    mSideSHM.readImage(imageBuf, sizeof(imageBuf));
+    image_shm_header_t* header = (image_shm_header_t*)imageBuf;
 
-    if (NULL == surroundImage)
-    {
-        return;
-    }
-
-    double elapsed = (clock() - surroundImage->timestamp)/CLOCKS_PER_SEC;
+    double elapsed = (clock() - header->timestamp)/CLOCKS_PER_SEC;
 #if DEBUG_UPDATE
-    timestamp = surroundImage->timestamp;
+    timestamp = header->timestamp;
     double start1 = clock();
 #endif
-
-    cv::Mat* frame = (cv::Mat*)(surroundImage->frame.data);
-    if (NULL != frame)
+    //if ((int)(elapsed*1000) < 1000/mFPS)
     {
-	//if ((int)(elapsed*1000) < 1000/mFPS)
-        {
-            QImage image = cvMat2QImage(*frame);
-            ui->label_video_small->setPixmap(QPixmap::fromImage(image));
-        }
-
-        delete frame;
+        cv::Mat side = cv::Mat(header->height, header->width, CV_8UC3, imageBuf+sizeof(image_shm_header_t));
+        QImage image = cvMat2QImage(side);
+        ui->label_video_small->setPixmap(QPixmap::fromImage(image));
     }
-    delete surroundImage;
 
 #if DEBUG_UPDATE
     double end1 = clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
-             << ", capture fps:" << mCaptureFPS
              << ", update fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
-             //<< ", timestamp:" << timestamp
+             << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             //<< ", read:" << (end-start)/CLOCKS_PER_SEC
              << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
 #endif
 }

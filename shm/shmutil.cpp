@@ -162,3 +162,23 @@ int SHMUtil::v(int semid, int num)
     }
     return 0;
 }
+
+int SHMUtil::p_w()
+{
+    return p(mSemId, W);
+}
+
+int SHMUtil::v_w()
+{
+    return v(mSemId, W);
+}
+
+int SHMUtil::p_r()
+{
+    return p(mSemId, R);
+}
+
+int SHMUtil::v_r()
+{
+    return v(mSemId, R);
+}

@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QTimer>
-#include "controller.h"
+#include "imageshm.h"
 #include <opencv/cv.h>
 
 namespace Ui {
@@ -46,18 +46,18 @@ private:
     QLabel *mVideoLabelFull;
     QLabel *mVideoLabelSmall;
 
-    Settings* mSettings;
+    //Settings* mSettings;
 
     QTimer mVideoUpdateTimer;
 
-    QTimer mVideoUpdateFullTimer;
-    QTimer mVideoUpdateSmallTimer;
+    //QTimer mVideoUpdateFullTimer;
+    //QTimer mVideoUpdateSmallTimer;
 
     unsigned int mCurVideoChannel;
 
-    unsigned int mCaptureFPS;
+    //unsigned int mCaptureFPS;
     unsigned int mUpdateFPS;
-    Controller mController;
+    //Controller mController;
 
     double mStartTime;
     double mStatDuration;
@@ -65,6 +65,9 @@ private:
 
     double mLastUpdateSmall;
     double mLastUpdateFull;
+
+    ImageSHM mSideSHM;
+    ImageSHM mPanoSHM;
 };
 
 #endif // MAINWINDOW_H

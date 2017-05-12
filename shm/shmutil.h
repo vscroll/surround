@@ -17,7 +17,11 @@ public:
     void destroy();
     int write(unsigned char* buf, unsigned int size);
     int read(unsigned char* buf, unsigned int size);
-
+    void* getSHMAddr() { return mSHMAddr; }
+    int p_w();
+    int v_w();
+    int p_r();
+    int v_r();
 private:
     int sem_create(key_t key);
     int sem_del(int semid);

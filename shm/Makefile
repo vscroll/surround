@@ -1,7 +1,7 @@
 #before buildint it don't forget to export ROOTF_DIR and TOOLCHAIN (only if they are uncommented here)
 
 # needs to source /opt/poky/x.x.x/environmentsetup.sh
-TARGET			= libshmutil.so
+TARGET			= libimageshm.so
 
 RM			= rm -rf
  
