@@ -22,8 +22,6 @@ public:
 protected:
     struct cap_sink_t mSink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t mSource[VIDEO_CHANNEL_SIZE];
-    unsigned int mSinkFrameSize[VIDEO_CHANNEL_SIZE];
-    unsigned int mSourceFrameSize[VIDEO_CHANNEL_SIZE];
 
     int mVideoFd[VIDEO_CHANNEL_SIZE];
     unsigned int mVideoChannelNum;

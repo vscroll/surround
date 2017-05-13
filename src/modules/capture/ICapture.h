@@ -18,3 +18,4 @@ public:
 };
 
 #endif // ICAPTURE_H
+

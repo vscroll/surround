@@ -16,7 +16,7 @@ int main (int argc, char **argv)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = IN_PIX_FMT_UYVY;
+        sink[i].pixfmt = PIX_FMT_UYVY;
         sink[i].width = 704;
         sink[i].height = 574;
         sink[i].crop_x = 0;
@@ -24,14 +24,20 @@ int main (int argc, char **argv)
         sink[i].crop_w = 704;
         sink[i].crop_h = 574;
 
-        source[i].pixfmt = OUT_PIX_FMT_BGR24;
+        source[i].pixfmt = PIX_FMT_BGR24;
         source[i].width = 704;
         source[i].height = 574;
     }
+
     Controller controller;
-    //controller.start(VIDEO_FPS_15);
+    controller.startLoop(VIDEO_FPS_15);
+
     controller.initCaptureModule(channel, VIDEO_CHANNEL_SIZE, sink, source);
+    controller.initPanoImageModule(704, 574, PIX_FMT_BGR24,
+                424, 600, PIX_FMT_BGR24,
+                "/home/root/ckt-demo/PanoConfig.bin", true);
     controller.startModules(VIDEO_FPS_15);
+
     while (true)
     {
          usleep(1000);

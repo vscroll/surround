@@ -83,18 +83,18 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
 	    mSource[i].width = mSink[i].width;
 	    mSource[i].height = mSink[i].height;
 
-	    if (mSink[i].pixfmt == IN_PIX_FMT_UYVY)
+	    if (mSink[i].pixfmt == PIX_FMT_UYVY)
 	    {
-            mSinkFrameSize[i] = mSink[i].width * mSink[i].height * 2;        
+            mSink[i].size = mSink[i].width * mSink[i].height * 2;        
 	    }
 
-	    if (mSource[i].pixfmt == OUT_PIX_FMT_UYVY)
+	    if (mSource[i].pixfmt == PIX_FMT_UYVY)
 	    {
-	        mSourceFrameSize[i] = mSource[i].width * mSource[i].height * 2;        
+	        mSource[i].size = mSource[i].width * mSource[i].height * 2;        
 	    }
-	    else if (mSource[i].pixfmt == OUT_PIX_FMT_BGR24)
+	    else if (mSource[i].pixfmt == PIX_FMT_BGR24)
 	    {
-	        mSourceFrameSize[i] = mSource[i].width * mSource[i].height * 3;
+	        mSource[i].size = mSource[i].width * mSource[i].height * 3;
 	    }
 
         for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
@@ -104,13 +104,13 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
             mV4l2Buf[i][j].pixfmt = mSink[i].pixfmt;
         }
 
-        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd, mSinkFrameSize[i]))
+        if (-1 == V4l2::v4l2ReqBuf(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType, mIPUFd, mSink[i].size))
         {
             return -1;
         }
 
 #if USE_IMX_IPU
-        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mSourceFrameSize[i]))
+        if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mSource[i].size))
         {
             return -1;
         }
@@ -277,7 +277,7 @@ void CaptureWorkerV4l2::run()
                 }
                 
 #else
-                unsigned char frame_buffer[mPanoSrcFrameSize[i]];
+                unsigned char frame_buffer[mSource[i].size];
                 Util::uyvy_to_rgb24(mSink[i].width, mSink[i].height, (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
 #endif
 
@@ -319,6 +319,7 @@ void CaptureWorkerV4l2::run()
             surroundImage->frame[i].info.width = mSource[i].width;
             surroundImage->frame[i].info.height = mSource[i].height;
             surroundImage->frame[i].info.pixfmt = mSource[i].pixfmt;
+            surroundImage->frame[i].info.size = mSource[i].size;
             surroundImage->frame[i].data = image[i];
         }
 
@@ -355,13 +356,11 @@ void CaptureWorkerV4l2::run()
     }
 
 #if DEBUG_CAPTURE
-    std::cout << "Capture4WorkerV4l2Impl::onCapture"
+    std::cout << "CaptureWorkerV4l2::onCapture"
             << " thread id:" << getTID()
-            << ", channel:" << mVideoChannelNum
-            << ", flag:" << (int)flag
-            << ", size:" << size
             << ", elapsed to last time:" << elapsed
             << ", capture:" << (clock()-start)/CLOCKS_PER_SEC
+            << ", size:" << size
             << ", fps:" << mRealFPS
             << std::endl;
 #endif

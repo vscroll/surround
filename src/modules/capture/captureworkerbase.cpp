@@ -10,8 +10,6 @@ CaptureWorkerBase::CaptureWorkerBase()
 
 	    memset(&mSink[i], 0, sizeof(mSink[i]));
 	    memset(&mSource[i], 0, sizeof(mSource[i]));
-        mSinkFrameSize[i] = 0;
-        mSourceFrameSize[i] = 0;
 
         mChannel[i] = 0;
     }

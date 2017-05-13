@@ -35,15 +35,14 @@
 #define VIDEO_FPS_25		25
 #define VIDEO_FPS_3		30
 
-#define IN_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
-
-#define OUT_PIX_FMT_BGR24 	V4L2_PIX_FMT_BGR24
-#define OUT_PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
+#define PIX_FMT_UYVY 	V4L2_PIX_FMT_UYVY
+#define PIX_FMT_BGR24 	V4L2_PIX_FMT_BGR24
 
 typedef struct cap_sink_t {
   unsigned int pixfmt;
   unsigned int width;
   unsigned int height;
+  unsigned int size;
   unsigned int crop_x;
   unsigned int crop_y;
   unsigned int crop_w;
@@ -54,12 +53,14 @@ typedef struct cap_src_t {
   unsigned int pixfmt;
   unsigned int width;
   unsigned int height;
+  unsigned int size;
 } cap_src_t;
 
 typedef struct frame_info_t {
     unsigned int width;
     unsigned int height;
     unsigned int pixfmt;
+    unsigned int size;
 } frame_info_t;
 
 typedef struct surround_image_t {
