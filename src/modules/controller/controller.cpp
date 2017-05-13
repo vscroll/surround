@@ -2,13 +2,20 @@
 #include "common.h"
 #include "ICapture.h"
 #include "captureimpl.h"
-#include "IPano.h"
-#include "panoimpl.h"
+#include "IPanoImage.h"
+#include "panoimageimpl.h"
+#include "imageshm.h"
+#include <opencv/cv.h>
 
 Controller::Controller()
 {
     mCapture = NULL;
-    mPano = NULL;
+    mPanoImage = NULL;
+
+    mCurChannelIndex = VIDEO_CHANNEL_FRONT;
+
+    mSideSHM = NULL;
+    mPanoSHM = NULL;
 }
 
 Controller::~Controller()
@@ -35,17 +42,23 @@ void Controller::initPanoImageModule(unsigned int inWidth,
             char* algoCfgFilePath,
             bool enableOpenCL)
 {
-    if (NULL == mPano)
+    if (NULL == mPanoImage)
     {
-        mPano = new PanoImpl();
+        mPanoImage = new PanoImageImpl();
     }
 
-    mPano->init(inWidth, inHeight, inPixfmt, panoWidth, panoHeight, panoPixfmt, algoCfgFilePath, enableOpenCL);
+    mPanoImage->init(inWidth, inHeight, inPixfmt, panoWidth, panoHeight, panoPixfmt, algoCfgFilePath, enableOpenCL);
 }
 
-void Controller::initSideImageModule(unsigned int width, unsigned int height, unsigned int pixfmt)
+void Controller::initSideImageModule(unsigned int curChannelIndex,
+            unsigned int outWidth,
+            unsigned int outHeight,
+            unsigned int outPixfmt)
 {
-
+    if (curChannelIndex < VIDEO_CHANNEL_SIZE)
+    {
+        mCurChannelIndex = curChannelIndex;
+    }
 }
 
 void Controller::uninitModules()
@@ -56,10 +69,10 @@ void Controller::uninitModules()
         mCapture = NULL;
     }
 
-    if (NULL != mPano)
+    if (NULL != mPanoImage)
     {
-        delete mPano;
-        mPano = NULL;
+        delete mPanoImage;
+        mPanoImage = NULL;
     }
 }
 
@@ -70,9 +83,9 @@ void Controller::startModules(unsigned int fps)
         mCapture->start(fps);
    }
 
-   if (NULL != mPano)
+   if (NULL != mPanoImage)
    {
-        mPano->start(fps);
+        mPanoImage->start(fps);
    }
 }
 
@@ -84,21 +97,50 @@ void Controller::stopModules()
         mCapture->closeDevice();
     }
 
-    if (NULL != mPano)
+    if (NULL != mPanoImage)
     {
-        mPano->stop();
+        mPanoImage->stop();
     }
 }
 
 void Controller::startLoop(unsigned int freq)
 {
+    mSideSHM = new ImageSHM();
+    mSideSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+
+    mPanoSHM = new ImageSHM();
+    mPanoSHM->create((key_t)SHM_PANO2D_ID, SHM_PANO2D_SIZE);
+
     start(1000/freq);
+}
+
+void Controller::stopLoop()
+{
+    if (NULL != mSideSHM)
+    {
+        mSideSHM->destroy();
+        delete mSideSHM;
+        mSideSHM = NULL;
+    }
+
+    if (NULL != mPanoSHM)
+    {
+        mPanoSHM->destroy();
+        delete mPanoSHM;
+        mPanoSHM = NULL;
+    }
 }
 
 void Controller::run()
 {
     if (NULL == mCapture
-        || NULL == mPano)
+        || NULL == mPanoImage)
+    {
+        return;
+    }
+
+    if (NULL == mSideSHM
+        || NULL == mPanoSHM)
     {
         return;
     }
@@ -109,6 +151,20 @@ void Controller::run()
         return;
     }
 
-    mPano->queueImages(surroundImages);
-    surround_image_t* surroundImage = mPano->dequeuePanoImage();
+    //Side
+    surround_image_t* sideImage = &(surroundImages->frame[mCurChannelIndex]);
+    if (NULL != sideImage)
+    {
+		struct image_shm_header_t header = {};
+		header.width = sideImage->info.width;
+		header.height = sideImage->info.height;
+		header.pixfmt = sideImage->info.pixfmt;
+		header.size = sideImage->info.size;
+		header.timestamp = sideImage->timestamp;
+        mSideSHM->writeImage(&header, (unsigned char*)sideImage->data, header.size);
+    }
+
+    //Pano
+    mPanoImage->queueImages(surroundImages);
+    surround_image_t* surroundImage = mPanoImage->dequeuePanoImage();
 }

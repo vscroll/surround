@@ -180,7 +180,7 @@ void CaptureWorkerV4l2::clearOverstock()
 
 void CaptureWorkerV4l2::run()
 {
-    clearOverstock();
+    //clearOverstock();
 #if DEBUG_CAPTURE
     double start = clock();
     int size = 0;

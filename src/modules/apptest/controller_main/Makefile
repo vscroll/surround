@@ -23,9 +23,12 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(SRC_ROOT)/util \
 			                    -I$(SRC_ROOT)/util/thread \
 			                    -I$(SRC_ROOT)/util/v4l2 \
+			                    -I$(SRC_ROOT)/util/cl \
+			                    -I$(SRC_ROOT)/util/shm \
                                 -I$(SRC_ROOT)/modules/controller \
 			                    -I$(SRC_ROOT)/modules/capture \
-			                    -I$(SRC_ROOT)/modules/panoimage
+			                    -I$(SRC_ROOT)/modules/panoimage \
+			                    -I$(SRC_ROOT)/modules/imageshm
 
 
 LFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
@@ -35,9 +38,12 @@ SRCS 			            = $(wildcard ./*.cpp )
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/thread/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/v4l2/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/util/cl/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/util/shm/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/controller/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/capture/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/panoimage/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/modules/imageshm/*.cpp)
 
 OBJS 			            = $(patsubst %.cpp, %.o, $(SRCS))
 

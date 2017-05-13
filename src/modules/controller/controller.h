@@ -4,7 +4,8 @@
 #include "thread.h"
 
 class ICapture;
-class IPano;
+class IPanoImage;
+class ImageSHM;
 class Controller : public Thread
 {
 public:
@@ -23,18 +24,27 @@ public:
             char* algoCfgFilePath,
             bool enableOpenCL);
 
-    void initSideImageModule(unsigned int width, unsigned int height, unsigned int pixfmt);
+    void initSideImageModule(unsigned int curChannelIndex,
+            unsigned int outWidth,
+            unsigned int outHeight,
+            unsigned int outPixfmt);
 
     void uninitModules();
     void startModules(unsigned int fps);
     void stopModules();
 
     void startLoop(unsigned int freq);
+    void stopLoop();
 public:
     virtual void run();
 private:
     ICapture* mCapture;
-    IPano* mPano;    
+    IPanoImage* mPanoImage;
+
+    unsigned int mCurChannelIndex;
+
+    ImageSHM* mSideSHM;
+    ImageSHM* mPanoSHM;
 };
 
 #endif // CONTROLLER_H
