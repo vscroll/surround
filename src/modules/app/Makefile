@@ -15,7 +15,7 @@ CXX           = $(OE_QMAKE_CXX)
 DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe $(OE_QMAKE_CFLAGS) -O2 -DLINUX=1 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe $(OE_QMAKE_CXXFLAGS) -O2 -DLINUX=1 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5 -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtWidgets -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtGui -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtCore -I. -I. -I/opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/lib/qt5/mkspecs/linux-oe-g++ -I../../include -I../../util/shm -I../imageshm
+INCPATH       = -I. -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5 -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtWidgets -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtGui -isystem /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/include/qt5/QtCore -I. -I. -I/opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi/usr/lib/qt5/mkspecs/linux-oe-g++ -I../../include -I../../util -I../../util/shm -I../imageshm
 QMAKE         = /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/x86_64-pokysdk-linux/usr/bin/qt5/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -51,12 +51,14 @@ OBJECTS_DIR   = ./
 SOURCES       = main.cpp \
 		mainwindow.cpp \
 		settings.cpp \
+		../../util/util.cpp \
 		../../util/shm/shmutil.cpp \
 		../imageshm/imageshm.cpp moc_mainwindow.cpp \
 		moc_settings.cpp
 OBJECTS       = main.o \
 		mainwindow.o \
 		settings.o \
+		util.o \
 		shmutil.o \
 		imageshm.o \
 		moc_mainwindow.o \
@@ -191,10 +193,12 @@ DIST          = /opt/fsl-imx-x11/3.14.52-1.1.0/sysroots/cortexa9hf-vfp-neon-poky
 		surroundpark.pro mainwindow.h \
 		settings.h \
 		../../include/common.h \
+		../../util/util.h \
 		../../util/shm/shmutil.h \
 		../imageshm/imageshm.h main.cpp \
 		mainwindow.cpp \
 		settings.cpp \
+		../../util/util.cpp \
 		../../util/shm/shmutil.cpp \
 		../imageshm/imageshm.cpp
 QMAKE_TARGET  = surroundpark
@@ -504,8 +508,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents mainwindow.h settings.h ../../include/common.h ../../util/shm/shmutil.h ../imageshm/imageshm.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp mainwindow.cpp settings.cpp ../../util/shm/shmutil.cpp ../imageshm/imageshm.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents mainwindow.h settings.h ../../include/common.h ../../util/util.h ../../util/shm/shmutil.h ../imageshm/imageshm.h $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp mainwindow.cpp settings.cpp ../../util/util.cpp ../../util/shm/shmutil.cpp ../imageshm/imageshm.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents mainwindow.ui $(DISTDIR)/
 
 
@@ -566,6 +570,9 @@ mainwindow.o: mainwindow.cpp mainwindow.h \
 
 settings.o: settings.cpp settings.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o settings.o settings.cpp
+
+util.o: ../../util/util.cpp ../../util/util.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o util.o ../../util/util.cpp
 
 shmutil.o: ../../util/shm/shmutil.cpp ../../util/shm/shmutil.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o shmutil.o ../../util/shm/shmutil.cpp

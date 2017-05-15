@@ -23,6 +23,14 @@ void CaptureImpl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sour
     }
 }
 
+void CaptureImpl::setFocusSource(int focusChannelIndex, struct cap_src_t* focusSource)
+{
+    if (NULL != mCaptureWorker)
+    {
+        return mCaptureWorker->setFocusSource(focusChannelIndex, focusSource);
+    }
+}
+
 int CaptureImpl::openDevice(unsigned int channel[], unsigned int channelNum)
 {
     if (NULL == mCaptureWorker)
@@ -85,6 +93,16 @@ surround_images_t* CaptureImpl::popOneFrame()
     if (NULL != mCaptureWorker)
     {
         pFrame = mCaptureWorker->popOneFrame();
+    }
+    return pFrame;
+}
+
+surround_image_t* CaptureImpl::popOneFrame4FocusSource()
+{
+    surround_image_t* pFrame = NULL;
+    if (NULL != mCaptureWorker)
+    {
+        pFrame = mCaptureWorker->popOneFrame4FocusSource();
     }
     return pFrame;
 }

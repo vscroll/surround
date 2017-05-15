@@ -16,7 +16,13 @@ CaptureWorkerBase::CaptureWorkerBase()
     
     mVideoChannelNum = 0;
 
-    pthread_mutex_init(&mMutexQueue, NULL); 
+    pthread_mutex_init(&mMutexQueue, NULL);
+
+    //focus source
+    mFocusChannelIndex = -1;
+    memset(&mFocusSource, 0, sizeof(mFocusSource));
+    pthread_mutex_init(&mMutexFocusSourceQueue, NULL);
+
     mLastCallTime = 0.0;
 
     mRealFPS = 0;
@@ -27,6 +33,18 @@ CaptureWorkerBase::CaptureWorkerBase()
 
 CaptureWorkerBase::~CaptureWorkerBase()
 {
+}
+
+void CaptureWorkerBase::setFocusSource(int focusChannelIndex, struct cap_src_t* focusSource)
+{
+    if (focusChannelIndex < 0
+        || focusChannelIndex >= VIDEO_CHANNEL_SIZE)
+    {
+        return;
+    }
+
+    mFocusChannelIndex = focusChannelIndex;
+    memcpy(&mFocusSource, &focusSource, sizeof(mFocusSource));
 }
 
 void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
@@ -54,12 +72,18 @@ surround_images_t* CaptureWorkerBase::popOneFrame()
     return surroundImage;
 }
 
-unsigned int CaptureWorkerBase::getFrameCount()
+surround_image_t* CaptureWorkerBase::popOneFrame4FocusSource()
 {
-    pthread_mutex_lock(&mMutexQueue);
-    unsigned int size = mSurroundImagesQueue.size();
-    pthread_mutex_unlock(&mMutexQueue);
-    return size;
+    struct surround_image_t* surroundImage = NULL;
+    pthread_mutex_lock(&mMutexFocusSourceQueue);
+    if (mFocuseSourceQueue.size() > 0)
+    {
+        surroundImage = mFocuseSourceQueue.front();
+        mFocuseSourceQueue.pop();
+    }
+    pthread_mutex_unlock(&mMutexFocusSourceQueue);
+
+    return surroundImage;
 }
 
 int CaptureWorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)

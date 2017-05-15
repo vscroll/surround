@@ -45,7 +45,7 @@ int ImageSHM::readImage(unsigned char* buf, unsigned int size)
     void* shmAddr = mSHMUtil.getSHMAddr();
     if (NULL == shmAddr)
     {
-	return -1;
+	    return -1;
     }
 
     mSHMUtil.p_r();

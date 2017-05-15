@@ -55,23 +55,23 @@ void SHMUtil::destroy()
 {
     if (NULL != mSHMAddr)
     {
-	shmdt(mSHMAddr);
+	    shmdt(mSHMAddr);
         mSHMAddr = NULL;
     }
 
     if (mSemId > 0)
     {
-	sem_del(mSemId);
-	mSemId = -1;
+	    sem_del(mSemId);
+	    mSemId = -1;
     }
 }
 
 int SHMUtil::write(unsigned char* buf, unsigned int size)
 {
     if (NULL == mSHMAddr
-	|| mSemId < 0)
+	    || mSemId < 0)
     {
-	return -1;
+	    return -1;
     }
 
     p(mSemId, W);
@@ -84,9 +84,9 @@ int SHMUtil::write(unsigned char* buf, unsigned int size)
 int SHMUtil::read(unsigned char* buf, unsigned int size)
 {
     if (NULL == mSHMAddr
-	|| mSemId < 0)
+	    || mSemId < 0)
     {
-	return -1;
+	    return -1;
     }
 
     p(mSemId, R);
@@ -101,8 +101,8 @@ int SHMUtil::sem_create(key_t key)
     int semid = semget(key, SEM_N, IPC_CREAT | 0666);
     if (semid < 0)
     {
-	perror("sem_create");
-	return -1;
+	    perror("sem_create");
+	    return -1;
     }
 
     sem_set_value(semid, W, 1);
@@ -140,11 +140,11 @@ int SHMUtil::p(int semid, int num)
     struct sembuf sem;
     sem.sem_num = num;
     sem.sem_op = -1;
-    sem.sem_flg = 0;
+    sem.sem_flg = 0;//IPC_NOWAIT;
     if (semop(semid, &sem, 1) < 0)
     {
         perror("semop");
-	return -1;
+	    return -1;
     }
     return 0;
 }
@@ -153,12 +153,12 @@ int SHMUtil::v(int semid, int num)
 {
     struct sembuf sem;
     sem.sem_num = num;
-    sem.sem_op = 1;
-    sem.sem_flg = 0;
+    sem.sem_op = +1;
+    sem.sem_flg = 0;//IPC_NOWAIT;
     if (semop(semid, &sem, 1) < 0)
     {
         perror("semop");
-	return -1;
+	    return -1;
     }
     return 0;
 }

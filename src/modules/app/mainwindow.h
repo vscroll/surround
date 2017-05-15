@@ -49,15 +49,12 @@ private:
     //Settings* mSettings;
 
     QTimer mVideoUpdateTimer;
-
     //QTimer mVideoUpdateFullTimer;
     //QTimer mVideoUpdateSmallTimer;
 
     unsigned int mCurVideoChannel;
 
-    //unsigned int mCaptureFPS;
     unsigned int mUpdateFPS;
-    //Controller mController;
 
     double mStartTime;
     double mStatDuration;

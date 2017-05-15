@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QDebug>
 #include "settings.h"
+#include "util.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -37,27 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mLastUpdateSmall = 0.0;
     mLastUpdateFull = 0.0;
-/*
-    struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
-    struct cap_src_t source[VIDEO_CHANNEL_SIZE];
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-	sink[i].pixfmt = IN_PIX_FMT_UYVY;
-	sink[i].width = 704;
-	sink[i].height = 574;
-	sink[i].crop_x = 0;
-	sink[i].crop_y = 0;
-	sink[i].crop_w = 704;
-	sink[i].crop_h = 574;
 
-	source[i].pixfmt = OUT_PIX_FMT_BGR24;
-	source[i].width = 704;
-	source[i].height = 574;
-    }
-
-    mController.init(Settings::getInstant()->mVideoChanel, VIDEO_CHANNEL_SIZE,
-			sink, source);
-*/
     start();
 
     mRealFrameCount = 0;
@@ -118,40 +99,28 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 
 void MainWindow::start()
 {
-//    mVideoUpdateTimer.start(1000/mUpdateFPS);
-/*
-    int pano2DWidth = Settings::getInstant()->mPano2DWidth;
-    int pano2DHeight = Settings::getInstant()->mPano2DHeight;
-    bool enableOpenCL = (Settings::getInstant()->mEnableOpenCL == 1);
-
-    QString path = Settings::getInstant()->getApplicationPath() + "/PanoConfig.bin";
-
-    mController.start(mCaptureFPS,
-			0, 0, pano2DWidth, pano2DHeight,
-			0, 0, 0, 0,
-			(char*)path.toStdString().c_str(),
-			enableOpenCL);
-*/
     mVideoUpdateTimer.start(1000/mUpdateFPS);
+    //mVideoUpdateSmallTimer.start(1000/mUpdateFPS);
+    //mVideoUpdateFullTimer.start(1000/mUpdateFPS);
     mSideSHM.create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
     mPanoSHM.create((key_t)SHM_PANO2D_ID, SHM_PANO2D_SIZE);
 }
 
 void MainWindow::stop()
 {
- //   mController.stop();
+
 }
 
 void MainWindow::onControllerQuit()
 {
- //   mController.uninit();
+
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QMainWindow::paintEvent(event);
+    //updateSmallImage();
     updateFullImage();
-    updateSmallImage();
 }
 
 void MainWindow::onUpdate()
@@ -162,7 +131,6 @@ void MainWindow::onUpdate()
 void MainWindow::updateFullImage()
 {
 #if DEBUG_UPDATE
-    double timestamp = 0.0;
     double start = clock();
     double showElapsed = 0;
     if (mLastUpdateFull > 0.00001f)
@@ -172,12 +140,15 @@ void MainWindow::updateFullImage()
     mLastUpdateFull = start;
 #endif
     unsigned char imageBuf[SHM_PANO2D_SIZE] = {};
-    mPanoSHM.readImage(imageBuf, sizeof(imageBuf));
+    if (mPanoSHM.readImage(imageBuf, sizeof(imageBuf)) < 0)
+    {
+        return;
+    }
     image_shm_header_t* header = (image_shm_header_t*)imageBuf;
 
-    double elapsed = (clock() - header->timestamp)/CLOCKS_PER_SEC;
+    long elapsed = (Util::get_system_milliseconds() - header->timestamp);
 #if DEBUG_UPDATE
-    timestamp = header->timestamp;
+    long timestamp = header->timestamp;
     double start1 = clock();
 #endif
 
@@ -189,17 +160,17 @@ void MainWindow::updateFullImage()
         //QPainter painter(this);
         //painter.drawImage(QPoint(20,20), image);
  #if DEBUG_UPDATE
-	if (mRealFrameCount == 0)
-	{
-	    mStartTime = clock();
-	}
+	    if (mRealFrameCount == 0)
+	    {
+	        mStartTime = clock();
+	    }
 
-	mRealFrameCount++;
+	    mRealFrameCount++;
         mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
-	if (mStatDuration > 5*60
-		|| mStatDuration < 0)
+	    if (mStatDuration > 5*60
+		    || mStatDuration < 0)
         {
-	    mRealFrameCount = 0;
+	        mRealFrameCount = 0;
         }
 #endif        
     }
@@ -221,7 +192,6 @@ void MainWindow::updateFullImage()
 void MainWindow::updateSmallImage()
 {
 #if DEBUG_UPDATE
-    double timestamp = 0.0;
     double start = clock();
     double showElapsed = 0;
     if (mLastUpdateSmall > 0.00001f)
@@ -231,12 +201,15 @@ void MainWindow::updateSmallImage()
     mLastUpdateSmall = start;
 #endif
     unsigned char imageBuf[SHM_SIDE_SIZE] = {};
-    mSideSHM.readImage(imageBuf, sizeof(imageBuf));
+    if (mSideSHM.readImage(imageBuf, sizeof(imageBuf)) < 0)
+    {
+        return;
+    }
     image_shm_header_t* header = (image_shm_header_t*)imageBuf;
 
-    double elapsed = (clock() - header->timestamp)/CLOCKS_PER_SEC;
+    long elapsed = Util::get_system_milliseconds() - header->timestamp;
 #if DEBUG_UPDATE
-    timestamp = header->timestamp;
+    long timestamp = header->timestamp;
     double start1 = clock();
 #endif
     //if ((int)(elapsed*1000) < 1000/mFPS)

@@ -16,6 +16,8 @@ Controller::Controller()
 
     mSideSHM = NULL;
     mPanoSHM = NULL;
+
+    mPanoSHMWorker = NULL;
 }
 
 Controller::~Controller()
@@ -161,10 +163,50 @@ void Controller::run()
 		header.pixfmt = sideImage->info.pixfmt;
 		header.size = sideImage->info.size;
 		header.timestamp = sideImage->timestamp;
-        mSideSHM->writeImage(&header, (unsigned char*)sideImage->data, header.size);
+        cv::Mat* frame = (cv::Mat*)sideImage->data;
+        double start = clock();
+        if (NULL != frame)
+        {
+            //mSideSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
+        }
+#if 0
+        std::cout << " side shm write time: " << (clock()-start)/CLOCKS_PER_SEC
+                << " width:" << header.width
+                << " height:" << header.height
+                << " size:" << header.size
+                << " timestamp:" << header.timestamp
+                << std::endl;
+#endif
     }
 
-    //Pano
     mPanoImage->queueImages(surroundImages);
+
+    //Pano
     surround_image_t* surroundImage = mPanoImage->dequeuePanoImage();
+    if (NULL != surroundImage)
+    {
+		struct image_shm_header_t header = {};
+		header.width = surroundImage->info.width;
+		header.height = surroundImage->info.height;
+		header.pixfmt = surroundImage->info.pixfmt;
+		header.size = surroundImage->info.size;
+		header.timestamp = surroundImage->timestamp;
+        cv::Mat* frame = (cv::Mat*)surroundImage->data;
+        double start = clock();
+        if (NULL != frame)
+        {
+            mPanoSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
+            delete frame;
+        }
+#if 0
+        std::cout << " pano shm write time: " << (clock()-start)/CLOCKS_PER_SEC
+                << " width:" << header.width
+                << " height:" << header.height
+                << " size:" << header.size
+                << " timestamp:" << header.timestamp
+                << std::endl;
+#endif
+
+        delete surroundImage;
+    } 
 }

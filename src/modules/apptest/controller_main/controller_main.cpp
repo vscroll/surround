@@ -30,13 +30,13 @@ int main (int argc, char **argv)
     }
 
     Controller controller;
-    controller.startLoop(VIDEO_FPS_15);
-
     controller.initCaptureModule(channel, VIDEO_CHANNEL_SIZE, sink, source);
     controller.initPanoImageModule(704, 574, PIX_FMT_BGR24,
                 424, 600, PIX_FMT_BGR24,
                 "/home/root/ckt-demo/PanoConfig.bin", true);
     controller.startModules(VIDEO_FPS_15);
+
+    controller.startLoop(VIDEO_FPS_15);
 
     while (true)
     {

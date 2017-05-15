@@ -6,6 +6,7 @@
 class ICapture;
 class IPanoImage;
 class ImageSHM;
+class PanoSHMWorker;
 class Controller : public Thread
 {
 public:
@@ -37,6 +38,7 @@ public:
     void stopLoop();
 public:
     virtual void run();
+
 private:
     ICapture* mCapture;
     IPanoImage* mPanoImage;
@@ -45,6 +47,8 @@ private:
 
     ImageSHM* mSideSHM;
     ImageSHM* mPanoSHM;
+
+    PanoSHMWorker* mPanoSHMWorker;
 };
 
 #endif // CONTROLLER_H

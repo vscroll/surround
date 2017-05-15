@@ -77,7 +77,7 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
                 << " in_pixfmt:" << mSink[i].pixfmt
                 << " in_width:" << mSink[i].width
                 << " in_height:" << mSink[i].height
-		<< std::endl;
+		        << std::endl;
 #endif
 
 	    mSource[i].width = mSink[i].width;
@@ -229,7 +229,7 @@ void CaptureWorkerV4l2::run()
         }
 
 #if DEBUG_CAPTURE
-        long read_start = (double)clock();
+        double read_start = clock();
 #endif
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
