@@ -7,10 +7,12 @@
 #include <time.h>
 #include <unistd.h>
 #include "common.h"
-#include "controller.h"
+#include "ICapture.h"
+#include "captureimpl.h"
 
 int main (int argc, char **argv)
 {
+    ICapture* capture = new CaptureImpl();
     unsigned int channel[VIDEO_CHANNEL_SIZE] = {4,2,3,5};
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
@@ -31,19 +33,23 @@ int main (int argc, char **argv)
         source[i].size = source[i].width*source[i].height*3;
     }
 
-    Controller controller;
-    controller.initCaptureModule(channel, VIDEO_CHANNEL_SIZE, sink, source);
-    controller.initPanoImageModule(704, 574, PIX_FMT_BGR24,
-                424, 600, PIX_FMT_BGR24,
-                "/home/root/ckt-demo/PanoConfig.bin", true);
-    controller.startModules(VIDEO_FPS_15);
-
-    controller.startLoop(VIDEO_FPS_15);
+    capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE);
+    struct cap_src_t focusSource;
+    focusSource.pixfmt = sink[0].pixfmt;
+    focusSource.width = sink[0].width;
+    focusSource.height = sink[0].height;
+    focusSource.size = sink[0].size;
+    capture->setFocusSource(0, &focusSource);
+    capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
+    capture->start(VIDEO_FPS_15);
 
     while (true)
     {
          usleep(1000);
     }
+
+    capture->closeDevice();
+    capture->stop();
 
     return 0;
 }

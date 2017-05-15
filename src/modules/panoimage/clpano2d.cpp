@@ -53,7 +53,7 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
 {
     cl_int ret;
 #if DEBUG_STITCH
-    double start0 = clock();
+    //double start0 = clock();
 #endif
 #if USE_MEM_VERSION_0
     if (stitch_cl_new_pano2d_buffer(side_imgs, map_x, map_y, mask, image_pano2d) < 0)
@@ -73,7 +73,6 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
         stitch_cl_delete_pano2d_buffer();
         return -1;
     }
-
     if (stitch_cl_new_input_buffer(side_imgs, map_x, map_y, mask, image_pano2d) < 0)
     {
         stitch_cl_delete_pano2d_buffer();
@@ -86,16 +85,16 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
     global[1] = side_imgs[0].rows;
 
 #if DEBUG_STITCH
-    double start1 = clock();
+    //double start1 = clock();
 #endif
     ret = clEnqueueNDRangeKernel (mCQ, mKernel, 2, NULL, global, NULL, 0, NULL, NULL);
     //clFlush(mCQ);
     clFinish(mCQ);
-    double start2 = clock();
+    //double start2 = clock();
 #if USE_MAP
     if (mImagePano2dMap != NULL)
     {
-	memcpy((void*)(image_pano2d.data), mImagePano2dMap, image_pano2d.channels()*image_pano2d.cols*image_pano2d.rows*sizeof(uchar));
+	    memcpy((void*)(image_pano2d.data), mImagePano2dMap, image_pano2d.channels()*image_pano2d.cols*image_pano2d.rows*sizeof(uchar));
     }
 #else
     ret |= clEnqueueReadBuffer(gCQ, mImagePano2d, CL_TRUE, 0,
@@ -108,7 +107,7 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
 #endif
 
 #if DEBUG_STITCH
-    double start3 = clock();
+    //double start3 = clock();
 #endif
 
 #if USE_MEM_VERSION_0
@@ -130,6 +129,7 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
 #endif
 
 #if DEBUG_STITCH
+/*
     double start4 = clock();
     printf ("\n stitch_cl_2d: write:%f cmd:%f read:%f del:%f total:%f\n",
 		(start1-start0)/CLOCKS_PER_SEC,
@@ -138,6 +138,7 @@ int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
 		(start4-start3)/CLOCKS_PER_SEC,
 		(start4-start0)/CLOCKS_PER_SEC	
 		);
+*/
 #endif
 
     return 0;
@@ -282,7 +283,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
 {
     cl_int ret;
 #if DEBUG_STITCH
-    double start0 = clock();
+    //double start0 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageFront,
@@ -297,7 +298,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start1 = clock();
+    //double start1 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageRear,
@@ -312,7 +313,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start2 = clock();
+    //double start2 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageLeft,
@@ -327,7 +328,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start3 = clock();
+    //double start3 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageRight,
@@ -342,7 +343,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start4 = clock();
+    //double start4 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageMapX,
@@ -357,7 +358,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start5 = clock();
+    //double start5 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageMapY,
@@ -372,7 +373,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start6 = clock();
+    //double start6 = clock();
 #endif
     ret = clEnqueueWriteBuffer(mCQ,
                                mImageMask,
@@ -387,7 +388,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
     }
 
 #if DEBUG_STITCH
-    double start7 = clock();
+/*    double start7 = clock();
     printf ("\n = stitch_cl_write_pano2d_buffer: %f %f %f %f %f %f %f %f\n",
 		(start1-start0)/CLOCKS_PER_SEC,
 		(start2-start1)/CLOCKS_PER_SEC,
@@ -398,6 +399,7 @@ int CLPano2D::stitch_cl_write_pano2d_buffer(const std::vector<cv::Mat>& side_img
 		(start7-start6)/CLOCKS_PER_SEC,
 		(start7-start0)/CLOCKS_PER_SEC
 		);
+*/
 #endif
 
     return 0;
@@ -458,7 +460,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
 {
     cl_int ret;
 #if DEBUG_STITCH
-    double start0 = clock();
+    //double start0 = clock();
 #endif
     mImageFront = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             side_imgs[0].channels()*side_imgs[0].cols*side_imgs[0].rows*sizeof(uchar),
@@ -471,7 +473,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start1 = clock();
+    //double start1 = clock();
 #endif
     mImageRear = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             side_imgs[1].channels()*side_imgs[1].cols*side_imgs[1].rows*sizeof(uchar),
@@ -484,7 +486,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start2 = clock();
+    //double start2 = clock();
 #endif
     mImageLeft = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             side_imgs[2].channels()*side_imgs[2].cols*side_imgs[2].rows*sizeof(uchar),
@@ -497,7 +499,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start3 = clock();
+    //double start3 = clock();
 #endif
     mImageRight = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             side_imgs[3].channels()*side_imgs[3].cols*side_imgs[3].rows*sizeof(uchar),
@@ -510,7 +512,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start4 = clock();
+    //double start4 = clock();
 #endif
     mImageMask  = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             mask.channels()*mask.cols*mask.rows*sizeof(uchar),
@@ -523,7 +525,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start5 = clock();
+    //double start5 = clock();
 #endif
     mImageMapX = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             map_x.channels()*map_x.cols*map_x.rows*sizeof(uchar),
@@ -536,7 +538,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start6 = clock();
+    //double start6 = clock();
 #endif
     mImageMapY = clCreateBuffer (mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
             map_y.channels()*map_y.cols*map_y.rows*sizeof(uchar),
@@ -549,7 +551,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
-    double start7 = clock();
+    //double start7 = clock();
 #endif
 
     ret = clSetKernelArg (mKernel, 0, sizeof(cl_mem), &mImageFront);
@@ -571,6 +573,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
     }
 
 #if DEBUG_STITCH
+/*
     printf ("\n stitch_cl_write_pano2d_buffer2: front:%f rear:%f left:%f right:%f mask:%f mapx:%f mapy:%f total:%f\n",
 		(start1-start0)/CLOCKS_PER_SEC,
 		(start2-start1)/CLOCKS_PER_SEC,
@@ -581,6 +584,7 @@ int CLPano2D::stitch_cl_new_input_buffer(const std::vector<cv::Mat>& side_imgs,
 		(start7-start6)/CLOCKS_PER_SEC,
 		(start7-start0)/CLOCKS_PER_SEC
 		);
+*/
 #endif
     return 0;
 }

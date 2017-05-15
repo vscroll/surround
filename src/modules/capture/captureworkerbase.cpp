@@ -44,7 +44,7 @@ void CaptureWorkerBase::setFocusSource(int focusChannelIndex, struct cap_src_t* 
     }
 
     mFocusChannelIndex = focusChannelIndex;
-    memcpy(&mFocusSource, &focusSource, sizeof(mFocusSource));
+    memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
 }
 
 void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)

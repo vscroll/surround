@@ -1,7 +1,6 @@
 #include "stitchworker.h"
-#include "ICapture.h"
 #include <opencv/cv.h>
-#include <string>
+#include <string.h>
 #include "clpano2d.h"
 #include "util.h"
 

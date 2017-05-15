@@ -32,6 +32,12 @@ void Controller::initCaptureModule(unsigned int channel[], unsigned int channelN
         mCapture = new CaptureImpl();
     }
     mCapture->setCapCapacity(sink, source, channelNum);
+    struct cap_src_t focusSource;
+    focusSource.pixfmt = sink[0].pixfmt;
+    focusSource.width = sink[0].width;
+    focusSource.height = sink[0].height;
+    focusSource.size = sink[0].size;
+    //mCapture->setFocusSource(0, &focusSource);
     mCapture->openDevice(channel, channelNum);
 }
 
@@ -147,6 +153,33 @@ void Controller::run()
         return;
     }
 
+    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
+    if (NULL != sideImage)
+    {
+		struct image_shm_header_t header = {};
+		header.width = sideImage->info.width;
+		header.height = sideImage->info.height;
+		header.pixfmt = sideImage->info.pixfmt;
+		header.size = sideImage->info.size;
+		header.timestamp = sideImage->timestamp;
+        unsigned char* frame = (unsigned char*)sideImage->data;
+        double start = clock();
+        if (NULL != frame)
+        {
+            //mSideSHM->writeImage(&header, frame, header.size);
+            delete frame;
+        }
+#if 0
+        std::cout << " side shm write time: " << (clock()-start)/CLOCKS_PER_SEC
+                << " width:" << header.width
+                << " height:" << header.height
+                << " size:" << header.size
+                << " timestamp:" << header.timestamp
+                << std::endl;
+#endif
+    }
+
+
     surround_images_t* surroundImages = mCapture->popOneFrame();
     if (NULL == surroundImages)
     {
@@ -154,6 +187,7 @@ void Controller::run()
     }
 
     //Side
+#if 0
     surround_image_t* sideImage = &(surroundImages->frame[mCurChannelIndex]);
     if (NULL != sideImage)
     {
@@ -178,6 +212,7 @@ void Controller::run()
                 << std::endl;
 #endif
     }
+#endif
 
     mPanoImage->queueImages(surroundImages);
 
@@ -195,7 +230,7 @@ void Controller::run()
         double start = clock();
         if (NULL != frame)
         {
-            mPanoSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
+            //mPanoSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
             delete frame;
         }
 #if 0
