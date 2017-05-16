@@ -13,12 +13,12 @@ RenderBase::~RenderBase()
 
 }
 
-int RenderBase::openDevice(unsigned int left,
-		unsigned int top,
-		unsigned int width,
-		unsigned int height)
+int RenderBase::openDevice(unsigned int dstLeft,
+		unsigned int dstTop,
+		unsigned int dstWidth,
+		unsigned int dstHeight)
 {
-    if (mRenderDevice->openDevice(left, top, width, height) < 0)
+    if (mRenderDevice->openDevice(dstLeft, dstTop, dstWidth, dstHeight) < 0)
     {
 	    return -1;
     }    
@@ -31,7 +31,19 @@ void RenderBase::closeDevice()
     mRenderDevice->closeDevice();
 }
 
-void RenderBase::drawImage(unsigned char* buf, unsigned int size)
+void RenderBase::drawImage(unsigned char* buf,
+            unsigned int srcPixfmt,
+            unsigned int srcWidth,
+            unsigned int srcHeight,
+            unsigned int srcSize)
 {
-    mRenderDevice->drawImage(buf, size);
+    mRenderDevice->drawImage(buf,
+                srcPixfmt,
+                srcWidth,
+                srcHeight,
+                srcSize,
+                mRenderDevice->getDstLeft(),
+                mRenderDevice->getDstTop(),
+                mRenderDevice->getDstWidth(),
+                mRenderDevice->getDstHeight());
 }

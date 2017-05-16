@@ -250,8 +250,9 @@ void CaptureWorkerV4l2::run()
                     surround_image->info.width = mFocusSource.width;
                     surround_image->info.height = mFocusSource.height;
                     surround_image->info.size = mFocusSource.size;
-                    surround_image->data = new unsigned char[mFocusSource.size];
-                    memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
+                    //surround_image->data = new unsigned char[mFocusSource.size];
+                    //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
+                    surround_image->data = mV4l2Buf[i][buf.index].start;
                     pthread_mutex_lock(&mMutexFocusSourceQueue);
                     mFocuseSourceQueue.push(surround_image);
 #if DEBUG_CAPTURE
@@ -388,7 +389,7 @@ void CaptureWorkerV4l2::run()
     }
 
 #if DEBUG_CAPTURE
-    std::cout << "CaptureWorkerV4l2::onCapture"
+    std::cout << "CaptureWorkerV4l2::run"
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed
             << ", capture:" << (clock()-start)/CLOCKS_PER_SEC

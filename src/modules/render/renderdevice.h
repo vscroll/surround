@@ -9,15 +9,27 @@ class RenderDevice
 public:
     RenderDevice();
     virtual ~RenderDevice();
-    int openDevice(unsigned int left,
-		unsigned int top,
-		unsigned int width,
-		unsigned int height);
+    int openDevice(unsigned int dstLeft,
+		unsigned int dstTop,
+		unsigned int dstWidth,
+		unsigned int dstHeight);
 
     void closeDevice();
 
-    void drawImage(unsigned char* buf, unsigned int size);
+    void drawImage(unsigned char* buf,
+            unsigned int srcPixfmt,
+            unsigned int srcWidth,
+            unsigned int srcHeight,
+            unsigned int srcSize,
+            unsigned int dstLeft,
+		    unsigned int dstTop,
+		    unsigned int dstWidth,
+		    unsigned int dstHeight);
 
+    unsigned int getDstLeft() { return mDstLeft; }
+    unsigned int getDstTop() { return mDstTop; }
+    unsigned int getDstWidth() { return mDstWidth; }
+    unsigned int getDstHeight() { return mDstHeight; }
 private:
     int openFramebuffer();
     void closeFramebuffer();
@@ -25,10 +37,10 @@ private:
     int openG2d();
     void closeG2d();
 private:
-    unsigned int mLeft;
-    unsigned int mTop;
-    unsigned int mWidth;
-    unsigned int mHeight;
+    unsigned int mDstLeft;
+    unsigned int mDstTop;
+    unsigned int mDstWidth;
+    unsigned int mDstHeight;
 
     int mFBFd;
     struct fb_fix_screeninfo mFBInfo;
@@ -38,8 +50,9 @@ private:
     int mFBSize;
 
 #define BUFFER_SIZE 2
-    void* mG2dHandle;
     struct g2d_buf* mG2dbuf[BUFFER_SIZE];
+
+    unsigned int mG2dBufIndex;
 private:
 
 };

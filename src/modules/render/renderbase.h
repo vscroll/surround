@@ -7,14 +7,18 @@ class RenderBase
 public:
     RenderBase();
     virtual ~RenderBase();
-    virtual int openDevice(unsigned int left,
-		unsigned int top,
-		unsigned int width,
-		unsigned int height);
+    virtual int openDevice(unsigned int dstLeft,
+		unsigned int dstTop,
+		unsigned int dstWidth,
+		unsigned int dstHeight);
 
     virtual void closeDevice();
 
-    virtual void drawImage(unsigned char* buf, unsigned int size);
+    virtual void drawImage(unsigned char* buf,
+            unsigned int srcPixfmt,
+            unsigned int srcWidth,
+            unsigned int srcHeight,
+            unsigned int srcSize);
 
 private:
     RenderDevice* mRenderDevice;

@@ -9,10 +9,10 @@
 
 RenderDevice::RenderDevice()
 {
-    mLeft = 0;
-    mTop = 0;
-    mWidth = 0;
-    mHeight = 0;
+    mDstLeft = 0;
+    mDstTop = 0;
+    mDstWidth = 0;
+    mDstHeight = 0;
 
     mFBFd = -1;
     memset(&mFBInfo, 0, sizeof(mFBInfo));
@@ -22,11 +22,12 @@ RenderDevice::RenderDevice()
     mFBMem = NULL;
     mFBSize = 0;
 
-    mG2dHandle = NULL;
     for (int i = 0; i < BUFFER_SIZE; i++)
     {
         mG2dbuf[i] = NULL;
     }
+
+    mG2dBufIndex = 0;
 }
 
 RenderDevice::~RenderDevice()
@@ -34,28 +35,35 @@ RenderDevice::~RenderDevice()
 
 }
 
-int RenderDevice::openDevice(unsigned int left,
-		unsigned int top,
-		unsigned int width,
-		unsigned int height)
+int RenderDevice::openDevice(unsigned int dstLeft,
+		unsigned int dstTop,
+		unsigned int dstWidth,
+		unsigned int dstHeight)
 {
-    mLeft = left;
-    mTop = top;
-    mWidth = width;
-    mHeight = height;
+    mDstLeft = dstLeft;
+    mDstTop = dstTop;
+    mDstWidth = dstWidth;
+    mDstHeight = dstHeight;
 
     if (openFramebuffer() < 0)
     {
         closeFramebuffer();
-	return -1;
+	    return -1;
     }
 
     if (openG2d() < 0)
     {
         closeFramebuffer();
         closeG2d();
-	return -1;
+	    return -1;
     }
+
+    std::cout << "openDevice ok"
+            << ", dst left:" << mDstLeft
+            << ", dst top:" << mDstTop
+            << ", dst width:" << mDstWidth
+            << ", dst height:" << mDstHeight
+            << std::endl;
 
     return 0;
 }
@@ -70,21 +78,21 @@ void RenderDevice::closeDevice()
 int RenderDevice::openFramebuffer()
 {
     if ((mFBFd = open("/dev/fb0", O_RDWR, 0)) < 0) {
-	return -1;
+	    return -1;
     }
 
     /* Get fix screen info. */
     if (ioctl(mFBFd, FBIOGET_FSCREENINFO, &mFBInfo) < 0) {
         std::cout << "FBIOGET_FSCREENINFO failed"
                   << std::endl;
-	return -1;
+	    return -1;
     }
 
     /* Get variable screen info. */
     if (ioctl(mFBFd, FBIOGET_VSCREENINFO, &mScreenInfo) < 0) {
         std::cout << "FBIOGET_VSCREENINFO failed"
                   << std::endl;
-	return -1;
+	    return -1;
     }
 
     mFBPhys = mFBInfo.smem_start + (mScreenInfo.xres_virtual * mScreenInfo.yoffset * mScreenInfo.bits_per_pixel / 8);
@@ -95,10 +103,10 @@ int RenderDevice::openFramebuffer()
     if ((int)mFBMem <= 0) {
         std::cout << "failed to map framebuffer device to memory"
                   << std::endl;
-	return -1;
+	    return -1;
     }
 
-    std::cout << "RenderPano2DWorker::openDevice"
+    std::cout << "RenderDevice::openDevice"
               << " xres_virtual:" << mScreenInfo.xres_virtual
               << " yres_virtual:" << mScreenInfo.yres_virtual
               << std::endl;
@@ -118,20 +126,12 @@ void RenderDevice::closeFramebuffer()
 
 int RenderDevice::openG2d()
 {
-    if (g2d_open(&mG2dHandle) == -1
-	|| mG2dHandle == NULL)
-    {
-        std::cout << "Fail to open g2d device"
-                  << std::endl;
-        return -1;
-    }
-
     for (int i = 0; i < BUFFER_SIZE; i++)
     {
 #if CACHEABLE
-        mG2dbuf[i] = g2d_alloc(mWidth*mHeight*3, 1);
+        mG2dbuf[i] = g2d_alloc(mDstWidth*mDstHeight*3, 1);
 #else
-        mG2dbuf[i] = g2d_alloc(mWidth*mHeight*3, 0);
+        mG2dbuf[i] = g2d_alloc(mDstWidth*mDstHeight*3, 0);
 #endif
         if(NULL == mG2dbuf[i])
         {
@@ -140,19 +140,16 @@ int RenderDevice::openG2d()
             return -1;
         }
     }
+
+    std::cout << "RenderDevice::openG2d ok"
+              << std::endl;
 }
 
 void RenderDevice::closeG2d()
 {
-    if (NULL != mG2dHandle)
-    {
-	g2d_close(mG2dHandle);
-        mG2dHandle = NULL;
-    }
-
     for (int i = 0; i < BUFFER_SIZE; i++)
     {
-	if (mG2dbuf[i] != NULL)
+	    if (mG2dbuf[i] != NULL)
         {
             g2d_free(mG2dbuf[i]);
             mG2dbuf[i] = NULL;
@@ -160,23 +157,44 @@ void RenderDevice::closeG2d()
     }
 }
 
-void RenderDevice::drawImage(unsigned char* buf, unsigned int size)
+void RenderDevice::drawImage(unsigned char* buf,
+            unsigned int srcPixfmt,
+            unsigned int srcWidth,
+            unsigned int srcHeight,
+            unsigned int srcSize,
+            unsigned int dstLeft,
+		    unsigned int dstTop,
+		    unsigned int dstWidth,
+		    unsigned int dstHeight)
 {
-#if 0
-    if (NULL == mG2dHandle)
+    void *g2dHandle;
+    if (g2d_open(&g2dHandle) == -1
+	    || g2dHandle == NULL)
     {
-	return;
-    }
-
-    if (((mLeft + mWidth) > (int)mScreenInfo->xres ) || ( (mTop + mHeight) > (int)mScreenInfo->yres ) )  {
-        std::cout << "Bad display image dimensions"
+        std::cout << "Fail to open g2d device"
                   << std::endl;
         return;
     }
 
-    struct g2d_buf* g2dbuf = mG2dbuf[0];
-    memcpy(g2dbuf->buf_vaddr, buf, size);
-    struct g2d_surface src, dst;
+    if ((dstLeft + dstWidth) > (int)mScreenInfo.xres || (dstTop + dstHeight) > (int)mScreenInfo.yres)  {
+        std::cout << "Bad display image dimensions"
+                << ", dst left:" << dstLeft
+                << ", dst top:" << dstTop
+                << ", dst width:" << dstWidth
+                << ", dst height:" << dstHeight
+                << std::endl;
+        return;
+    }
+
+    struct g2d_buf* g2dbuf = mG2dbuf[mG2dBufIndex];
+    if (++mG2dBufIndex >= BUFFER_SIZE)
+    {
+        mG2dBufIndex = 0;
+    }
+
+    memcpy(g2dbuf->buf_vaddr, buf, srcSize);
+    struct g2d_surface src;
+    struct g2d_surface dst;
 
 #if CACHEABLE
     g2d_cache_op(g2dbuf, G2D_CACHE_FLUSH);
@@ -195,7 +213,7 @@ NV21/NV61:  Y in planes [0], VU in planes [1], with 64bytes alignment,
 YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
 */
 
-    src.format = img_format;
+    src.format = G2D_UYVY;
     switch (src.format) {
         case G2D_RGB565:
         case G2D_RGBA8888:
@@ -205,46 +223,47 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
         case G2D_BGR565:
         case G2D_YUYV:
         case G2D_UYVY:
-            src.planes[0] = buf->buf_paddr;
+            src.planes[0] = g2dbuf->buf_paddr;
             break;
         case G2D_NV12:
-            src.planes[0] = buf->buf_paddr;
-            src.planes[1] = buf->buf_paddr + img_width * img_height;
+            src.planes[0] = g2dbuf->buf_paddr;
+            src.planes[1] = g2dbuf->buf_paddr + srcWidth * srcHeight;
             break;
         case G2D_I420:
-            src.planes[0] = buf->buf_paddr;
-            src.planes[1] = buf->buf_paddr + img_width * img_height;
-            src.planes[2] = src.planes[1]  + img_width * img_height / 4;
+            src.planes[0] = g2dbuf->buf_paddr;
+            src.planes[1] =g2dbuf->buf_paddr + srcWidth * srcHeight;
+            src.planes[2] = src.planes[1]  + srcWidth * srcHeight / 4;
             break;
         case G2D_NV16:
-            src.planes[0] = buf->buf_paddr;
-            src.planes[1] = buf->buf_paddr + img_width * img_height;
+            src.planes[0] = g2dbuf->buf_paddr;
+            src.planes[1] = g2dbuf->buf_paddr + srcWidth * srcHeight;
             break;
         default:
-            printf("Unsupport image format in the example code\n");
+            std::cout << "Unsupport image format"
+                    << std::endl;
             return;
     }
 
     src.left = 0;
     src.top = 0;
-    src.right = img_width;
-    src.bottom = img_height;
-    src.stride = img_width;
-    src.width  = img_width;
-    src.height = img_height;
+    src.right = srcWidth;
+    src.bottom = srcHeight;
+    src.stride = srcWidth;
+    src.width  = srcWidth;
+    src.height = srcHeight;
     src.rot  = G2D_ROTATION_0;
 
-    dst.planes[0] = g_fb_phys;
-    dst.left = left;
-    dst.top = top;
-    dst.right = left + to_width;
-    dst.bottom = top + to_height;
-    dst.stride = screen_info->xres;
-    dst.width  = screen_info->xres;
-    dst.height = screen_info->yres;
-    dst.rot    = rotation;
-    dst.format = screen_info->bits_per_pixel == 16 ? G2D_RGB565 : (screen_info->red.offset == 0 ? G2D_RGBA8888 : G2D_BGRA8888);
-
+    dst.planes[0] = mFBPhys;
+    dst.left = dstLeft;
+    dst.top = dstTop;
+    dst.right = dstLeft + dstWidth;
+    dst.bottom = dstTop + dstHeight;
+    dst.stride = mScreenInfo.xres;
+    dst.width  = mScreenInfo.xres;
+    dst.height = mScreenInfo.yres;
+    dst.rot    = G2D_ROTATION_0;
+    dst.format = mScreenInfo.bits_per_pixel == 16 ? G2D_RGB565 : (mScreenInfo.red.offset == 0 ? G2D_RGBA8888 : G2D_BGRA8888);
+#if 0
     if (set_alpha)
     {
         src.blendfunc = G2D_ONE;
@@ -256,16 +275,17 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
         g2d_enable(g2dHandle, G2D_BLEND);
         g2d_enable(g2dHandle, G2D_GLOBAL_ALPHA);
     }
+#endif
 
     g2d_blit(g2dHandle, &src, &dst);
     g2d_finish(g2dHandle);
-
+#if 0
     if (set_alpha)
     {
         g2d_disable(g2dHandle, G2D_GLOBAL_ALPHA);
         g2d_disable(g2dHandle, G2D_BLEND);
     }
-
-    g2d_close(g2dHandle);
 #endif
+    g2d_close(g2dHandle);
+
 }
