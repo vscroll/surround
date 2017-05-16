@@ -178,6 +178,13 @@ void CaptureWorkerV4l2::clearOverstock()
     pthread_mutex_unlock(&mMutexQueue);
 }
 
+bool CaptureWorkerV4l2::isNeedConvert(unsigned int channelIndex)
+{
+    return (mSink[channelIndex].pixfmt != mSource[channelIndex].pixfmt
+                    || mSink[channelIndex].width != mSource[channelIndex].width
+                    || mSink[channelIndex].height != mSource[channelIndex].height);
+}
+
 void CaptureWorkerV4l2::run()
 {
     //clearOverstock();
@@ -229,9 +236,6 @@ void CaptureWorkerV4l2::run()
             return;
         }
 
-#if DEBUG_CAPTURE
-        double read_start = clock();
-#endif
         struct v4l2_buffer buf;
         if (-1 != V4l2::readFrame(mVideoFd[i], &buf, mMemType))
         {
@@ -256,71 +260,78 @@ void CaptureWorkerV4l2::run()
                     pthread_mutex_unlock(&mMutexFocusSourceQueue);                                     
                 }
 
-#if DEBUG_CAPTURE
-                read_time = (clock()-read_start)/CLOCKS_PER_SEC;
-#endif
+                // call IPU to convert
+                if (isNeedConvert(i))
+                {
 
 #if DEBUG_CAPTURE
-                double convert_start = clock();
+                    double convert_start = clock();
 #endif
 
 #if USE_IMX_IPU
-                struct ipu_task task;
-                memset(&task, 0, sizeof(struct ipu_task));
-                task.input.width  = mSink[i].width;
-                task.input.height = mSink[i].height;
-                task.input.crop.pos.x = mSink[i].crop_x;
-                task.input.crop.pos.y = mSink[i].crop_y;
-                task.input.crop.w = mSink[i].crop_w;
-                task.input.crop.h = mSink[i].crop_h;
-                task.input.format = mSink[i].pixfmt;
-                task.input.deinterlace.enable = 1;
-                task.input.deinterlace.motion = 2;
+                    struct ipu_task task;
+                    memset(&task, 0, sizeof(struct ipu_task));
+                    task.input.width  = mSink[i].width;
+                    task.input.height = mSink[i].height;
+                    task.input.crop.pos.x = mSink[i].crop_x;
+                    task.input.crop.pos.y = mSink[i].crop_y;
+                    task.input.crop.w = mSink[i].crop_w;
+                    task.input.crop.h = mSink[i].crop_h;
+                    task.input.format = mSink[i].pixfmt;
+                    task.input.deinterlace.enable = 1;
+                    task.input.deinterlace.motion = 2;
 
-                task.output.width = mSource[i].width;
-                task.output.height = mSource[i].height;
-                task.output.crop.pos.x = 0;
-                task.output.crop.pos.y = 0;
-                task.output.crop.w = mSource[i].width;
-                task.output.crop.h = mSource[i].height;
-                //for colour cast
-                //task.output.format = V4L2_PIX_FMT_RGB24;
-                task.output.format = mSource[i].pixfmt;
+                    task.output.width = mSource[i].width;
+                    task.output.height = mSource[i].height;
+                    task.output.crop.pos.x = 0;
+                    task.output.crop.pos.y = 0;
+                    task.output.crop.w = mSource[i].width;
+                    task.output.crop.h = mSource[i].height;
+                    //for colour cast
+                    //task.output.format = V4L2_PIX_FMT_RGB24;
+                    task.output.format = mSource[i].pixfmt;
 
-                task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
-                task.output.paddr = (int)mOutIPUBuf[i].offset;
-                if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
-                    std::cout << "CaptureWorkerV4l2::onCapture"
-                            << ", ipu task failed:" << mIPUFd
-			                << std::endl;
-                    continue;
-                }
+                    task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
+                    task.output.paddr = (int)mOutIPUBuf[i].offset;
+                    if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
+                        std::cout << "CaptureWorkerV4l2::onCapture"
+                                << ", ipu task failed:" << mIPUFd
+			                    << std::endl;
+                        continue;
+                    }
                 
 #else
-                unsigned char frame_buffer[mSource[i].size];
-                Util::uyvy_to_rgb24(mSink[i].width, mSink[i].height, (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
+                    unsigned char frame_buffer[mSource[i].size];
+                    Util::uyvy_to_rgb24(mSink[i].width, mSink[i].height, (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
 #endif
 
 #if DEBUG_CAPTURE
 /*
-                convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
-                std::cout << "CaptureWorkerV4l2::onCapture"
-                        << ", channel:" << i
-                        << ", read_time:" << read_time
-                        << ", yuv to rgb:" << convert_time
-			            << std::endl;
+                    convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
+                    std::cout << "CaptureWorkerV4l2::onCapture"
+                            << ", channel:" << i
+                            << ", yuv to rgb:" << convert_time
+			                << std::endl;
 */
 #endif
 
 #if USE_IMX_IPU                
-                cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, mOutIPUBuf[i].start);
+                    cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, mOutIPUBuf[i].start);
 #else
-                cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, frame_buffer);
+                    cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, frame_buffer);
 #endif
-                if (NULL != matImage)
+                    if (NULL != matImage)
+                    {
+                        flag = flag << 1;
+                        image[i] = matImage;
+                    }
+                }
+                else
                 {
                     flag = flag << 1;
-                    image[i] = matImage;
+                    //image[i] = new unsigned char[mSource[i].size];
+                    //memcpy(image[i], (unsigned char*)mV4l2Buf[i][buf.index].start, mSource[i].size);
+                    image[i] = mV4l2Buf[i][buf.index].start;
                 }
             }
         }
@@ -368,7 +379,8 @@ void CaptureWorkerV4l2::run()
     {
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
-            if (NULL != image[i])
+            if (NULL != image[i]
+                && isNeedConvert(i))
             {
                 delete (cv::Mat*)image[i];
             }

@@ -6,6 +6,7 @@
 #include <opencv/cv.h>
 #include <queue>
 
+class ICapture;
 class CLPano2D;
 class StitchWorker : public Thread
 {
@@ -13,7 +14,9 @@ public:
     StitchWorker();
     virtual ~StitchWorker();
 
-    int init(unsigned int inWidth,
+    int init(
+            ICapture* capture,
+            unsigned int inWidth,
 		    unsigned int inHeight,
 		    unsigned int inPixfmt,        
 		    unsigned int panoWidth,
@@ -41,6 +44,8 @@ private:
                 const cv::Mat& mapX, const cv::Mat& mapY, const cv::Mat& mask,
                 void** outPano2D, int outPano2DWidth, int outPano2DHeight);
 private:
+    ICapture* mCapture;
+
     pthread_mutex_t mInputImagesMutex;
     std::queue<surround_images_t*> mInputImagesQueue;
 

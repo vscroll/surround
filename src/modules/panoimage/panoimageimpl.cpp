@@ -15,7 +15,9 @@ PanoImageImpl::~PanoImageImpl()
     }
 }
 
-int PanoImageImpl::init(unsigned int inWidth,
+int PanoImageImpl::init(
+        ICapture* capture,
+        unsigned int inWidth,
 		unsigned int inHeight,
 		unsigned int inPixfmt,        
 		unsigned int panoWidth,
@@ -29,7 +31,9 @@ int PanoImageImpl::init(unsigned int inWidth,
         return -1;
     }
 
-    return mWorker->init(inWidth,
+    return mWorker->init(
+                capture,
+                inWidth,
                 inHeight,
                 inPixfmt,
                 panoWidth,

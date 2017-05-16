@@ -3,11 +3,14 @@
 
 #include "common.h"
 
+class ICapture;
 class IPanoImage
 {
 public:
     virtual ~IPanoImage() {}
-    virtual int init(unsigned int inWidth,
+    virtual int init(
+        ICapture* capture,
+        unsigned int inWidth,
 		unsigned int inHeight,
 		unsigned int inPixfmt,        
 		unsigned int panoWidth,

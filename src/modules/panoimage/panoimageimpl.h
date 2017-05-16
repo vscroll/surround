@@ -9,7 +9,9 @@ class PanoImageImpl : public IPanoImage
 public:
     PanoImageImpl();
     virtual ~PanoImageImpl();
-    virtual int init(unsigned int inWidth,
+    virtual int init(
+        ICapture* capture,
+        unsigned int inWidth,
 		unsigned int inHeight,
 		unsigned int inPixfmt,        
 		unsigned int panoWidth,

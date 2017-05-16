@@ -3,11 +3,14 @@
 #include <string.h>
 #include "clpano2d.h"
 #include "util.h"
+#include "ICapture.h"
 
 using namespace cv;
 
 StitchWorker::StitchWorker()
 {
+    mCapture = NULL;
+
     pthread_mutex_init(&mInputImagesMutex, NULL);
     pthread_mutex_init(&mOutputPanoImageMutex, NULL);
 
@@ -27,7 +30,9 @@ StitchWorker::~StitchWorker()
 
 }
 
-int StitchWorker::init(unsigned int inWidth,
+int StitchWorker::init(
+            ICapture* capture,
+            unsigned int inWidth,
 		    unsigned int inHeight,
 		    unsigned int inPixfmt,        
 		    unsigned int panoWidth,
@@ -36,12 +41,18 @@ int StitchWorker::init(unsigned int inWidth,
 		    char* algoCfgFilePath,
 		    bool enableOpenCL)
 {
+    mCapture = capture;
+
     mPanoWidth = panoWidth;
     mPanoHeight = panoHeight;
     mPanoPixfmt = panoPixfmt;
     if (panoPixfmt == PIX_FMT_BGR24)
     {
         mPanoSize = panoWidth*panoHeight*3;
+    }
+    else if (panoPixfmt == PIX_FMT_UYVY)
+    {
+        mPanoSize = panoWidth*panoHeight*2;
     }
 
     mEnableOpenCL = enableOpenCL;
@@ -190,14 +201,22 @@ void StitchWorker::run()
 #endif
  
     surround_images_t* surroundImage = NULL;
-    pthread_mutex_lock(&mInputImagesMutex);
-    inputImageSize = mInputImagesQueue.size();
-    if (inputImageSize > 0)
+    if (NULL != mCapture)
     {
-        surroundImage = mInputImagesQueue.front();
-        mInputImagesQueue.pop();
+        surroundImage = mCapture->popOneFrame();
     }
-    pthread_mutex_unlock(&mInputImagesMutex);
+    else
+    {
+        pthread_mutex_lock(&mInputImagesMutex);
+        inputImageSize = mInputImagesQueue.size();
+        if (inputImageSize > 0)
+        {
+            surroundImage = mInputImagesQueue.front();
+            mInputImagesQueue.pop();
+        }
+        pthread_mutex_unlock(&mInputImagesMutex);
+    }
+
     if (NULL == surroundImage)
     {
         return;

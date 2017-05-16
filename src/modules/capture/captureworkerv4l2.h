@@ -19,7 +19,7 @@ public:
 
 private:
     void clearOverstock();
-    
+    bool isNeedConvert(unsigned int channelIndex);
 private:
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[VIDEO_CHANNEL_SIZE][V4L2_BUF_COUNT];

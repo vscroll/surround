@@ -4,6 +4,8 @@
 #include "captureimpl.h"
 #include "IPanoImage.h"
 #include "panoimageimpl.h"
+#include "IRender.h"
+#include "renderimpl.h"
 #include "imageshm.h"
 #include <opencv/cv.h>
 
@@ -11,8 +13,9 @@ Controller::Controller()
 {
     mCapture = NULL;
     mPanoImage = NULL;
+    mRender = NULL;
 
-    mCurChannelIndex = VIDEO_CHANNEL_FRONT;
+    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
 
     mSideSHM = NULL;
     mPanoSHM = NULL;
@@ -24,24 +27,32 @@ Controller::~Controller()
 {
 }
 
-void Controller::initCaptureModule(unsigned int channel[], unsigned int channelNum,
-		struct cap_sink_t sink[], struct cap_src_t source[])
+ICapture* Controller::initCaptureModule(
+            unsigned int channel[],
+            unsigned int channelNum,
+            struct cap_sink_t sink[],
+            struct cap_src_t source[])
 {
     if (NULL == mCapture)
     {
         mCapture = new CaptureImpl();
     }
     mCapture->setCapCapacity(sink, source, channelNum);
+
     struct cap_src_t focusSource;
     focusSource.pixfmt = sink[0].pixfmt;
     focusSource.width = sink[0].width;
     focusSource.height = sink[0].height;
     focusSource.size = sink[0].size;
-    //mCapture->setFocusSource(0, &focusSource);
+    mCapture->setFocusSource(0, &focusSource);
     mCapture->openDevice(channel, channelNum);
+
+    return mCapture;
 }
 
-void Controller::initPanoImageModule(unsigned int inWidth,
+IPanoImage* Controller::initPanoImageModule(
+            ICapture* capture,
+            unsigned int inWidth,
             unsigned int inHeight,
             unsigned int inPixfmt,
             unsigned int panoWidth,
@@ -55,18 +66,18 @@ void Controller::initPanoImageModule(unsigned int inWidth,
         mPanoImage = new PanoImageImpl();
     }
 
-    mPanoImage->init(inWidth, inHeight, inPixfmt, panoWidth, panoHeight, panoPixfmt, algoCfgFilePath, enableOpenCL);
+    mPanoImage->init(mCapture, inWidth, inHeight, inPixfmt, panoWidth, panoHeight, panoPixfmt, algoCfgFilePath, enableOpenCL);
+    return mPanoImage;
 }
 
-void Controller::initSideImageModule(unsigned int curChannelIndex,
+ISideImage* Controller::initSideImageModule(
+            ICapture* capture,
+            unsigned int focusChannelIndex,
             unsigned int outWidth,
             unsigned int outHeight,
             unsigned int outPixfmt)
 {
-    if (curChannelIndex < VIDEO_CHANNEL_SIZE)
-    {
-        mCurChannelIndex = curChannelIndex;
-    }
+    return NULL;
 }
 
 void Controller::uninitModules()
@@ -84,17 +95,46 @@ void Controller::uninitModules()
     }
 }
 
+IRender* Controller::initRenderModule(
+            ICapture* capture,
+            ISideImage* sideImage,
+            IPanoImage* panoImage,
+		    unsigned int sideLeft,
+		    unsigned int sideTop,
+		    unsigned int sideWidth,
+		    unsigned int sideHeight,
+		    unsigned int panoLeft,
+		    unsigned int panoTop,
+		    unsigned int panoWidth,
+		    unsigned int panoHeight)
+{
+    if (NULL == mRender)
+    {
+        mRender = new RenderImpl();
+    }
+    mRender->init(capture, panoImage,
+            sideLeft, sideTop, sideWidth, sideHeight,
+            panoLeft, panoTop, panoWidth, panoHeight);
+
+    return mRender;
+} 
+
 void Controller::startModules(unsigned int fps)
 {
-   if (NULL != mCapture)
-   {
+    if (NULL != mCapture)
+    {
         mCapture->start(fps);
-   }
+    }
 
-   if (NULL != mPanoImage)
-   {
+    if (NULL != mPanoImage)
+    {
         mPanoImage->start(fps);
-   }
+    }
+
+    if (NULL != mRender)
+    {
+        mRender->start(fps);
+    }
 }
 
 void Controller::stopModules()
@@ -179,12 +219,13 @@ void Controller::run()
 #endif
     }
 
-
+/*
     surround_images_t* surroundImages = mCapture->popOneFrame();
     if (NULL == surroundImages)
     {
         return;
     }
+*/
 
     //Side
 #if 0
@@ -214,6 +255,7 @@ void Controller::run()
     }
 #endif
 
+#if 0
     mPanoImage->queueImages(surroundImages);
 
     //Pano
@@ -243,5 +285,7 @@ void Controller::run()
 #endif
 
         delete surroundImage;
-    } 
+    }
+#endif
+
 }
