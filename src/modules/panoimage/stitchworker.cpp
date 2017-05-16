@@ -22,7 +22,7 @@ StitchWorker::StitchWorker()
     mEnableOpenCL = false;
     mCLPano2D = new CLPano2D();
 
-    mLastCallTime = 0.0;
+    mLastCallTime = 0;
 }
 
 StitchWorker::~StitchWorker()
@@ -191,11 +191,11 @@ void StitchWorker::run()
     int inputImageSize = 0;
     int panoSize = 0;
 
-    double start = clock();
+    clock_t start = clock();
     double elapsed_to_last = 0;
-    if (mLastCallTime > 0.00001f)
+    if (mLastCallTime > 0)
     {
-        elapsed_to_last = (start - mLastCallTime)/CLOCKS_PER_SEC;
+        elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
     }
     mLastCallTime = start;
 #endif
@@ -256,7 +256,7 @@ void StitchWorker::run()
         }
     }
 #if DEBUG_STITCH
-       double end = clock();
+       clock_t end = clock();
 #endif
 
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -293,7 +293,7 @@ void StitchWorker::run()
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << elapsed
-            << ", stitch:" << (end-start)/CLOCKS_PER_SEC
+            << ", stitch:" << (double)(end-start)/CLOCKS_PER_SEC
             << ", input_size:" << inputImageSize
             << ", pano_size:" << panoSize
             << std::endl;

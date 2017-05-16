@@ -189,15 +189,15 @@ void CaptureWorkerV4l2::run()
 {
     //clearOverstock();
 #if DEBUG_CAPTURE
-    double start = clock();
+    clock_t start = clock();
     int size = 0;
     int focus_size = 0;
     double elapsed = 0;
-    double read_time = 0;
-    double convert_time = 0;
-    if (mLastCallTime > 0.00001f)
+    clock_t read_time = 0;
+    clock_t convert_time = 0;
+    if (mLastCallTime > 0)
     {
-        elapsed = (start - mLastCallTime)/CLOCKS_PER_SEC;
+        elapsed = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
     }
     mLastCallTime = start;
 #endif
@@ -266,7 +266,7 @@ void CaptureWorkerV4l2::run()
                 {
 
 #if DEBUG_CAPTURE
-                    double convert_start = clock();
+                    clock_t convert_start = clock();
 #endif
 
 #if USE_IMX_IPU
@@ -368,13 +368,19 @@ void CaptureWorkerV4l2::run()
 	    }
 
 	    mRealFrameCount++;
-        mRealFPS = mRealFrameCount/mStatDuration;
         mStatDuration = (clock() - mStartStatTime)/CLOCKS_PER_SEC;
-	    if (mStatDuration > 5*60
-            || mStatDuration < 0)
+        if (mStatDuration < 1)
+        {
+            mStatDuration = 1;
+        }
+
+	    if (mStatDuration > 5*60)
         {
 	        mRealFrameCount = 0;
         }
+
+        mRealFPS = mRealFrameCount/mStatDuration;
+
     }
     else
     {
@@ -387,12 +393,11 @@ void CaptureWorkerV4l2::run()
             }
         }
     }
-
 #if DEBUG_CAPTURE
     std::cout << "CaptureWorkerV4l2::run"
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed
-            << ", capture:" << (clock()-start)/CLOCKS_PER_SEC
+            << ", capture:" << (double)(clock() - start)/CLOCKS_PER_SEC
             << ", size:" << size
             << ", focus_size:" << focus_size
             << ", fps:" << mRealFPS

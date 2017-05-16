@@ -23,11 +23,11 @@ CaptureWorkerBase::CaptureWorkerBase()
     memset(&mFocusSource, 0, sizeof(mFocusSource));
     pthread_mutex_init(&mMutexFocusSourceQueue, NULL);
 
-    mLastCallTime = 0.0;
+    mLastCallTime = 0;
 
     mRealFPS = 0;
-    mStartStatTime = 0.0;
-    mStatDuration = 0.0;
+    mStartStatTime = 0;
+    mStatDuration = 0;
     mRealFrameCount = 0;
 }
 

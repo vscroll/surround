@@ -56,12 +56,12 @@ private:
 
     unsigned int mUpdateFPS;
 
-    double mStartTime;
-    double mStatDuration;
+    clock_t mStartTime;
+    clock_t mStatDuration;
     unsigned long mRealFrameCount;
 
-    double mLastUpdateSmall;
-    double mLastUpdateFull;
+    clock_t mLastUpdateSmall;
+    clock_t mLastUpdateFull;
 
     ImageSHM mSideSHM;
     ImageSHM mPanoSHM;

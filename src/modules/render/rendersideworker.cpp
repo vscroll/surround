@@ -12,7 +12,7 @@ RenderSideWorker::RenderSideWorker()
 
 RenderSideWorker::~RenderSideWorker()
 {
-    mLastCallTime = 0.0;
+    mLastCallTime = 0;
 }
 
 void RenderSideWorker::init(ICapture* capture)
@@ -23,11 +23,11 @@ void RenderSideWorker::init(ICapture* capture)
 void RenderSideWorker::run()
 {
 #if DEBUG_UPDATE
-    double start = clock();
+    clock_t start = clock();
     double elapsed_to_last = 0;
-    if (mLastCallTime > 0.00001f)
+    if (mLastCallTime > 0)
     {
-        elapsed_to_last = (start - mLastCallTime)/CLOCKS_PER_SEC;
+        elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
     }
     mLastCallTime = start;
 #endif
@@ -49,7 +49,7 @@ void RenderSideWorker::run()
     }
 
 #if DEBUG_UPDATE
-    double start_draw = clock();
+    clock_t start_draw = clock();
 #endif
 
     drawImage((unsigned char*)sideImage->data,
@@ -63,7 +63,7 @@ void RenderSideWorker::run()
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << Util::get_system_milliseconds() - sideImage->timestamp
-            << ", draw:" << (clock() - start_draw)/CLOCKS_PER_SEC
+            << ", draw:" << (double)(clock() - start_draw)/CLOCKS_PER_SEC
             << " width:"  << sideImage->info.width
             << " height:" << sideImage->info.height
             << " size:" << sideImage->info.size

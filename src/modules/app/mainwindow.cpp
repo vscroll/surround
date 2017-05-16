@@ -36,8 +36,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //mUpdateFPS = mSettings->mUpdateFps;
     mUpdateFPS = 15;
 
-    mLastUpdateSmall = 0.0;
-    mLastUpdateFull = 0.0;
+    mLastUpdateSmall = 0;
+    mLastUpdateFull = 0;
 
     start();
 
@@ -131,11 +131,11 @@ void MainWindow::onUpdate()
 void MainWindow::updateFullImage()
 {
 #if DEBUG_UPDATE
-    double start = clock();
+    clock_t start = clock();
     double showElapsed = 0;
-    if (mLastUpdateFull > 0.00001f)
+    if (mLastUpdateFull > 0)
     {
-        showElapsed = (start - mLastUpdateFull)/CLOCKS_PER_SEC;
+        showElapsed = (double)(start - mLastUpdateFull)/CLOCKS_PER_SEC;
     }
     mLastUpdateFull = start;
 #endif
@@ -149,7 +149,7 @@ void MainWindow::updateFullImage()
     long elapsed = (Util::get_system_milliseconds() - header->timestamp);
 #if DEBUG_UPDATE
     long timestamp = header->timestamp;
-    double start1 = clock();
+    clock_t start1 = clock();
 #endif
 
     //if ((int)(elapsed*1000) < 1000/mFPS)
@@ -166,9 +166,13 @@ void MainWindow::updateFullImage()
 	    }
 
 	    mRealFrameCount++;
-        mStatDuration = (clock()-mStartTime)/CLOCKS_PER_SEC;
-	    if (mStatDuration > 5*60
-		    || mStatDuration < 0)
+        mStatDuration = (clock() - mStartTime)/CLOCKS_PER_SEC;
+        if (mStatDuration < 1)
+        {
+            mStatDuration = 1;
+        }
+
+	    if (mStatDuration > 5*60)
         {
 	        mRealFrameCount = 0;
         }
@@ -176,15 +180,13 @@ void MainWindow::updateFullImage()
     }
 
 #if DEBUG_UPDATE
-    double end1 = clock();
-
     qDebug() << "MainWindow::onUpdateFullImage"
              << ", update fps:" << mUpdateFPS
              << ", real update fps:" << mRealFrameCount/mStatDuration
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
+             << ", show:" << (double)(clock() - start1)/CLOCKS_PER_SEC;
 
 #endif
 }
@@ -192,11 +194,11 @@ void MainWindow::updateFullImage()
 void MainWindow::updateSmallImage()
 {
 #if DEBUG_UPDATE
-    double start = clock();
+    clock_t start = clock();
     double showElapsed = 0;
-    if (mLastUpdateSmall > 0.00001f)
+    if (mLastUpdateSmall > 0)
     {
-        showElapsed = (start - mLastUpdateSmall)/CLOCKS_PER_SEC;
+        showElapsed = (double)(start - mLastUpdateSmall)/CLOCKS_PER_SEC;
     }
     mLastUpdateSmall = start;
 #endif
@@ -210,7 +212,7 @@ void MainWindow::updateSmallImage()
     long elapsed = Util::get_system_milliseconds() - header->timestamp;
 #if DEBUG_UPDATE
     long timestamp = header->timestamp;
-    double start1 = clock();
+    clock_t start1 = clock();
 #endif
     //if ((int)(elapsed*1000) < 1000/mFPS)
     {
@@ -220,13 +222,12 @@ void MainWindow::updateSmallImage()
     }
 
 #if DEBUG_UPDATE
-    double end1 = clock();
     qDebug() << "MainWindow::onUpdateSmallImage"
              << ", update fps:" << mUpdateFPS
              << ", elapsed to last update:" << showElapsed
              << ", timestamp:" << timestamp
              << ", elapsed to capture:" << elapsed
-             << ", show:" << (end1-start1)/CLOCKS_PER_SEC;
+             << ", show:" << (double)(clock() - start1)/CLOCKS_PER_SEC;
 #endif
 }
 

@@ -203,7 +203,7 @@ void Controller::run()
 		header.size = sideImage->info.size;
 		header.timestamp = sideImage->timestamp;
         unsigned char* frame = (unsigned char*)sideImage->data;
-        double start = clock();
+        clock_t start = clock();
         if (NULL != frame)
         {
             //mSideSHM->writeImage(&header, frame, header.size);
@@ -239,7 +239,7 @@ void Controller::run()
 		header.size = sideImage->info.size;
 		header.timestamp = sideImage->timestamp;
         cv::Mat* frame = (cv::Mat*)sideImage->data;
-        double start = clock();
+        clock_t start = clock();
         if (NULL != frame)
         {
             //mSideSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
@@ -269,7 +269,7 @@ void Controller::run()
 		header.size = surroundImage->info.size;
 		header.timestamp = surroundImage->timestamp;
         cv::Mat* frame = (cv::Mat*)surroundImage->data;
-        double start = clock();
+        clock_t start = clock();
         if (NULL != frame)
         {
             //mPanoSHM->writeImage(&header, (unsigned char*)frame->data, header.size);

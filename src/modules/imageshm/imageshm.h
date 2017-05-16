@@ -8,7 +8,7 @@ typedef struct image_shm_header_t {
     unsigned int height;
     unsigned int pixfmt;
     unsigned int size;
-    double timestamp;
+    long timestamp;
 } image_shm_header_t;
 
 #define SHM_SIDE_ID 	0x8886

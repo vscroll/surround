@@ -66,7 +66,7 @@ private:
     bool mEnableOpenCL;
     CLPano2D* mCLPano2D;
 
-    double mLastCallTime;
+    clock_t mLastCallTime;
 };
 
 #endif // STITCHWORKER_H

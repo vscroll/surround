@@ -36,10 +36,10 @@ protected:
     pthread_mutex_t mMutexFocusSourceQueue;
     std::queue<surround_image_t*> mFocuseSourceQueue;
 
-    double mLastCallTime;
+    clock_t mLastCallTime;
     unsigned int mRealFPS;
-    double mStartStatTime;
-    double mStatDuration;
+    clock_t mStartStatTime;
+    clock_t mStatDuration;
     unsigned long mRealFrameCount;
 };
 

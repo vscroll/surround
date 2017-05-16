@@ -17,7 +17,7 @@ public:
 
 private:
     ICapture* mCapture;
-    double mLastCallTime;
+    clock_t mLastCallTime;
 };
 
 #endif // RENDERSIDEWORKER_H
