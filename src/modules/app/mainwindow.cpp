@@ -133,7 +133,7 @@ void MainWindow::updateFullImage()
 #if DEBUG_UPDATE
     clock_t start = clock();
     double showElapsed = 0;
-    if (mLastUpdateFull > 0)
+    if (mLastUpdateFull != 0)
     {
         showElapsed = (double)(start - mLastUpdateFull)/CLOCKS_PER_SEC;
     }
@@ -196,7 +196,7 @@ void MainWindow::updateSmallImage()
 #if DEBUG_UPDATE
     clock_t start = clock();
     double showElapsed = 0;
-    if (mLastUpdateSmall > 0)
+    if (mLastUpdateSmall != 0)
     {
         showElapsed = (double)(start - mLastUpdateSmall)/CLOCKS_PER_SEC;
     }

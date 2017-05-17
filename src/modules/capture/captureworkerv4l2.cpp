@@ -195,7 +195,7 @@ void CaptureWorkerV4l2::run()
     double elapsed = 0;
     clock_t read_time = 0;
     clock_t convert_time = 0;
-    if (mLastCallTime > 0)
+    if (mLastCallTime != 0)
     {
         elapsed = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
     }

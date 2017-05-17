@@ -27,10 +27,10 @@ int main (int argc, char **argv)
         sink[i].crop_w = 704;
         sink[i].crop_h = 574;
 
-        source[i].pixfmt = PIX_FMT_BGR24;
+        source[i].pixfmt = PIX_FMT_UYVY;
         source[i].width = 704;
         source[i].height = 574;
-        source[i].size = source[i].width*source[i].height*3;
+        source[i].size = source[i].width*source[i].height*2;
     }
 
     capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE);
@@ -45,7 +45,7 @@ int main (int argc, char **argv)
 
     while (true)
     {
-         usleep(1000);
+         sleep(10000);
     }
 
     capture->closeDevice();

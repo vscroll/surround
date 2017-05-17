@@ -22,15 +22,15 @@ void* thread_func(void* args)
               << " interval:" << pThread->mInterval
               << std::endl;
 
-    double lastTimestamp = 0.0;
+    clock_t lastTime = 0;
     double elapsed = 0.0;
     while(true)
     {
 	    pthread_testcancel();
 
-        if (lastTimestamp > 0.00001f)
+        if (lastTime != 0)
         {
-            elapsed = (clock() - lastTimestamp)/CLOCKS_PER_SEC;
+            elapsed = (double)(clock() - lastTime)/CLOCKS_PER_SEC;
         }
 
 	    if (elapsed > 0.00001f
@@ -39,7 +39,7 @@ void* thread_func(void* args)
 	        continue;
 	    }
 
-        lastTimestamp = clock();
+        lastTime = clock();
 
         pThread->run();
         usleep(5);

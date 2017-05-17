@@ -25,7 +25,7 @@ void RenderSideWorker::run()
 #if DEBUG_UPDATE
     clock_t start = clock();
     double elapsed_to_last = 0;
-    if (mLastCallTime > 0)
+    if (mLastCallTime != 0)
     {
         elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
     }
