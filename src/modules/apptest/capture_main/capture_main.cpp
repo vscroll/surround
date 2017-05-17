@@ -11,6 +11,7 @@
 #include "ICapture.h"
 #include "captureimpl.h"
 #include "imageshm.h"
+#include <linux/input.h>
 
 class SideImageSHMWriteWorker : public Thread
 {
@@ -103,21 +104,65 @@ int main (int argc, char **argv)
     }
 
     capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE);
+    int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
     focusSource.pixfmt = sink[0].pixfmt;
     focusSource.width = sink[0].width;
     focusSource.height = sink[0].height;
     focusSource.size = sink[0].size;
-    capture->setFocusSource(0, &focusSource);
+    capture->setFocusSource(focusChannelIndex, &focusSource);
     capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
     capture->start(VIDEO_FPS_15);
 
     SideImageSHMWriteWorker* sideImageSHMWriteWorker = new SideImageSHMWriteWorker(capture);
     sideImageSHMWriteWorker->start(VIDEO_FPS_15);
 
+    int eventFd = open("/dev/input/event0", O_RDONLY);
+    struct input_event event[64] = {0};
+
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(eventFd, &fds);
+
+    struct timeval tv;
+    tv.tv_sec = 2;
+    tv.tv_usec = 0;
+
     while (true)
     {
-         sleep(10000);
+        if (eventFd > 0)
+        {
+            int r = select (eventFd + 1, &fds, NULL, NULL, &tv);
+            if (-1 == r) {
+                usleep(100);
+            }
+
+            if (0 == r) {
+                usleep(100);
+            }
+
+            int rd = read(eventFd, event, sizeof(struct input_event) * 64);
+            if (rd >= (int) sizeof(struct input_event))
+            {
+                for (int i = 0; i < rd / sizeof(struct input_event); i++)
+                {
+                    if (event[i].type == EV_KEY
+                            && event[i].code == BTN_TOUCH
+                            && event[i].value == 0)
+                    {
+                        focusChannelIndex++;
+                        if (focusChannelIndex >= VIDEO_CHANNEL_SIZE)
+                        {
+                            focusChannelIndex = VIDEO_CHANNEL_FRONT;
+                        }
+                        capture->setFocusSource(focusChannelIndex, &focusSource);
+                        break;
+                    }
+                }
+            }
+        }
+
+        usleep(100);
     }
 
     sideImageSHMWriteWorker->stop();

@@ -15,7 +15,7 @@ int main (int argc, char **argv)
 {
     RenderImpl* render = new RenderImpl();
     render->init(NULL, NULL,
-            439, 10, 570, 574,
+            424, 0, 600, 600,
             0, 0, 424, 600);
     render->start(VIDEO_FPS_15);
 
