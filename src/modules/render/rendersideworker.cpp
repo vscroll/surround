@@ -4,10 +4,12 @@
 #include "common.h"
 #include "ICapture.h"
 #include "util.h"
+#include "imageshm.h"
 
 RenderSideWorker::RenderSideWorker()
 {
     mCapture = NULL;
+    mSideSHM = NULL;
 }
 
 RenderSideWorker::~RenderSideWorker()
@@ -18,6 +20,11 @@ RenderSideWorker::~RenderSideWorker()
 void RenderSideWorker::init(ICapture* capture)
 {
     mCapture = capture;
+    if (NULL == capture)
+    {
+        mSideSHM = new ImageSHM();
+        mSideSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+    }
 }
 
 void RenderSideWorker::run()
@@ -32,12 +39,35 @@ void RenderSideWorker::run()
     mLastCallTime = start;
 #endif
 
-    if (NULL == mCapture)
+    surround_image_t* sideImage = NULL;
+    
+    
+    if (NULL != mCapture)
     {
-        return;
+        //one source from ICapture Module
+        sideImage = mCapture->popOneFrame4FocusSource();
+    }
+    else
+    {
+        //one source from share memory
+        if (NULL != mSideSHM)
+        {
+            unsigned char imageBuf[SHM_SIDE_SIZE] = {};
+            if (mSideSHM->readImage(imageBuf, sizeof(imageBuf)) < 0)
+            {
+                return;
+            }
+            image_shm_header_t* header = (image_shm_header_t*)imageBuf;
+            sideImage = new surround_image_t();
+            sideImage->info.width = header->width;
+            sideImage->info.height = header->height;
+            sideImage->info.pixfmt = header->pixfmt;
+            sideImage->info.size = header->size;
+            sideImage->timestamp = header->timestamp;
+            sideImage->data = imageBuf + sizeof(image_shm_header_t);
+        }
     }
 
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
     if (NULL == sideImage)
     {
         return;

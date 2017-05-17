@@ -5,6 +5,7 @@
 #include "thread.h"
 
 class ICapture;
+class ImageSHM;
 class RenderSideWorker : public RenderBase, public Thread
 {
 public:
@@ -17,6 +18,8 @@ public:
 
 private:
     ICapture* mCapture;
+    ImageSHM* mSideSHM;
+
     clock_t mLastCallTime;
 };
 

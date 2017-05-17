@@ -3,7 +3,7 @@
 # needs to source /opt/poky/x.x.x/environmentsetup.sh
 
 
-TARGET                      = capture_main
+TARGET                      = render_main
 RM                          = rm -rf
 
 PROJECT_ROOT                = ../../../..
@@ -22,22 +22,21 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(SRC_ROOT)/include \
 			                    -I$(SRC_ROOT)/util \
 			                    -I$(SRC_ROOT)/util/thread \
-			                    -I$(SRC_ROOT)/util/v4l2 \
 			                    -I$(SRC_ROOT)/modules/capture \
+			                    -I$(SRC_ROOT)/modules/render \
 			                    -I$(SRC_ROOT)/util/shm \
 			                    -I$(SRC_ROOT)/modules/imageshm
 
 
 LFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
-			                    -lpthread -lopencv_core
+			                    -lpthread -lg2d
 
 SRCS 			            = $(wildcard ./*.cpp )
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/thread/*.cpp)
-SRCS 		                += $(wildcard $(SRC_ROOT)/util/v4l2/*.cpp)
-SRCS 		                += $(wildcard $(SRC_ROOT)/modules/capture/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/shm/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/imageshm/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/modules/render/*.cpp)
 
 OBJS 			            = $(patsubst %.cpp, %.o, $(SRCS))
 

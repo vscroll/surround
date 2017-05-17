@@ -6,9 +6,78 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <iostream>
 #include "common.h"
 #include "ICapture.h"
 #include "captureimpl.h"
+#include "imageshm.h"
+
+class SideImageSHMWriteWorker : public Thread
+{
+public:
+    SideImageSHMWriteWorker(ICapture* capture);
+    virtual ~SideImageSHMWriteWorker();
+
+public:
+    virtual void run();
+
+private:
+    ICapture* mCapture;
+    ImageSHM* mImageSHM;
+};
+
+SideImageSHMWriteWorker::SideImageSHMWriteWorker(ICapture* capture)
+{
+    mCapture = capture;
+    mImageSHM = new ImageSHM();
+    mImageSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+}
+
+SideImageSHMWriteWorker::~SideImageSHMWriteWorker()
+{
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
+}
+
+void SideImageSHMWriteWorker::run()
+{
+    if (NULL == mCapture
+        || NULL == mImageSHM)
+    {
+        return;
+    }
+
+    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
+    if (NULL != sideImage)
+    {
+		struct image_shm_header_t header = {};
+		header.width = sideImage->info.width;
+		header.height = sideImage->info.height;
+		header.pixfmt = sideImage->info.pixfmt;
+		header.size = sideImage->info.size;
+		header.timestamp = sideImage->timestamp;
+        unsigned char* frame = (unsigned char*)sideImage->data;
+#if 0
+        clock_t start = clock();
+#endif
+        if (NULL != frame)
+        {
+            mImageSHM->writeImage(&header, frame, header.size);
+        }
+#if 0
+        std::cout << " side shm write time: " << (double)(clock()-start)/CLOCKS_PER_SEC
+                << " width:" << header.width
+                << " height:" << header.height
+                << " size:" << header.size
+                << " timestamp:" << header.timestamp
+                << std::endl;
+#endif
+    }
+}
 
 int main (int argc, char **argv)
 {
@@ -43,13 +112,22 @@ int main (int argc, char **argv)
     capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
     capture->start(VIDEO_FPS_15);
 
+    SideImageSHMWriteWorker* sideImageSHMWriteWorker = new SideImageSHMWriteWorker(capture);
+    sideImageSHMWriteWorker->start(VIDEO_FPS_15);
+
     while (true)
     {
          sleep(10000);
     }
 
+    sideImageSHMWriteWorker->stop();
+    delete sideImageSHMWriteWorker;
+    sideImageSHMWriteWorker = NULL;
+
     capture->closeDevice();
     capture->stop();
+    delete capture;
+    capture = NULL;
 
     return 0;
 }
