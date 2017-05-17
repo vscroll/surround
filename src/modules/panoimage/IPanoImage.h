@@ -18,6 +18,7 @@ public:
 		unsigned int panoPixfmt,
 		char* algoCfgFilePath,
 		bool enableOpenCL) = 0;
+    virtual void uninit() = 0;
     virtual int start(unsigned int fps) = 0;
     virtual void stop() = 0;
     virtual void queueImages(surround_images_t* surroundImages) = 0;

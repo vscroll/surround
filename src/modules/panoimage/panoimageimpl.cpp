@@ -3,16 +3,11 @@
 
 PanoImageImpl::PanoImageImpl()
 {
-    mWorker = new StitchWorker();
+    mWorker = NULL;
 }
 
 PanoImageImpl::~PanoImageImpl()
 {
-    if (NULL != mWorker)
-    {
-        delete mWorker;
-        mWorker = NULL;
-    }
 }
 
 int PanoImageImpl::init(
@@ -28,7 +23,7 @@ int PanoImageImpl::init(
 {
     if (NULL == mWorker)
     {
-        return -1;
+        mWorker = new StitchWorker();
     }
 
     return mWorker->init(
@@ -43,6 +38,15 @@ int PanoImageImpl::init(
 		        enableOpenCL);
 }
 
+void PanoImageImpl::uninit()
+{
+    if (NULL != mWorker)
+    {
+        delete mWorker;
+        mWorker = NULL;
+    }
+}
+
 int PanoImageImpl::start(unsigned int fps)
 {
     if (NULL == mWorker)
@@ -55,12 +59,10 @@ int PanoImageImpl::start(unsigned int fps)
 
 void PanoImageImpl::stop()
 {
-    if (NULL == mWorker)
+    if (NULL != mWorker)
     {
-        return;
+        mWorker->stop();
     }
-
-    mWorker->stop();
 }
 
 void PanoImageImpl::queueImages(surround_images_t* surroundImages)
