@@ -10,11 +10,12 @@ RenderSideWorker::RenderSideWorker()
 {
     mCapture = NULL;
     mSideSHM = NULL;
+
+    mLastCallTime = 0;
 }
 
 RenderSideWorker::~RenderSideWorker()
 {
-    mLastCallTime = 0;
 }
 
 void RenderSideWorker::init(ICapture* capture)
@@ -68,12 +69,8 @@ void RenderSideWorker::run()
         }
     }
 
-    if (NULL == sideImage)
-    {
-        return;
-    }
-
-    if (NULL == sideImage->data)
+    if (NULL == sideImage
+        || NULL == sideImage->data)
     {
         return;
     }

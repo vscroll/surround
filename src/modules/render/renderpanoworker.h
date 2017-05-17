@@ -5,6 +5,7 @@
 #include "thread.h"
 
 class IPanoImage;
+class ImageSHM;
 class RenderPanoWorker : public RenderBase, public Thread
 {
 public:
@@ -17,6 +18,9 @@ public:
 
 private:
     IPanoImage* mPanoImage;
+    ImageSHM* mPanoSHM;
+
+    clock_t mLastCallTime;
 };
 
 #endif // RENDERPANOWORKER_H
