@@ -3,6 +3,18 @@
 
 #include <linux/mxcfb.h>
 
+typedef struct render_surface_t {
+    unsigned char* srcBuf;
+    unsigned int srcPixfmt;
+    unsigned int srcWidth;
+    unsigned int srcHeight;
+    unsigned int srcSize;
+    unsigned int dstLeft;
+	unsigned int dstTop;
+	unsigned int dstWidth;
+	unsigned int dstHeight;
+} render_surface_t;
+
 struct g2d_buf;
 class RenderDevice
 {
@@ -16,15 +28,9 @@ public:
 
     void closeDevice();
 
-    void drawImage(unsigned char* buf,
-            unsigned int srcPixfmt,
-            unsigned int srcWidth,
-            unsigned int srcHeight,
-            unsigned int srcSize,
-            unsigned int dstLeft,
-		    unsigned int dstTop,
-		    unsigned int dstWidth,
-		    unsigned int dstHeight);
+    void drawImage(struct render_surface_t* surface);
+
+    void drawMultiImages(struct render_surface_t* surface[], unsigned int num);
 
     unsigned int getDstLeft() { return mDstLeft; }
     unsigned int getDstTop() { return mDstTop; }

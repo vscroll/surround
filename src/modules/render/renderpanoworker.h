@@ -12,13 +12,26 @@ public:
     RenderPanoWorker();
     virtual ~RenderPanoWorker();
 
-    void init(IPanoImage* panoImage);
+    void setPanoImageModule(IPanoImage* panoImage);
+    void setPanoImageRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height);
+    void getPanoImageRect(unsigned int* left,
+		    unsigned int* top,
+		    unsigned int* width,
+		    unsigned int* height);
 public:
     virtual void run();
 
 private:
     IPanoImage* mPanoImage;
     ImageSHM* mPanoSHM;
+
+    unsigned int mPanoImageLeft;
+    unsigned int mPanoImageTop;
+    unsigned int mPanoImageWidth;
+    unsigned int mPanoImageHeight;
 
     clock_t mLastCallTime;
 };

@@ -157,15 +157,7 @@ void RenderDevice::closeG2d()
     }
 }
 
-void RenderDevice::drawImage(unsigned char* buf,
-            unsigned int srcPixfmt,
-            unsigned int srcWidth,
-            unsigned int srcHeight,
-            unsigned int srcSize,
-            unsigned int dstLeft,
-		    unsigned int dstTop,
-		    unsigned int dstWidth,
-		    unsigned int dstHeight)
+void RenderDevice::drawImage(struct render_surface_t* surface)
 {
     void *g2dHandle;
     if (g2d_open(&g2dHandle) == -1
@@ -176,12 +168,12 @@ void RenderDevice::drawImage(unsigned char* buf,
         return;
     }
 
-    if ((dstLeft + dstWidth) > (int)mScreenInfo.xres || (dstTop + dstHeight) > (int)mScreenInfo.yres)  {
+    if ((surface->dstLeft + surface->dstWidth) > (int)mScreenInfo.xres || (surface->dstTop + surface->dstHeight) > (int)mScreenInfo.yres)  {
         std::cout << "Bad display image dimensions"
-                << ", dst left:" << dstLeft
-                << ", dst top:" << dstTop
-                << ", dst width:" << dstWidth
-                << ", dst height:" << dstHeight
+                << ", dst left:" << surface->dstLeft
+                << ", dst top:" << surface->dstTop
+                << ", dst width:" << surface->dstWidth
+                << ", dst height:" << surface->dstHeight
                 << std::endl;
         return;
     }
@@ -192,7 +184,7 @@ void RenderDevice::drawImage(unsigned char* buf,
         mG2dBufIndex = 0;
     }
 
-    memcpy(g2dbuf->buf_vaddr, buf, srcSize);
+    memcpy(g2dbuf->buf_vaddr, surface->srcBuf, surface->srcSize);
     struct g2d_surface src;
     struct g2d_surface dst;
 
@@ -227,16 +219,16 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
             break;
         case G2D_NV12:
             src.planes[0] = g2dbuf->buf_paddr;
-            src.planes[1] = g2dbuf->buf_paddr + srcWidth * srcHeight;
+            src.planes[1] = g2dbuf->buf_paddr + surface->srcWidth * surface->srcHeight;
             break;
         case G2D_I420:
             src.planes[0] = g2dbuf->buf_paddr;
-            src.planes[1] =g2dbuf->buf_paddr + srcWidth * srcHeight;
-            src.planes[2] = src.planes[1]  + srcWidth * srcHeight / 4;
+            src.planes[1] = g2dbuf->buf_paddr + surface->srcWidth * surface->srcHeight;
+            src.planes[2] = src.planes[1]  + surface->srcWidth * surface->srcHeight / 4;
             break;
         case G2D_NV16:
             src.planes[0] = g2dbuf->buf_paddr;
-            src.planes[1] = g2dbuf->buf_paddr + srcWidth * srcHeight;
+            src.planes[1] = g2dbuf->buf_paddr + surface->srcWidth * surface->srcHeight;
             break;
         default:
             std::cout << "Unsupport image format"
@@ -246,18 +238,18 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
 
     src.left = 0;
     src.top = 0;
-    src.right = srcWidth;
-    src.bottom = srcHeight;
-    src.stride = srcWidth;
-    src.width  = srcWidth;
-    src.height = srcHeight;
+    src.right = surface->srcWidth;
+    src.bottom = surface->srcHeight;
+    src.stride = surface->srcWidth;
+    src.width  = surface->srcWidth;
+    src.height = surface->srcHeight;
     src.rot  = G2D_ROTATION_0;
 
     dst.planes[0] = mFBPhys;
-    dst.left = dstLeft;
-    dst.top = dstTop;
-    dst.right = dstLeft + dstWidth;
-    dst.bottom = dstTop + dstHeight;
+    dst.left = surface->dstLeft;
+    dst.top = surface->dstTop;
+    dst.right = surface->dstLeft + surface->dstWidth;
+    dst.bottom = surface->dstTop + surface->dstHeight;
     dst.stride = mScreenInfo.xres;
     dst.width  = mScreenInfo.xres;
     dst.height = mScreenInfo.yres;
@@ -287,5 +279,10 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
     }
 #endif
     g2d_close(g2dHandle);
+
+}
+
+void RenderDevice::drawMultiImages(struct render_surface_t* surface[], unsigned int num)
+{
 
 }

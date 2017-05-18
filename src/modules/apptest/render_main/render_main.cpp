@@ -14,9 +14,12 @@
 int main (int argc, char **argv)
 {
     RenderImpl* render = new RenderImpl();
-    render->init(NULL, NULL,
-            424, 0, 600, 600,
-            0, 0, 424, 600);
+    render->setCaptureModule(NULL);
+    render->setSideImageRect(424, 0, 600, 600);
+
+    render->setPanoImageModule(NULL);          
+    render->setPanoImageRect(0, 0, 424, 600);
+
     render->start(VIDEO_FPS_15);
 
     while (true)

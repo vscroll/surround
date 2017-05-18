@@ -11,17 +11,25 @@ public:
     RenderImpl();
     virtual ~RenderImpl();
 
-    virtual int init(
-        ICapture* capture,
-        IPanoImage* panoImage,
-		unsigned int sideLeft,
-		unsigned int sideTop,
-		unsigned int sideWidth,
-		unsigned int sideHeight,
-		unsigned int panoLeft,
-		unsigned int panoTop,
-		unsigned int panoWidth,
-		unsigned int panoHeight);
+    virtual void setCaptureModule(ICapture* capture = NULL);
+    virtual void setSideImageRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height);
+    virtual void setChannelMarkRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height);
+
+    virtual void setPanoImageModule(IPanoImage* panoImage = NULL);
+    virtual void setPanoImageRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height);
+
     virtual int start(unsigned int fps);
     virtual void stop();
 private:

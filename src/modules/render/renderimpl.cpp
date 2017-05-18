@@ -10,45 +10,58 @@ RenderImpl::RenderImpl()
 
 RenderImpl::~RenderImpl()
 {
-
 }
 
-int RenderImpl::init(
-        ICapture* capture,
-        IPanoImage* panoImage,
-		unsigned int sideLeft,
-		unsigned int sideTop,
-		unsigned int sideWidth,
-		unsigned int sideHeight,
-		unsigned int panoLeft,
-		unsigned int panoTop,
-		unsigned int panoWidth,
-		unsigned int panoHeight)
+void RenderImpl::setCaptureModule(ICapture* capture)
 {
-    
-    if (NULL == mSideWorker
-        || NULL == mPanoWorker)
+    if (NULL != mSideWorker)
     {
-        return -1;
+        mSideWorker->setCaptureModule(capture);
     }
+}
 
-    mSideWorker->init(capture);
-    if (mSideWorker->openDevice(sideLeft, sideTop, sideWidth, sideHeight) < 0)
+void RenderImpl::setSideImageRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height)
+{
+    if (NULL != mSideWorker)
     {
-        mSideWorker->closeDevice();
-        return -1;
+        mSideWorker->setSideImageRect(left, top, width, height);
     }
+}
 
-
-    mPanoWorker->init(panoImage);
-    if (mPanoWorker->openDevice(panoLeft, panoTop, panoWidth, panoHeight) < 0)
+void RenderImpl::setChannelMarkRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height)
+{
+    if (NULL != mSideWorker)
     {
-        mSideWorker->closeDevice();
-        mPanoWorker->closeDevice();
-        return -1;
+        mSideWorker->setChannelMarkRect(left, top, width, height);
     }
+}
 
-    return 0;
+void RenderImpl::setPanoImageModule(IPanoImage* panoImage)
+{
+    if (NULL != mPanoWorker)
+    {
+        mPanoWorker->setPanoImageModule(panoImage);
+    }
+}
+
+void RenderImpl::setPanoImageRect(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height)
+{
+    if (NULL != mPanoWorker)
+    {
+        mPanoWorker->setPanoImageRect(left, top, width, height);
+    }
 }
 
 int RenderImpl::start(unsigned int fps)
@@ -59,7 +72,26 @@ int RenderImpl::start(unsigned int fps)
         return -1;
     }
 
+    unsigned int sideLeft;
+    unsigned int sideTop;
+    unsigned int sideWidth;
+    unsigned int sideHeight;
+    mSideWorker->getSideImageRect(&sideLeft, &sideTop, &sideWidth, &sideHeight);
+    if (mSideWorker->openDevice(sideLeft, sideTop, sideWidth, sideHeight) < 0)
+    {
+        mSideWorker->closeDevice();
+    }
     mSideWorker->start(1000/fps);
+
+    unsigned int panoLeft;
+    unsigned int panoTop;
+    unsigned int panoWidth;
+    unsigned int panoHeight;
+    mPanoWorker->getPanoImageRect(&panoLeft, &panoTop, &panoWidth, &panoHeight);
+    if (mPanoWorker->openDevice(panoLeft, panoTop, panoWidth, panoHeight) < 0)
+    {
+        mPanoWorker->closeDevice();
+    }
     mPanoWorker->start(1000/fps);
 
     return 0;

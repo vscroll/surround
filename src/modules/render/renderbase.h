@@ -1,7 +1,8 @@
 #ifndef RENDERBASE_H
 #define RENDERBASE_H
 
-class RenderDevice;
+#include "renderdevice.h"
+
 class RenderBase
 {
 public:
@@ -14,11 +15,9 @@ public:
 
     virtual void closeDevice();
 
-    virtual void drawImage(unsigned char* buf,
-            unsigned int srcPixfmt,
-            unsigned int srcWidth,
-            unsigned int srcHeight,
-            unsigned int srcSize);
+    virtual void drawImage(struct render_surface_t* surface);
+
+    virtual void drawMultiImages(struct render_surface_t* surface[], unsigned int num);
 
 private:
     RenderDevice* mRenderDevice;

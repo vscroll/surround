@@ -1,7 +1,6 @@
 #include "renderbase.h"
 #include <string.h>
 #include <iostream>
-#include "renderdevice.h"
 
 RenderBase::RenderBase()
 {
@@ -31,19 +30,12 @@ void RenderBase::closeDevice()
     mRenderDevice->closeDevice();
 }
 
-void RenderBase::drawImage(unsigned char* buf,
-            unsigned int srcPixfmt,
-            unsigned int srcWidth,
-            unsigned int srcHeight,
-            unsigned int srcSize)
+void RenderBase::drawImage(struct render_surface_t* surface)
 {
-    mRenderDevice->drawImage(buf,
-                srcPixfmt,
-                srcWidth,
-                srcHeight,
-                srcSize,
-                mRenderDevice->getDstLeft(),
-                mRenderDevice->getDstTop(),
-                mRenderDevice->getDstWidth(),
-                mRenderDevice->getDstHeight());
+    mRenderDevice->drawImage(surface);
+}
+
+void RenderBase::drawMultiImages(struct render_surface_t* surface[], unsigned int num)
+{
+    mRenderDevice->drawMultiImages(surface, num);
 }

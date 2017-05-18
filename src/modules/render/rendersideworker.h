@@ -12,13 +12,35 @@ public:
     RenderSideWorker();
     virtual ~RenderSideWorker();
 
-    void init(ICapture* capture);
+    void setCaptureModule(ICapture* capture);
+    void setSideImageRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height);
+    void getSideImageRect(unsigned int* left,
+		    unsigned int* top,
+		    unsigned int* width,
+		    unsigned int* height);
+    void setChannelMarkRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height);
 public:
     virtual void run();
 
 private:
     ICapture* mCapture;
     ImageSHM* mSideSHM;
+
+    unsigned int mSideImageLeft;
+    unsigned int mSideImageTop;
+    unsigned int mSideImageWidth;
+    unsigned int mSideImageHeight;
+
+    unsigned int mChannelMarkLeft;
+    unsigned int mChannelMarkTop;
+    unsigned int mChannelMarkWidth;
+    unsigned int mChannelMarkHeight;
 
     unsigned int mFocusChannelIndex;
 

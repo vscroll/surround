@@ -12,10 +12,9 @@ RenderPanoWorker::RenderPanoWorker()
 
 RenderPanoWorker::~RenderPanoWorker()
 {
-
 }
 
-void RenderPanoWorker::init(IPanoImage* panoImage)
+void RenderPanoWorker::setPanoImageModule(IPanoImage* panoImage)
 {
     mPanoImage = panoImage;
     if (NULL == panoImage)
@@ -23,6 +22,28 @@ void RenderPanoWorker::init(IPanoImage* panoImage)
         mPanoSHM = new ImageSHM();
         mPanoSHM->create((key_t)SHM_PANO_ID, SHM_PANO_SIZE);
     }
+}
+
+void RenderPanoWorker::setPanoImageRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height)
+{
+    mPanoImageLeft = left;
+    mPanoImageTop = top;
+    mPanoImageWidth = width;
+    mPanoImageHeight = height;
+}
+
+void RenderPanoWorker::getPanoImageRect(unsigned int* left,
+		    unsigned int* top,
+		    unsigned int* width,
+		    unsigned int* height)
+{
+    *left = mPanoImageLeft;
+    *top = mPanoImageTop;
+    *width = mPanoImageWidth;
+    *height = mPanoImageHeight;
 }
 
 unsigned char gFakeData[SHM_PANO_DATA_SIZE] = {0};
@@ -83,11 +104,16 @@ void RenderPanoWorker::run()
     clock_t start_draw = clock();
 #endif
 
-    drawImage((unsigned char*)panoImage->data,
-            panoImage->info.pixfmt,
-            panoImage->info.width,
-            panoImage->info.height,
-            panoImage->info.size);
+    struct render_surface_t surface;
+    surface.srcBuf = (unsigned char*)panoImage->data;
+    surface.srcPixfmt = panoImage->info.pixfmt;
+    surface.srcWidth = panoImage->info.width;
+    surface.srcHeight = panoImage->info.height;
+    surface.dstLeft = mPanoImageLeft;
+    surface.dstTop = mPanoImageTop;
+    surface.dstWidth = mPanoImageWidth;
+    surface.dstHeight = mPanoImageHeight;
+    drawImage(&surface);
 
 #if DEBUG_UPDATE
     std::cout << "RenderPanoWorker::run"

@@ -5,11 +5,23 @@
 #include "ICapture.h"
 #include "util.h"
 #include "imageshm.h"
+#include "renderdevice.h"
 
 RenderSideWorker::RenderSideWorker()
 {
     mCapture = NULL;
     mSideSHM = NULL;
+
+    mSideImageLeft = 0;
+    mSideImageTop = 0;
+    mSideImageWidth = 0;
+    mSideImageHeight = 0;
+
+    mChannelMarkLeft = 0;
+    mChannelMarkTop = 0;
+    mChannelMarkWidth = 0;
+    mChannelMarkHeight = 0;
+
     mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
 
     mLastCallTime = 0;
@@ -19,7 +31,7 @@ RenderSideWorker::~RenderSideWorker()
 {
 }
 
-void RenderSideWorker::init(ICapture* capture)
+void RenderSideWorker::setCaptureModule(ICapture* capture)
 {
     mCapture = capture;
     if (NULL == capture)
@@ -27,6 +39,39 @@ void RenderSideWorker::init(ICapture* capture)
         mSideSHM = new ImageSHM();
         mSideSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
     }
+}
+
+void RenderSideWorker::setSideImageRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height)
+{
+    mSideImageLeft = left;
+    mSideImageTop = top;
+    mSideImageWidth = width;
+    mSideImageHeight = height;
+}
+
+void RenderSideWorker::getSideImageRect(unsigned int* left,
+		    unsigned int* top,
+		    unsigned int* width,
+		    unsigned int* height)
+{
+    *left = mSideImageLeft;
+    *top = mSideImageTop;
+    *width = mSideImageWidth;
+    *height = mSideImageHeight;
+}
+
+void RenderSideWorker::setChannelMarkRect(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height)
+{
+    mChannelMarkLeft = left;
+    mChannelMarkTop = top;
+    mChannelMarkWidth = width;
+    mChannelMarkHeight = height;
 }
 
 void RenderSideWorker::run()
@@ -81,12 +126,16 @@ void RenderSideWorker::run()
 #if DEBUG_UPDATE
     clock_t start_draw = clock();
 #endif
-
-    drawImage((unsigned char*)sideImage->data,
-            sideImage->info.pixfmt,
-            sideImage->info.width,
-            sideImage->info.height,
-            sideImage->info.size);
+    struct render_surface_t surface;
+    surface.srcBuf = (unsigned char*)sideImage->data;
+    surface.srcPixfmt = sideImage->info.pixfmt;
+    surface.srcWidth = sideImage->info.width;
+    surface.srcHeight = sideImage->info.height;
+    surface.dstLeft = mSideImageLeft;
+    surface.dstTop = mSideImageTop;
+    surface.dstWidth = mSideImageWidth;
+    surface.dstHeight = mSideImageHeight;
+    drawImage(&surface);
 
 #if DEBUG_UPDATE
     std::cout << "RenderSideWorker::run"
