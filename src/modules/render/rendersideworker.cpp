@@ -10,6 +10,7 @@ RenderSideWorker::RenderSideWorker()
 {
     mCapture = NULL;
     mSideSHM = NULL;
+    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
 
     mLastCallTime = 0;
 }
@@ -47,6 +48,7 @@ void RenderSideWorker::run()
     {
         //one source from ICapture Module
         sideImage = mCapture->popOneFrame4FocusSource();
+        mFocusChannelIndex = mCapture->getFocusChannelIndex();
     }
     else
     {
@@ -60,6 +62,7 @@ void RenderSideWorker::run()
             }
             image_shm_header_t* header = (image_shm_header_t*)imageBuf;
             sideImage = new surround_image_t();
+            mFocusChannelIndex = header->channel;
             sideImage->info.width = header->width;
             sideImage->info.height = header->height;
             sideImage->info.pixfmt = header->pixfmt;
@@ -91,6 +94,7 @@ void RenderSideWorker::run()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << Util::get_system_milliseconds() - sideImage->timestamp
             << ", draw:" << (double)(clock() - start_draw)/CLOCKS_PER_SEC
+            << ", channel:" << mFocusChannelIndex
             << " width:"  << sideImage->info.width
             << " height:" << sideImage->info.height
             << " size:" << sideImage->info.size

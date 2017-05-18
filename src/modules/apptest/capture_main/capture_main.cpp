@@ -55,12 +55,13 @@ void SideImageSHMWriteWorker::run()
     surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
     if (NULL != sideImage)
     {
-		struct image_shm_header_t header = {};
-		header.width = sideImage->info.width;
-		header.height = sideImage->info.height;
-		header.pixfmt = sideImage->info.pixfmt;
-		header.size = sideImage->info.size;
-		header.timestamp = sideImage->timestamp;
+        struct image_shm_header_t header = {};
+        header.channel = mCapture->getFocusChannelIndex();
+        header.width = sideImage->info.width;
+        header.height = sideImage->info.height;
+        header.pixfmt = sideImage->info.pixfmt;
+        header.size = sideImage->info.size;
+        header.timestamp = sideImage->timestamp;
         unsigned char* frame = (unsigned char*)sideImage->data;
 #if 0
         clock_t start = clock();
@@ -70,7 +71,8 @@ void SideImageSHMWriteWorker::run()
             mImageSHM->writeImage(&header, frame, header.size);
         }
 #if 0
-        std::cout << " side shm write time: " << (double)(clock()-start)/CLOCKS_PER_SEC
+        std::cout << "SideImageSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
+                << " channel:" << header.channel
                 << " width:" << header.width
                 << " height:" << header.height
                 << " size:" << header.size
@@ -130,6 +132,7 @@ int main (int argc, char **argv)
 
     while (true)
     {
+        //touch screen to switch focus channel
         if (eventFd > 0)
         {
             int r = select (eventFd + 1, &fds, NULL, NULL, &tv);

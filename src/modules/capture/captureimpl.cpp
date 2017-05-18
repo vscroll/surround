@@ -23,12 +23,22 @@ void CaptureImpl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t sour
     }
 }
 
-void CaptureImpl::setFocusSource(int focusChannelIndex, struct cap_src_t* focusSource)
+void CaptureImpl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
     if (NULL != mCaptureWorker)
     {
         return mCaptureWorker->setFocusSource(focusChannelIndex, focusSource);
     }
+}
+
+unsigned int CaptureImpl::getFocusChannelIndex()
+{
+    if (NULL != mCaptureWorker)
+    {
+        return mCaptureWorker->getFocusChannelIndex();
+    }
+
+    return VIDEO_CHANNEL_FRONT;
 }
 
 int CaptureImpl::openDevice(unsigned int channel[], unsigned int channelNum)

@@ -20,6 +20,8 @@ private:
     ICapture* mCapture;
     ImageSHM* mSideSHM;
 
+    unsigned int mFocusChannelIndex;
+
     clock_t mLastCallTime;
 };
 

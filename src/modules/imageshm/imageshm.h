@@ -4,6 +4,7 @@
 #include "shmutil.h"
 
 typedef struct image_shm_header_t {
+    unsigned int channel;    
     unsigned int width;
     unsigned int height;
     unsigned int pixfmt;

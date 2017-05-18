@@ -19,7 +19,7 @@ CaptureWorkerBase::CaptureWorkerBase()
     pthread_mutex_init(&mMutexQueue, NULL);
 
     //focus source
-    mFocusChannelIndex = -1;
+    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
     memset(&mFocusSource, 0, sizeof(mFocusSource));
     pthread_mutex_init(&mMutexFocusSourceQueue, NULL);
 
@@ -35,16 +35,20 @@ CaptureWorkerBase::~CaptureWorkerBase()
 {
 }
 
-void CaptureWorkerBase::setFocusSource(int focusChannelIndex, struct cap_src_t* focusSource)
+void CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
-    if (focusChannelIndex < 0
-        || focusChannelIndex >= VIDEO_CHANNEL_SIZE)
+    if (focusChannelIndex >= VIDEO_CHANNEL_SIZE)
     {
         return;
     }
 
     mFocusChannelIndex = focusChannelIndex;
     memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
+}
+
+unsigned int CaptureWorkerBase::getFocusChannelIndex()
+{
+    return mFocusChannelIndex;
 }
 
 void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)

@@ -12,7 +12,8 @@ public:
     virtual ~CaptureImpl();
 
     virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
-    virtual void setFocusSource(int focusChannelIndex, struct cap_src_t* focusSource);
+    virtual void setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
+    virtual unsigned int getFocusChannelIndex();
     virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual void closeDevice();
     virtual int start(unsigned int fps);
