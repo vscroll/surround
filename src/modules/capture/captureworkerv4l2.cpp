@@ -254,11 +254,21 @@ void CaptureWorkerV4l2::run()
                     //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
                     surround_image->data = mV4l2Buf[i][buf.index].start;
                     pthread_mutex_lock(&mMutexFocusSourceQueue);
-                    mFocuseSourceQueue.push(surround_image);
+                    mFocusSourceQueue.push(surround_image);
 #if DEBUG_CAPTURE
-                    focus_size = mFocuseSourceQueue.size();
+                    focus_size = mFocusSourceQueue.size();
 #endif
-                    pthread_mutex_unlock(&mMutexFocusSourceQueue);                                     
+                    pthread_mutex_unlock(&mMutexFocusSourceQueue);   
+
+                    if (mEnableCapture)                                  
+                    {
+                        mCaptureFrame4FocusSource.timestamp = surround_image->timestamp;
+                        mCaptureFrame4FocusSource.info.pixfmt = surround_image->info.pixfmt;
+                        mCaptureFrame4FocusSource.info.width = surround_image->info.width;
+                        mCaptureFrame4FocusSource.info.height = surround_image->info.height;
+                        mCaptureFrame4FocusSource.info.size = surround_image->info.size;
+                        mCaptureFrame4FocusSource.data = surround_image->data;
+                    }
                 }
 
                 // call IPU to convert

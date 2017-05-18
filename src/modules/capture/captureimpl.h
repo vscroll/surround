@@ -22,7 +22,8 @@ public:
     virtual int getFPS(unsigned int* fps);
     virtual surround_images_t* popOneFrame();
     virtual surround_image_t* popOneFrame4FocusSource();
-
+    virtual void enableCapture();
+    virtual surround_image_t* captureOneFrame4FocusSource();
 private:
     CaptureWorkerBase *mCaptureWorker;
 };

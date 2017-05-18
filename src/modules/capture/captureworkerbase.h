@@ -21,6 +21,8 @@ public:
     virtual unsigned int getVideoChannelNum() { return mVideoChannelNum; }
     virtual int getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height);
     virtual int getFPS(unsigned int* fps);
+    virtual void enableCapture();
+    virtual surround_image_t* captureOneFrame4FocusSource();
 protected:
     struct cap_sink_t mSink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t mSource[VIDEO_CHANNEL_SIZE];
@@ -35,7 +37,10 @@ protected:
     int mFocusChannelIndex;
     struct cap_src_t mFocusSource;
     pthread_mutex_t mMutexFocusSourceQueue;
-    std::queue<surround_image_t*> mFocuseSourceQueue;
+    std::queue<surround_image_t*> mFocusSourceQueue;
+
+    bool mEnableCapture;
+    surround_image_t mCaptureFrame4FocusSource;
 
     clock_t mLastCallTime;
     unsigned int mRealFPS;

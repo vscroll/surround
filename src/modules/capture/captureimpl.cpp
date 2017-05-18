@@ -99,20 +99,37 @@ int CaptureImpl::getFPS(unsigned int* fps)
 
 surround_images_t* CaptureImpl::popOneFrame()
 {
-    surround_images_t* pFrame = NULL;
+    surround_images_t* frame = NULL;
     if (NULL != mCaptureWorker)
     {
-        pFrame = mCaptureWorker->popOneFrame();
+        frame = mCaptureWorker->popOneFrame();
     }
-    return pFrame;
+    return frame;
 }
 
 surround_image_t* CaptureImpl::popOneFrame4FocusSource()
 {
-    surround_image_t* pFrame = NULL;
+    surround_image_t* frame = NULL;
     if (NULL != mCaptureWorker)
     {
-        pFrame = mCaptureWorker->popOneFrame4FocusSource();
+        frame = mCaptureWorker->popOneFrame4FocusSource();
     }
-    return pFrame;
+    return frame;
+}
+
+void CaptureImpl::enableCapture()
+{
+    if (NULL != mCaptureWorker)
+    {
+        mCaptureWorker->enableCapture();
+    }
+}
+surround_image_t* CaptureImpl::captureOneFrame4FocusSource()
+{
+    surround_image_t* frame = NULL;
+    if (NULL != mCaptureWorker)
+    {
+        frame = mCaptureWorker->captureOneFrame4FocusSource();
+    }
+    return frame;
 }

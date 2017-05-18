@@ -23,6 +23,9 @@ CaptureWorkerBase::CaptureWorkerBase()
     memset(&mFocusSource, 0, sizeof(mFocusSource));
     pthread_mutex_init(&mMutexFocusSourceQueue, NULL);
 
+    mEnableCapture = false;
+    memset(&mCaptureFrame4FocusSource, 0, sizeof(mCaptureFrame4FocusSource));  
+
     mLastCallTime = 0;
 
     mRealFPS = 0;
@@ -80,14 +83,29 @@ surround_image_t* CaptureWorkerBase::popOneFrame4FocusSource()
 {
     struct surround_image_t* surroundImage = NULL;
     pthread_mutex_lock(&mMutexFocusSourceQueue);
-    if (mFocuseSourceQueue.size() > 0)
+    if (mFocusSourceQueue.size() > 0)
     {
-        surroundImage = mFocuseSourceQueue.front();
-        mFocuseSourceQueue.pop();
+        surroundImage = mFocusSourceQueue.front();
+        mFocusSourceQueue.pop();
     }
     pthread_mutex_unlock(&mMutexFocusSourceQueue);
 
     return surroundImage;
+}
+
+void CaptureWorkerBase::enableCapture()
+{
+    mEnableCapture = true;
+}
+
+surround_image_t* CaptureWorkerBase::captureOneFrame4FocusSource()
+{
+    surround_image_t* frame = NULL;
+    if (mEnableCapture)
+    {
+        frame = &mCaptureFrame4FocusSource;
+    }
+    return frame;
 }
 
 int CaptureWorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
