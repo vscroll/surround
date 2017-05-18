@@ -9,6 +9,7 @@
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
+#include "util.h"
 
 //arm-linux-gcc v4l2_example.c -o v4l2_example.out -lopencv_core -lopencv_highgui
 //arm-linux-gcc v4l2_example.c -o v4l2_example.out
@@ -216,14 +217,21 @@ void write2File(int channel, void* image)
 {
     static int count = 0;
     IplImage* frame = (IplImage*)image;
-    char outImageName[16] = {0};
+    char outImageName[256] = {0};
     IplImage* outImage = cvCreateImage(cvGetSize(frame),frame->depth,frame->nChannels);
     // 将原图拷贝过来
     cvCopy(frame,outImage,NULL);
 
+    timespec time;
+    clock_gettime(CLOCK_REALTIME, &time);
+    tm now;
+    localtime_r(&time.tv_sec, &now);
+
     //设置保存的图片名称和格式
     memset(outImageName, 0, sizeof(outImageName));
-    sprintf(outImageName, "test_cam%d_%d.jpg", channel, count++);
+    sprintf(outImageName, "test_cam%02d_%04d%02d%02d_%02d%02d%02d_%02d.jpg", channel,
+            now.tm_year + 1900, now.tm_mon+1, now.tm_mday, 
+            now.tm_hour, now.tm_min, now.tm_sec, count++);
     //保存图片
     cvSaveImage(outImageName, outImage, 0);
 }

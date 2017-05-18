@@ -18,12 +18,14 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
                                 -DEGL_API_FB -DGPU_TYPE_VIV -DGL_GLEXT_PROTOTYPES -DENABLE_GPU_RENDER_20 \
 			                    -I. -I$(TARGET_PATH_INCLUDE) \
                                 -I$(HOME)/my-imx6/02_source/linux-3.14.52/include/uapi \
-                                -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include
+                                -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include \
+			                    -I$(SRC_ROOT)/util
 
 LFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
 			                    -lpthread -lopencv_core -lopencv_highgui
 
 SRCS 			            = $(wildcard ./*.cpp )
+SRCS 		                += $(wildcard $(SRC_ROOT)/util/*.cpp)
 
 OBJS 			            = $(patsubst %.cpp, %.o, $(SRCS))
 
