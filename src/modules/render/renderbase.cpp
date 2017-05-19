@@ -30,12 +30,12 @@ void RenderBase::closeDevice()
     mRenderDevice->closeDevice();
 }
 
-void RenderBase::drawImage(struct render_surface_t* surface)
+void RenderBase::drawImage(struct render_surface_t* surface, bool alpha)
 {
-    mRenderDevice->drawImage(surface);
+    mRenderDevice->drawImage(surface, alpha);
 }
 
-void RenderBase::drawMultiImages(struct render_surface_t* surface[], unsigned int num)
+void RenderBase::drawMultiImages(struct render_surface_t surfaces[], unsigned int num)
 {
-    mRenderDevice->drawMultiImages(surface, num);
+    mRenderDevice->drawMultiImages(surfaces, num);
 }

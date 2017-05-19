@@ -15,9 +15,9 @@ public:
 
     virtual void closeDevice();
 
-    virtual void drawImage(struct render_surface_t* surface);
+    virtual void drawImage(struct render_surface_t* surface, bool alpha = false);
 
-    virtual void drawMultiImages(struct render_surface_t* surface[], unsigned int num);
+    virtual void drawMultiImages(struct render_surface_t surfaces[], unsigned int num);
 
 private:
     RenderDevice* mRenderDevice;

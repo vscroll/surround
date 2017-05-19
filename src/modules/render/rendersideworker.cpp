@@ -74,6 +74,7 @@ void RenderSideWorker::setChannelMarkRect(unsigned int left,
     mChannelMarkHeight = height;
 }
 
+unsigned char gChannelMarkData[100*100*2] = {0};
 void RenderSideWorker::run()
 {
 #if DEBUG_UPDATE
@@ -126,16 +127,51 @@ void RenderSideWorker::run()
 #if DEBUG_UPDATE
     clock_t start_draw = clock();
 #endif
+
+#if 1
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)sideImage->data;
     surface.srcPixfmt = sideImage->info.pixfmt;
     surface.srcWidth = sideImage->info.width;
     surface.srcHeight = sideImage->info.height;
+    surface.srcSize = sideImage->info.size;
     surface.dstLeft = mSideImageLeft;
     surface.dstTop = mSideImageTop;
     surface.dstWidth = mSideImageWidth;
     surface.dstHeight = mSideImageHeight;
     drawImage(&surface);
+#else
+
+    struct render_surface_t surfaces[2];
+
+    surfaces[0].srcBuf = (unsigned char*)sideImage->data;
+    surfaces[0].srcPixfmt = sideImage->info.pixfmt;
+    surfaces[0].srcWidth = sideImage->info.width;
+    surfaces[0].srcHeight = sideImage->info.height;
+    surfaces[0].srcSize = sideImage->info.size;
+    surfaces[0].dstLeft = mSideImageLeft;
+    surfaces[0].dstTop = mSideImageTop;
+    surfaces[0].dstWidth = mSideImageWidth;
+    surfaces[0].dstHeight = mSideImageHeight;
+
+    surfaces[1].srcBuf = (unsigned char*)gChannelMarkData;
+    surfaces[1].srcPixfmt = V4L2_PIX_FMT_YUYV;
+    surfaces[1].srcWidth = 100;
+    surfaces[1].srcHeight = 100;
+    surfaces[1].srcSize = surfaces[1].srcWidth*surfaces[1].srcHeight*2;
+    surfaces[1].dstLeft = mSideImageLeft;
+    surfaces[1].dstTop = mSideImageTop;
+    surfaces[1].dstWidth = 100;
+    surfaces[1].dstHeight = 100;
+
+#if 1
+    drawImage(&surfaces[0]);
+    drawImage(&surfaces[1]);
+#else
+    drawMultiImages(surfaces, 2);
+#endif
+
+#endif
 
 #if DEBUG_UPDATE
     std::cout << "RenderSideWorker::run"

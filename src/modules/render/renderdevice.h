@@ -28,9 +28,9 @@ public:
 
     void closeDevice();
 
-    void drawImage(struct render_surface_t* surface);
+    void drawImage(struct render_surface_t* surface, bool alpha);
 
-    void drawMultiImages(struct render_surface_t* surface[], unsigned int num);
+    void drawMultiImages(struct render_surface_t surfaces[], unsigned int num);
 
     unsigned int getDstLeft() { return mDstLeft; }
     unsigned int getDstTop() { return mDstTop; }

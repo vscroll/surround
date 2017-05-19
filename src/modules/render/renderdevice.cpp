@@ -1,10 +1,12 @@
 #include "renderdevice.h"
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <iostream>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <linux/videodev2.h>
 #include "g2d.h"
 
 RenderDevice::RenderDevice()
@@ -157,17 +159,8 @@ void RenderDevice::closeG2d()
     }
 }
 
-void RenderDevice::drawImage(struct render_surface_t* surface)
+void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
 {
-    void *g2dHandle;
-    if (g2d_open(&g2dHandle) == -1
-	    || g2dHandle == NULL)
-    {
-        std::cout << "Fail to open g2d device"
-                  << std::endl;
-        return;
-    }
-
     if ((surface->dstLeft + surface->dstWidth) > (int)mScreenInfo.xres || (surface->dstTop + surface->dstHeight) > (int)mScreenInfo.yres)  {
         std::cout << "Bad display image dimensions"
                 << ", dst left:" << surface->dstLeft
@@ -178,6 +171,17 @@ void RenderDevice::drawImage(struct render_surface_t* surface)
         return;
     }
 
+    struct g2d_surface src;
+    struct g2d_surface dst;
+    if (surface->srcPixfmt == V4L2_PIX_FMT_UYVY)
+    {
+        src.format = G2D_UYVY;
+    }
+    else if (surface->srcPixfmt == V4L2_PIX_FMT_YUYV)
+    {
+        src.format = G2D_YUYV;
+    }
+
     struct g2d_buf* g2dbuf = mG2dbuf[mG2dBufIndex];
     if (++mG2dBufIndex >= BUFFER_SIZE)
     {
@@ -185,8 +189,7 @@ void RenderDevice::drawImage(struct render_surface_t* surface)
     }
 
     memcpy(g2dbuf->buf_vaddr, surface->srcBuf, surface->srcSize);
-    struct g2d_surface src;
-    struct g2d_surface dst;
+
 
 #if CACHEABLE
     g2d_cache_op(g2dbuf, G2D_CACHE_FLUSH);
@@ -204,8 +207,6 @@ YV12:  Y in planes [0], V in planes [1], U in planes [2], with 64 bytes alignmen
 NV21/NV61:  Y in planes [0], VU in planes [1], with 64bytes alignment,
 YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
 */
-
-    src.format = G2D_UYVY;
     switch (src.format) {
         case G2D_RGB565:
         case G2D_RGBA8888:
@@ -255,34 +256,97 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
     dst.height = mScreenInfo.yres;
     dst.rot    = G2D_ROTATION_0;
     dst.format = mScreenInfo.bits_per_pixel == 16 ? G2D_RGB565 : (mScreenInfo.red.offset == 0 ? G2D_RGBA8888 : G2D_BGRA8888);
-#if 0
-    if (set_alpha)
+
+    void *g2dHandle;
+    if (g2d_open(&g2dHandle) == -1
+	    || g2dHandle == NULL)
+    {
+        std::cout << "Fail to open g2d device"
+                  << std::endl;
+        return;
+    }
+
+    if (alpha)
     {
         src.blendfunc = G2D_ONE;
-        dst.blendfunc = G2D_ONE_MINUS_SRC_ALPHA;
-
         src.global_alpha = 0x80;
+
+        dst.blendfunc = G2D_ONE_MINUS_SRC_ALPHA;
         dst.global_alpha = 0xff;
 
         g2d_enable(g2dHandle, G2D_BLEND);
         g2d_enable(g2dHandle, G2D_GLOBAL_ALPHA);
     }
-#endif
 
     g2d_blit(g2dHandle, &src, &dst);
     g2d_finish(g2dHandle);
-#if 0
-    if (set_alpha)
+
+    if (alpha)
     {
         g2d_disable(g2dHandle, G2D_GLOBAL_ALPHA);
         g2d_disable(g2dHandle, G2D_BLEND);
     }
-#endif
-    g2d_close(g2dHandle);
 
+    g2d_close(g2dHandle);
 }
 
-void RenderDevice::drawMultiImages(struct render_surface_t* surface[], unsigned int num)
+void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned int num)
 {
+    void *g2dHandle;
+    if (g2d_open(&g2dHandle) == -1
+	    || g2dHandle == NULL)
+    {
+        std::cout << "Fail to open g2d device"
+                  << std::endl;
+        return;
+    }
 
+    struct g2d_buf* g2dbuf = mG2dbuf[mG2dBufIndex];
+    if (++mG2dBufIndex >= BUFFER_SIZE)
+    {
+        mG2dBufIndex = 0;
+    }
+
+    struct g2d_buf *mul_s_buf[num];
+    struct g2d_surface_pair* sp[num];
+
+    for (unsigned int i = 0; i < num; ++i)
+    {
+        mul_s_buf[i] = g2d_alloc(surfaces[i].srcSize, 0);
+        memcpy(mul_s_buf[i]->buf_vaddr, surfaces[i].srcBuf, surfaces[i].srcSize);
+
+        sp[i] = (struct g2d_surface_pair*)malloc(sizeof(struct g2d_surface_pair));
+        sp[i]->s.left = 0;
+        sp[i]->s.top = 0;
+        sp[i]->s.right = surfaces[i].srcWidth;
+        sp[i]->s.bottom = surfaces[i].srcHeight;
+        sp[i]->s.stride = surfaces[i].srcWidth;
+        sp[i]->s.width = surfaces[i].srcWidth;
+        sp[i]->s.height = surfaces[i].srcHeight;
+        sp[i]->s.rot = G2D_ROTATION_0;
+        sp[i]->s.format = G2D_UYVY;
+        sp[i]->s.planes[0] = mul_s_buf[i]->buf_paddr;
+
+        sp[i]->d.left = 0;
+        sp[i]->d.top = 0;
+        sp[i]->d.right = surfaces[i].dstWidth;
+        sp[i]->d.bottom = surfaces[i].srcHeight;
+        sp[i]->d.stride = surfaces[i].dstWidth;
+        sp[i]->d.width = surfaces[i].dstWidth;
+        sp[i]->d.height = surfaces[i].srcHeight;
+        sp[i]->d.format = mScreenInfo.bits_per_pixel == 16 ? G2D_RGB565 : (mScreenInfo.red.offset == 0 ? G2D_RGBA8888 : G2D_BGRA8888);
+        sp[i]->d.rot = G2D_ROTATION_0;
+        sp[i]->d.planes[0] = mFBPhys;
+    }
+
+    g2d_multi_blit(g2dHandle, sp, num);
+    g2d_finish(g2dHandle);
+
+    for (unsigned int i = 0; i < num; ++i)
+    {
+        g2d_free(mul_s_buf[i]);
+        free(sp[i]);
+    }
+
+    g2d_close(g2dHandle);
 }

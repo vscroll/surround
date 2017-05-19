@@ -22,6 +22,7 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(SRC_ROOT)/include \
 			                    -I$(SRC_ROOT)/util \
 			                    -I$(SRC_ROOT)/util/thread \
+			                    -I$(SRC_ROOT)/util/v4l2 \
 			                    -I$(SRC_ROOT)/modules/capture \
 			                    -I$(SRC_ROOT)/modules/render \
 			                    -I$(SRC_ROOT)/util/shm \
