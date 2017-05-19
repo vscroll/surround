@@ -128,7 +128,7 @@ void RenderSideWorker::run()
     clock_t start_draw = clock();
 #endif
 
-#if 1
+#if 0
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)sideImage->data;
     surface.srcPixfmt = sideImage->info.pixfmt;
@@ -156,8 +156,8 @@ void RenderSideWorker::run()
 
     surfaces[1].srcBuf = (unsigned char*)gChannelMarkData;
     surfaces[1].srcPixfmt = V4L2_PIX_FMT_YUYV;
-    surfaces[1].srcWidth = mChannelMarkWidth;
-    surfaces[1].srcHeight = mChannelMarkHeight;
+    surfaces[1].srcWidth = 100;
+    surfaces[1].srcHeight = 100;
     surfaces[1].srcSize = surfaces[1].srcWidth*surfaces[1].srcHeight*2;
     surfaces[1].dstLeft = mChannelMarkLeft;
     surfaces[1].dstTop = mChannelMarkTop;
