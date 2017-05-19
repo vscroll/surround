@@ -16,6 +16,7 @@ int main (int argc, char **argv)
     RenderImpl* render = new RenderImpl();
     render->setCaptureModule(NULL);
     render->setSideImageRect(424, 0, 600, 600);
+    render->setChannelMarkRect(524, 0, 100, 100);
 
     render->setPanoImageModule(NULL);          
     render->setPanoImageRect(0, 0, 424, 600);

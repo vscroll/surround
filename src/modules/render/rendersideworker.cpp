@@ -156,13 +156,13 @@ void RenderSideWorker::run()
 
     surfaces[1].srcBuf = (unsigned char*)gChannelMarkData;
     surfaces[1].srcPixfmt = V4L2_PIX_FMT_YUYV;
-    surfaces[1].srcWidth = 100;
-    surfaces[1].srcHeight = 100;
+    surfaces[1].srcWidth = mChannelMarkWidth;
+    surfaces[1].srcHeight = mChannelMarkHeight;
     surfaces[1].srcSize = surfaces[1].srcWidth*surfaces[1].srcHeight*2;
-    surfaces[1].dstLeft = mSideImageLeft;
-    surfaces[1].dstTop = mSideImageTop;
-    surfaces[1].dstWidth = 100;
-    surfaces[1].dstHeight = 100;
+    surfaces[1].dstLeft = mChannelMarkLeft;
+    surfaces[1].dstTop = mChannelMarkTop;
+    surfaces[1].dstWidth = mChannelMarkWidth;
+    surfaces[1].dstHeight = mChannelMarkHeight;
 
 #if 1
     drawImage(&surfaces[0]);

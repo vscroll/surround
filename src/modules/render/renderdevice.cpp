@@ -9,6 +9,8 @@
 #include <linux/videodev2.h>
 #include "g2d.h"
 
+#define CACHEABLE 0
+
 RenderDevice::RenderDevice()
 {
     mDstLeft = 0;
@@ -34,7 +36,6 @@ RenderDevice::RenderDevice()
 
 RenderDevice::~RenderDevice()
 {
-
 }
 
 int RenderDevice::openDevice(unsigned int dstLeft,
@@ -190,7 +191,6 @@ void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
 
     memcpy(g2dbuf->buf_vaddr, surface->srcBuf, surface->srcSize);
 
-
 #if CACHEABLE
     g2d_cache_op(g2dbuf, G2D_CACHE_FLUSH);
 #endif
@@ -290,8 +290,9 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
     g2d_close(g2dHandle);
 }
 
-void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned int num)
+void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned int num, bool alpha)
 {
+#if 1
     void *g2dHandle;
     if (g2d_open(&g2dHandle) == -1
 	    || g2dHandle == NULL)
@@ -301,13 +302,93 @@ void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned 
         return;
     }
 
-    struct g2d_buf* g2dbuf = mG2dbuf[mG2dBufIndex];
-    if (++mG2dBufIndex >= BUFFER_SIZE)
+    struct g2d_buf* mul_s_buf[num] = {NULL};
+
+    for (unsigned int i = 0; i < num; ++i)
     {
-        mG2dBufIndex = 0;
+        struct g2d_surface src;
+        struct g2d_surface dst;
+        if (surfaces[i].srcPixfmt == V4L2_PIX_FMT_UYVY)
+        {
+            src.format = G2D_UYVY;
+        }
+        else if (surfaces[i].srcPixfmt == V4L2_PIX_FMT_YUYV)
+        {
+            src.format = G2D_YUYV;
+        }
+#if CACHEABLE
+        mul_s_buf[i] = g2d_alloc(surfaces[i].srcSize, 1);
+#else
+        mul_s_buf[i] = g2d_alloc(surfaces[i].srcSize, 0);
+#endif
+        memcpy(mul_s_buf[i]->buf_vaddr, surfaces[i].srcBuf, surfaces[i].srcSize);
+
+#if CACHEABLE
+        g2d_cache_op(mul_s_buf[i], G2D_CACHE_FLUSH);
+#endif
+
+        src.planes[0] = mul_s_buf[i]->buf_paddr;
+        src.left = 0;
+        src.top = 0;
+        src.right = surfaces[i].srcWidth;
+        src.bottom = surfaces[i].srcHeight;
+        src.stride = surfaces[i].srcWidth;
+        src.width  = surfaces[i].srcWidth;
+        src.height = surfaces[i].srcHeight;
+        src.rot  = G2D_ROTATION_0;
+
+        dst.planes[0] = mFBPhys;
+        dst.left = surfaces[i].dstLeft;
+        dst.top = surfaces[i].dstTop;
+        dst.right = surfaces[i].dstLeft + surfaces[i].dstWidth;
+        dst.bottom = surfaces[i].dstTop + surfaces[i].dstHeight;
+        dst.stride = mScreenInfo.xres;
+        dst.width  = mScreenInfo.xres;
+        dst.height = mScreenInfo.yres;
+        dst.rot    = G2D_ROTATION_0;
+        dst.format = mScreenInfo.bits_per_pixel == 16 ? G2D_RGB565 : (mScreenInfo.red.offset == 0 ? G2D_RGBA8888 : G2D_BGRA8888);
+
+        if (alpha)
+        {
+            src.blendfunc = G2D_ONE;
+            src.global_alpha = 0x80;
+
+            dst.blendfunc = G2D_ONE_MINUS_SRC_ALPHA;
+            dst.global_alpha = 0xff;
+
+            g2d_enable(g2dHandle, G2D_BLEND);
+            g2d_enable(g2dHandle, G2D_GLOBAL_ALPHA);
+        }
+
+        g2d_blit(g2dHandle, &src, &dst);
+
+        if (alpha)
+        {
+            g2d_disable(g2dHandle, G2D_GLOBAL_ALPHA);
+            g2d_disable(g2dHandle, G2D_BLEND);
+        }
     }
 
-    struct g2d_buf *mul_s_buf[num];
+    g2d_finish(g2dHandle);
+
+    for (unsigned int i = 0; i < num; ++i)
+    {
+        g2d_free(mul_s_buf[i]);
+    }
+
+    g2d_close(g2dHandle);
+
+#else
+    void *g2dHandle;
+    if (g2d_open(&g2dHandle) == -1
+	    || g2dHandle == NULL)
+    {
+        std::cout << "Fail to open g2d device"
+                  << std::endl;
+        return;
+    }
+
+    struct g2d_buf* mul_s_buf[num];
     struct g2d_surface_pair* sp[num];
 
     for (unsigned int i = 0; i < num; ++i)
@@ -349,4 +430,6 @@ void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned 
     }
 
     g2d_close(g2dHandle);
+#endif
+
 }

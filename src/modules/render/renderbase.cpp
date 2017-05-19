@@ -35,7 +35,7 @@ void RenderBase::drawImage(struct render_surface_t* surface, bool alpha)
     mRenderDevice->drawImage(surface, alpha);
 }
 
-void RenderBase::drawMultiImages(struct render_surface_t surfaces[], unsigned int num)
+void RenderBase::drawMultiImages(struct render_surface_t surfaces[], unsigned int num, bool alpha)
 {
-    mRenderDevice->drawMultiImages(surfaces, num);
+    mRenderDevice->drawMultiImages(surfaces, num, alpha);
 }
