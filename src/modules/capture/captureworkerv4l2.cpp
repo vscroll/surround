@@ -56,7 +56,7 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
         mVideoFd[i] = open(devName, O_RDWR | O_NONBLOCK);
         if (mVideoFd[i] < 0)
         {
-            std::cout << "CaptureWorkerV4l2::openDevice"
+            std::cout << "CaptureWorkerV4l2::openDevice:" << devName
                 << " open video failed"
                 << std::endl;
             return -1;
@@ -71,7 +71,7 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
         V4l2::setFps(mVideoFd[i], 15);
         V4l2::getFps(mVideoFd[i]);
 #if DEBUG_CAPTURE
-        std::cout << "CaptureWorkerV4l2::openDevice"
+        std::cout << "CaptureWorkerV4l2::openDevice:" << devName
                 << " mem type: " << mMemType
                 << " buf count:" << V4L2_BUF_COUNT
                 << " in_pixfmt:" << mSink[i].pixfmt
@@ -117,7 +117,7 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
 #endif
 
 #if DEBUG_CAPTURE
-        std::cout << "CaptureWorkerV4l2::openDevice"
+        std::cout << "CaptureWorkerV4l2::openDevice:" << devName
                 << " initV4l2Buf ok"
 		        << std::endl;
 #endif
