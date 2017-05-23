@@ -19,7 +19,7 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I. -I$(TARGET_PATH_INCLUDE) \
                                 -I$(HOME)/my-imx6/02_source/linux-3.14.52/include/uapi \
                                 -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include \
-			                    -I$(SRC_ROOT)/include
+			                    -I$(SRC_ROOT)/util/v4l2
 
 LFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
 			                    -lpthread -lg2d

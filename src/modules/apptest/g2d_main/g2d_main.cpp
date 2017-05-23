@@ -569,8 +569,48 @@ int main(int argc, char **argv)
   struct fb_fix_screeninfo fb_info;
   struct timeval tv1, tv2;
 
-  if ((fd_fb0 = open("/dev/fb0", O_RDWR, 0)) < 0) {
-    if ((fd_fb0 = open("/dev/graphics/fb0", O_RDWR, 0)) < 0) {
+  int index = 0;
+  int flag = 0;
+  if (1 != argc 
+        && 3 != argc)
+  {
+    printf("\n usage: g2d_main fb_index cmd([blit|mblit|clear]) \n");
+    return -1;
+  }
+
+  if (1 == argc)
+  {
+    index = 0;
+    flag = 0;
+  }
+  else if (3 == argc)
+  {
+    index = atoi(argv[1]);
+    if (strcmp("blit", argv[2]) == 0)
+    {
+      flag = 0;
+    }
+    else if (strcmp("mblit", argv[2]) == 0)
+    {
+      flag = 1;
+    }
+    else if (strcmp("clear", argv[2]) == 0)
+    {
+      flag = 2;
+    }
+    else
+    {
+    }
+  }
+  else
+  {
+  }
+
+  char fb[32] = {0};
+  sprintf(fb, "/dev/fb%d", index);
+  if ((fd_fb0 = open(fb, O_RDWR, 0)) < 0) {
+    sprintf(fb, "/dev/graphics/fb%d", index);
+    if ((fd_fb0 = open(fb, O_RDWR, 0)) < 0) {
       printf("Unable to open fb0\n");
       retval = TFAIL;
       goto err0;
@@ -595,39 +635,54 @@ int main(int argc, char **argv)
   g_fb0_size = screen_info.xres_virtual * screen_info.yres_virtual * screen_info.bits_per_pixel / 8;
 
 
-  gettimeofday(&tv1, NULL);
+  if (flag == 0)
+  {
+    gettimeofday(&tv1, NULL);
 
-  draw_image_to_framebuffer(1024, 600, 1024 * 600 * 2, G2D_RGB565, (unsigned char *)wall_1024x768_565rgb, &screen_info, 0, 0, 1024, 600, 1, G2D_ROTATION_0);
+    if (index == 0)
+    {
+        draw_image_to_framebuffer(480, 360, 480 * 360 * 2, G2D_BGR565, (unsigned char *)fsl_logo_bgr_480x360, &screen_info, 0, 0, 1024, 600, 0, G2D_ROTATION_0);
+        //draw_image_to_framebuffer(1024, 600, 1024 * 600 * 2, G2D_RGB565, (unsigned char *)wall_1024x768_565rgb, &screen_info, 0, 0, 1024, 600, 0, G2D_ROTATION_0);
+    }
+    else
+    {
+        draw_image_to_framebuffer(480, 360, 480 * 360 * 2, G2D_BGR565, (unsigned char *)fsl_logo_bgr_480x360, &screen_info, 100, 40, 500, 300, 0, G2D_ROTATION_0);
+    }
 
-  draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 100, 40, 500, 300, 1, G2D_ROTATION_0);
+    //draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 100, 40, 500, 300, 0, G2D_ROTATION_0);
+    
+    //draw_image_to_framebuffer(480, 360, 480 * 360 * 2, G2D_BGR565, (unsigned char *)fsl_logo_bgr_480x360, &screen_info, 350, 260, 400, 300, 0, G2D_ROTATION_0);
 
-  draw_image_to_framebuffer(480, 360, 480 * 360 * 2, G2D_BGR565, (unsigned char *)fsl_logo_bgr_480x360, &screen_info, 350, 260, 400, 300, 0, G2D_ROTATION_0);
+    //draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 650, 400, 300, 200, 1, G2D_ROTATION_90);
 
-  draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 650, 400, 300, 200, 1, G2D_ROTATION_90);
+    //draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 50, 400, 300, 200, 0, G2D_ROTATION_180);
 
-  draw_image_to_framebuffer(800, 600, 800 * 600 * 2, G2D_BGR565, (unsigned char *)ginger_bgr_800x600, &screen_info, 50, 400, 300, 200, 0, G2D_ROTATION_180);
+    //draw_image_to_framebuffer(176, 144, 176 * 144 * 3 / 2, G2D_I420, akiyo_I420_176x144, &screen_info, 550, 40, 150, 120, 0, G2D_ROTATION_0);
 
-  draw_image_to_framebuffer(176, 144, 176 * 144 * 3 / 2, G2D_I420, akiyo_I420_176x144, &screen_info, 550, 40, 150, 120, 0, G2D_ROTATION_0);
+    //draw_image_to_framebuffer(352, 288, 352 * 288 * 2, G2D_NV16, NV16_352x288, &screen_info, 0, 420, 176, 144, 1, G2D_ROTATION_0);
 
-  draw_image_to_framebuffer(352, 288, 352 * 288 * 2, G2D_NV16, NV16_352x288, &screen_info, 0, 420, 176, 144, 1, G2D_ROTATION_0);
+    //draw_image_to_framebuffer(352, 288, 352 * 288 * 2, G2D_YUYV, yuyv_352x288, &screen_info, 0, 0, 176, 144, 1, G2D_ROTATION_0);
 
-  draw_image_to_framebuffer(352, 288, 352 * 288 * 2, G2D_YUYV, yuyv_352x288, &screen_info, 0, 0, 176, 144, 1, G2D_ROTATION_0);
+    gettimeofday(&tv2, NULL);
 
-  gettimeofday(&tv2, NULL);
+    printf("Overlay rendering with blit time %dus .\n", (int)((tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec));
+  }
+  else if (flag == 1)
+  {
+    gettimeofday(&tv1, NULL);
 
-  printf("Overlay rendering time %dus .\n", (int)((tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec));
+    Test_g2d_multi_blit(&screen_info);
 
-  /* overlay test with multiblit */
-  clear_screen_with_g2d(&screen_info);
+    gettimeofday(&tv2, NULL);
 
-  gettimeofday(&tv1, NULL);
-
-  Test_g2d_multi_blit(&screen_info);
-
-  gettimeofday(&tv2, NULL);
-
-  printf("Overlay rendering with multiblit time %dus .\n", (int)((tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec));
-
+    printf("Overlay rendering with multiblit time %dus .\n", (int)((tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec));
+  }
+  else if (flag == 2)
+  {
+      /* overlay test with multiblit */
+    printf("clear %s\n", fb);
+    clear_screen_with_g2d(&screen_info);
+  }
 
 err2:
   close(fd_fb0);
