@@ -3,7 +3,10 @@
 
 #include "IRender.h"
 
+#define RENDER_MARK_ALONE 1
+
 class RenderSideWorker;
+class RenderMarkWorker;
 class RenderPanoWorker;
 class RenderImpl : public IRender
 {
@@ -34,6 +37,9 @@ public:
     virtual void stop();
 private:
     RenderSideWorker* mSideWorker;
+#if RENDER_MARK_ALONE
+    RenderMarkWorker* mMarkWorker;
+#endif
     RenderPanoWorker* mPanoWorker;
 };
 

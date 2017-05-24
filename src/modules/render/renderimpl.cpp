@@ -1,10 +1,14 @@
 #include "renderimpl.h"
 #include "renderpanoworker.h"
 #include "rendersideworker.h"
+#include "rendermarkworker.h"
 
 RenderImpl::RenderImpl()
 {
     mSideWorker = new RenderSideWorker();
+#if RENDER_MARK_ALONE
+    mMarkWorker = new RenderMarkWorker();
+#endif
     mPanoWorker = new RenderPanoWorker();
 }
 
@@ -38,10 +42,17 @@ void RenderImpl::setChannelMarkRect(
 		unsigned int width,
 		unsigned int height)
 {
+#if RENDER_MARK_ALONE
+    if (NULL != mMarkWorker)
+    {
+        mMarkWorker->setChannelMarkRect(left, top, width, height);
+    }
+#else
     if (NULL != mSideWorker)
     {
         mSideWorker->setChannelMarkRect(left, top, width, height);
     }
+#endif
 }
 
 void RenderImpl::setPanoImageModule(IPanoImage* panoImage)
@@ -82,6 +93,20 @@ int RenderImpl::start(unsigned int fps)
         mSideWorker->closeDevice();
     }
     mSideWorker->start(1000/fps);
+
+#if RENDER_MARK_ALONE
+    unsigned int markLeft;
+    unsigned int markTop;
+    unsigned int markWidth;
+    unsigned int markHeight;
+    mMarkWorker->getChannelMarkRect(&markLeft, &markTop, &markWidth, &markHeight);
+    if (mMarkWorker->openDevice(markLeft, markTop, markWidth, markHeight) < 0)
+    {
+        mMarkWorker->closeDevice();
+    }
+    mMarkWorker->start(1000/fps);
+
+#endif
 
     unsigned int panoLeft;
     unsigned int panoTop;

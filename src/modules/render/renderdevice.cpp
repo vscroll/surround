@@ -1,5 +1,6 @@
 #include "renderdevice.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -11,8 +12,11 @@
 
 #define CACHEABLE 0
 
-RenderDevice::RenderDevice()
+RenderDevice::RenderDevice(unsigned int devIndex, bool blank)
 {
+    mDevIndex = devIndex;
+    mBlank = blank;
+
     mDstLeft = 0;
     mDstTop = 0;
     mDstWidth = 0;
@@ -80,8 +84,20 @@ void RenderDevice::closeDevice()
 
 int RenderDevice::openFramebuffer()
 {
-    if ((mFBFd = open("/dev/fb0", O_RDWR, 0)) < 0) {
+    char fb[16] = {0};
+    sprintf(fb, "/dev/fb%d", mDevIndex);
+    if ((mFBFd = open(fb, O_RDWR, 0)) < 0) {
 	    return -1;
+    }
+
+    if (!mBlank)
+    {
+        if (ioctl(mFBFd, FBIOBLANK, FB_BLANK_UNBLANK) < 0)
+        {
+            std::cout << "FBIOBLANK failed"
+                    << std::endl;
+	        return -1;
+        }
     }
 
     /* Get fix screen info. */
@@ -110,8 +126,11 @@ int RenderDevice::openFramebuffer()
     }
 
     std::cout << "RenderDevice::openDevice"
+              << " fb:" << fb
               << " xres_virtual:" << mScreenInfo.xres_virtual
               << " yres_virtual:" << mScreenInfo.yres_virtual
+              << ", xres:" << mScreenInfo.xres
+              << ", yres:" << mScreenInfo.yres
               << std::endl;
 
     return 0;
@@ -146,6 +165,8 @@ int RenderDevice::openG2d()
 
     std::cout << "RenderDevice::openG2d ok"
               << std::endl;
+
+    return 0;
 }
 
 void RenderDevice::closeG2d()
@@ -168,6 +189,8 @@ void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
                 << ", dst top:" << surface->dstTop
                 << ", dst width:" << surface->dstWidth
                 << ", dst height:" << surface->dstHeight
+                << ", xres:" << mScreenInfo.xres
+                << ", yres:" << mScreenInfo.yres
                 << std::endl;
         return;
     }

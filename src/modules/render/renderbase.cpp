@@ -4,7 +4,7 @@
 
 RenderBase::RenderBase()
 {
-    mRenderDevice = new RenderDevice();
+    mRenderDevice = NULL;
 }
 
 RenderBase::~RenderBase()
@@ -17,6 +17,11 @@ int RenderBase::openDevice(unsigned int dstLeft,
 		unsigned int dstWidth,
 		unsigned int dstHeight)
 {
+    if (NULL == mRenderDevice)
+    {
+        mRenderDevice = new RenderDevice(0, true);
+    }
+
     if (mRenderDevice->openDevice(dstLeft, dstTop, dstWidth, dstHeight) < 0)
     {
 	    return -1;
@@ -27,15 +32,26 @@ int RenderBase::openDevice(unsigned int dstLeft,
 
 void RenderBase::closeDevice()
 {
-    mRenderDevice->closeDevice();
+    if (NULL != mRenderDevice)
+    {
+        mRenderDevice->closeDevice();
+        delete mRenderDevice;
+        mRenderDevice = NULL;
+    }
 }
 
 void RenderBase::drawImage(struct render_surface_t* surface, bool alpha)
 {
-    mRenderDevice->drawImage(surface, alpha);
+    if (NULL != mRenderDevice)
+    {
+        mRenderDevice->drawImage(surface, alpha);
+    }
 }
 
 void RenderBase::drawMultiImages(struct render_surface_t surfaces[], unsigned int num, bool alpha)
 {
-    mRenderDevice->drawMultiImages(surfaces, num, alpha);
+    if (NULL != mRenderDevice)
+    {
+        mRenderDevice->drawMultiImages(surfaces, num, alpha);
+    }
 }

@@ -19,7 +19,7 @@ struct g2d_buf;
 class RenderDevice
 {
 public:
-    RenderDevice();
+    RenderDevice(unsigned int devIndex, bool blank);
     virtual ~RenderDevice();
     int openDevice(unsigned int dstLeft,
 		unsigned int dstTop,
@@ -43,6 +43,9 @@ private:
     int openG2d();
     void closeG2d();
 private:
+    unsigned int mDevIndex;
+    bool mBlank;
+
     unsigned int mDstLeft;
     unsigned int mDstTop;
     unsigned int mDstWidth;
