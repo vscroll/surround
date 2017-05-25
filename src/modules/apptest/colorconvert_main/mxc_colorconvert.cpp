@@ -134,24 +134,24 @@ int main(int argc, char *argv[])
 
     if (argc == 5)
     {
-        if (strcmp("uyvy2rgb", argv[1]) == 0)
+        if (strcmp("0", argv[1]) == 0)
         {
             src_fmt = IPU_PIX_FMT_UYVY;
             dst_fmt = IPU_PIX_FMT_BGR24;
             in_width = atoi(argv[3]);
             in_height = atoi(argv[4]);
         }
-        else if (strcmp("yuyv2rgb", argv[1]) == 0)
+        else if (strcmp("1", argv[1]) == 0)
         {
             src_fmt = IPU_PIX_FMT_YUYV;
             dst_fmt = IPU_PIX_FMT_BGR24;
         }
-        else if (strcmp("rgb2uyvy", argv[1]) == 0)
+        else if (strcmp("2", argv[1]) == 0)
         {
             src_fmt = IPU_PIX_FMT_BGR24;
             dst_fmt = IPU_PIX_FMT_UYVY;
         }
-        else if (strcmp("rgb2yuyv", argv[1]) == 0)
+        else if (strcmp("3", argv[1]) == 0)
         {
             src_fmt = IPU_PIX_FMT_BGR24;
             dst_fmt = IPU_PIX_FMT_YUYV;
@@ -167,7 +167,8 @@ int main(int argc, char *argv[])
     if (src_fmt == -1
         || dst_fmt == -1)
     {
-        printf("\n usage: colorconvert [uyvy2rgb|yuyv2rgb|rgb2uyvy|rgb2yuyv] input in_width in_height) \n");
+        printf("\n usage: colorconvert [0|1|2|3] input in_width in_height) \n");
+        printf("        0:uyvy2rgb 1:yuyv2rgb 2:rgb2uyvy 3:rgb2yuyv \n");
         return -1;
     }
 
