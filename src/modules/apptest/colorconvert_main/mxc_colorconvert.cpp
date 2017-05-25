@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
     }
     else if (dst_fmt == IPU_PIX_FMT_BGR24)
     {
-        sprintf(output, "%s.jpg", outname, in_width, in_height);
+        sprintf(output, "%s.jpg", outname);
     }
     else
     {
@@ -312,6 +312,38 @@ int main(int argc, char *argv[])
         }
         fwrite(outbuf, 1, osize, output_fd);
         fclose(output_fd);
+
+        char cppname[256] = {0};
+        sprintf(cppname, "%s_%dx%d.cpp", outname, in_width, in_height);
+        FILE * cpp_fd = fopen(cppname, "at+");
+        if (cpp_fd < 0)
+        {
+            printf("faild to open %s\n", cppname);
+            return -1;
+        }
+
+        char header[256] = {0};
+        sprintf(header, "unsigned char %s_%dx%d[%d*%d*2] = {\n\t", outname, in_width, in_height, in_width, in_height);
+        fwrite(header, 1, strlen(header), cpp_fd);
+        int count = 0;
+        while(count++ < osize)
+        {
+            char byte[8] = {0};
+            if (count > 0 && count%8 == 0)
+            {
+                sprintf(byte, "0x%02x,\n\t", *((unsigned char*)outbuf+count));
+            }
+            else
+            {
+                sprintf(byte, "0x%02x,", *((unsigned char*)outbuf+count));
+            }
+            fwrite(byte, 1, strlen(byte), cpp_fd);
+        }
+
+        char tail[8] = {"\n};\n"};
+        fwrite(tail, 1, strlen(tail), cpp_fd);
+
+        fclose(cpp_fd);        
     }
     else if (dst_fmt == IPU_PIX_FMT_BGR24)
     {
