@@ -314,7 +314,17 @@ int main(int argc, char *argv[])
         fclose(output_fd);
 
         char cppname[256] = {0};
-        sprintf(cppname, "%s_%dx%d.cpp", outname, in_width, in_height);
+        char header[256] = {0};
+        if (dst_fmt == IPU_PIX_FMT_UYVY)
+        {
+            sprintf(cppname, "%s_uyvy_%dx%d.cpp", outname, in_width, in_height);
+            sprintf(header, "unsigned char %s_uyvy_%dx%d[%d*%d*2] = {\n\t", outname, in_width, in_height, in_width, in_height);
+        }
+        else
+        {
+            sprintf(cppname, "%s_yuyv_%dx%d.cpp", outname, in_width, in_height);
+            sprintf(header, "unsigned char %s_yuyv_%dx%d[%d*%d*2] = {\n\t", outname, in_width, in_height, in_width, in_height);
+        }
         FILE * cpp_fd = fopen(cppname, "at+");
         if (cpp_fd < 0)
         {
@@ -322,8 +332,6 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        char header[256] = {0};
-        sprintf(header, "unsigned char %s_%dx%d[%d*%d*2] = {\n\t", outname, in_width, in_height, in_width, in_height);
         fwrite(header, 1, strlen(header), cpp_fd);
         int count = 0;
         while(count++ < osize)
