@@ -7,6 +7,7 @@
 #include <queue>
 
 class ICapture;
+class ImageSHM;
 class CLPano2D;
 class StitchWorker : public Thread
 {
@@ -45,6 +46,7 @@ private:
                 void** outPano2D, int outPano2DWidth, int outPano2DHeight);
 private:
     ICapture* mCapture;
+    ImageSHM* mImageSHM;
 
     pthread_mutex_t mInputImagesMutex;
     std::queue<surround_images_t*> mInputImagesQueue;

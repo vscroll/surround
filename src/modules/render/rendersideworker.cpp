@@ -10,7 +10,7 @@
 RenderSideWorker::RenderSideWorker()
 {
     mCapture = NULL;
-    mSideSHM = NULL;
+    mImageSHM = NULL;
 
     mSideImageLeft = 0;
     mSideImageTop = 0;
@@ -29,6 +29,12 @@ RenderSideWorker::RenderSideWorker()
 
 RenderSideWorker::~RenderSideWorker()
 {
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
 }
 
 void RenderSideWorker::setCaptureModule(ICapture* capture)
@@ -36,8 +42,8 @@ void RenderSideWorker::setCaptureModule(ICapture* capture)
     mCapture = capture;
     if (NULL == capture)
     {
-        mSideSHM = new ImageSHM();
-        mSideSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+        mImageSHM = new ImageSHM();
+        mImageSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
     }
 }
 
@@ -92,17 +98,17 @@ void RenderSideWorker::run()
     
     if (NULL != mCapture)
     {
-        //one source from ICapture Module
+        //one source may be come from ICapture Module
         sideImage = mCapture->popOneFrame4FocusSource();
         mFocusChannelIndex = mCapture->getFocusChannelIndex();
     }
     else
     {
-        //one source from share memory
-        if (NULL != mSideSHM)
+        //one source may be come from share memory
+        if (NULL != mImageSHM)
         {
-            unsigned char imageBuf[SHM_SIDE_SIZE] = {};
-            if (mSideSHM->readImage(imageBuf, sizeof(imageBuf)) < 0)
+            unsigned char imageBuf[SHM_FOCUS_SOURCE_SIZE] = {};
+            if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
             {
                 return;
             }
@@ -177,7 +183,7 @@ void RenderSideWorker::run()
     std::cout << "RenderSideWorker::run"
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
-            << ", elapsed to capture:" << Util::get_system_milliseconds() - sideImage->timestamp
+            << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - sideImage->timestamp)/1000
             << ", draw:" << (double)(clock() - start_draw)/CLOCKS_PER_SEC
             << ", channel:" << mFocusChannelIndex
             << " width:"  << sideImage->info.width

@@ -4,12 +4,14 @@
 #include "clpano2d.h"
 #include "util.h"
 #include "ICapture.h"
+#include "imageshm.h"
 
 using namespace cv;
 
 StitchWorker::StitchWorker()
 {
     mCapture = NULL;
+    mImageSHM = NULL;
 
     pthread_mutex_init(&mInputImagesMutex, NULL);
     pthread_mutex_init(&mOutputPanoImageMutex, NULL);
@@ -27,7 +29,12 @@ StitchWorker::StitchWorker()
 
 StitchWorker::~StitchWorker()
 {
-
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
 }
 
 int StitchWorker::init(
@@ -42,15 +49,20 @@ int StitchWorker::init(
 		    bool enableOpenCL)
 {
     mCapture = capture;
+    if (NULL == capture)
+    {
+        mImageSHM = new ImageSHM();
+        mImageSHM->create((key_t)SHM_ALL_SOURCES_ID, SHM_ALL_SOURCES_SIZE);
+    }
 
     mPanoWidth = panoWidth;
     mPanoHeight = panoHeight;
     mPanoPixfmt = panoPixfmt;
-    if (panoPixfmt == PIX_FMT_BGR24)
+    if (panoPixfmt == V4L2_PIX_FMT_BGR24)
     {
         mPanoSize = panoWidth*panoHeight*3;
     }
-    else if (panoPixfmt == PIX_FMT_UYVY)
+    else if (panoPixfmt == V4L2_PIX_FMT_UYVY)
     {
         mPanoSize = panoWidth*panoHeight*2;
     }
@@ -203,10 +215,41 @@ void StitchWorker::run()
     surround_images_t* surroundImage = NULL;
     if (NULL != mCapture)
     {
+        //one source may be come from ICapture Module
         surroundImage = mCapture->popOneFrame();
     }
     else
     {
+        //one source may be come from share memory
+        if (NULL != mImageSHM)
+        {
+            unsigned char imageBuf[SHM_ALL_SOURCES_SIZE] = {};
+            if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
+            {
+                return;
+            }
+
+            surroundImage = new surround_images_t();
+            void* start = imageBuf;
+            long tmp = 0;
+            for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+            {
+                image_shm_header_t* header = (image_shm_header_t*)start;
+                surroundImage->frame[i].info.width = header->width;
+                surroundImage->frame[i].info.height = header->height;
+                surroundImage->frame[i].info.pixfmt = header->pixfmt;
+                surroundImage->frame[i].info.size = header->size;
+                surroundImage->frame[i].timestamp = header->timestamp;
+                surroundImage->frame[i].data = start + sizeof(image_shm_header_t);
+                if (tmp < surroundImage->frame[i].timestamp)
+                {
+                    tmp = surroundImage->frame[i].timestamp;
+                }
+                start += sizeof(image_shm_header_t) + header->size;
+            }
+            surroundImage->timestamp = tmp;
+        }
+#if 0
         pthread_mutex_lock(&mInputImagesMutex);
         inputImageSize = mInputImagesQueue.size();
         if (inputImageSize > 0)
@@ -215,6 +258,7 @@ void StitchWorker::run()
             mInputImagesQueue.pop();
         }
         pthread_mutex_unlock(&mInputImagesMutex);
+#endif
     }
 
     if (NULL == surroundImage)
@@ -292,7 +336,7 @@ void StitchWorker::run()
     std::cout << "StitchWorke::run"
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
-            << ", elapsed to capture:" << elapsed
+            << ", elapsed to capture:" << (double)elapsed/1000
             << ", stitch:" << (double)(end-start)/CLOCKS_PER_SEC
             << ", input_size:" << inputImageSize
             << ", pano_size:" << panoSize

@@ -20,11 +20,11 @@
 
 #define USE_CPU 1
 
-class SideImageSHMWriteWorker : public Thread
+class FocusSourceSHMWriteWorker : public Thread
 {
 public:
-    SideImageSHMWriteWorker(ICapture* capture);
-    virtual ~SideImageSHMWriteWorker();
+    FocusSourceSHMWriteWorker(ICapture* capture);
+    virtual ~FocusSourceSHMWriteWorker();
 
 public:
     virtual void run();
@@ -34,14 +34,14 @@ private:
     ImageSHM* mImageSHM;
 };
 
-SideImageSHMWriteWorker::SideImageSHMWriteWorker(ICapture* capture)
+FocusSourceSHMWriteWorker::FocusSourceSHMWriteWorker(ICapture* capture)
 {
     mCapture = capture;
     mImageSHM = new ImageSHM();
-    mImageSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+    mImageSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
 }
 
-SideImageSHMWriteWorker::~SideImageSHMWriteWorker()
+FocusSourceSHMWriteWorker::~FocusSourceSHMWriteWorker()
 {
     if (NULL != mImageSHM)
     {
@@ -51,7 +51,7 @@ SideImageSHMWriteWorker::~SideImageSHMWriteWorker()
     }
 }
 
-void SideImageSHMWriteWorker::run()
+void FocusSourceSHMWriteWorker::run()
 {
     if (NULL == mCapture
         || NULL == mImageSHM)
@@ -59,31 +59,21 @@ void SideImageSHMWriteWorker::run()
         return;
     }
 
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
-    if (NULL != sideImage)
+    surround_image_t* focusSource = mCapture->popOneFrame4FocusSource();
+    if (NULL != focusSource)
     {
-        struct image_shm_header_t header = {};
-        header.channel = mCapture->getFocusChannelIndex();
-        header.width = sideImage->info.width;
-        header.height = sideImage->info.height;
-        header.pixfmt = sideImage->info.pixfmt;
-        header.size = sideImage->info.size;
-        header.timestamp = sideImage->timestamp;
-        unsigned char* frame = (unsigned char*)sideImage->data;
+        unsigned int channel = mCapture->getFocusChannelIndex();
 #if 0
         clock_t start = clock();
 #endif
-        if (NULL != frame)
-        {
-            mImageSHM->writeImage(&header, frame, header.size);
-        }
+        mImageSHM->writeFocusSource(focusSource, channel);
 #if 0
-        std::cout << "SideImageSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
-                << " channel:" << header.channel
-                << " width:" << header.width
-                << " height:" << header.height
-                << " size:" << header.size
-                << " timestamp:" << header.timestamp
+        std::cout << "FocusSourceSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
+                << " channel:" << channel
+                << " width:" << sideImage->width
+                << " height:" << sideImage->height
+                << " size:" << sideImage->size
+                << " timestamp:" << sideImage->timestamp
                 << std::endl;
 #endif
     }
@@ -119,18 +109,18 @@ int main (int argc, char **argv)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = PIX_FMT_UYVY;
-        sink[i].width = 704;
-        sink[i].height = 574;
+        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        sink[i].width = CAPTURE_VIDEO_RES_X;
+        sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = sink[i].width*sink[i].height*2;
         sink[i].crop_x = 0;
         sink[i].crop_y = 0;
-        sink[i].crop_w = 704;
-        sink[i].crop_h = 574;
+        sink[i].crop_w = CAPTURE_VIDEO_RES_X;
+        sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
 
-        source[i].pixfmt = PIX_FMT_UYVY;
-        source[i].width = 704;
-        source[i].height = 574;
+        source[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        source[i].width = CAPTURE_VIDEO_RES_X;
+        source[i].height = CAPTURE_VIDEO_RES_Y;
         source[i].size = source[i].width*source[i].height*2;
     }
 
@@ -145,8 +135,8 @@ int main (int argc, char **argv)
     capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
     capture->start(VIDEO_FPS_15);
 
-    SideImageSHMWriteWorker* sideImageSHMWriteWorker = new SideImageSHMWriteWorker(capture);
-    sideImageSHMWriteWorker->start(VIDEO_FPS_15);
+    FocusSourceSHMWriteWorker* focusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(capture);
+    focusSourceSHMWriteWorker->start(VIDEO_FPS_15);
 
     //IPU for color convert
     int ipuFd = open("/dev/mxc_ipu", O_RDWR, 0);
@@ -287,9 +277,9 @@ int main (int argc, char **argv)
         usleep(10);
     }
 
-    sideImageSHMWriteWorker->stop();
-    delete sideImageSHMWriteWorker;
-    sideImageSHMWriteWorker = NULL;
+    focusSourceSHMWriteWorker->stop();
+    delete focusSourceSHMWriteWorker;
+    focusSourceSHMWriteWorker = NULL;
 
     capture->closeDevice();
     capture->stop();

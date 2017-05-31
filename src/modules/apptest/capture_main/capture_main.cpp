@@ -11,13 +11,14 @@
 #include "ICapture.h"
 #include "captureimpl.h"
 #include "imageshm.h"
+#include "util.h"
 #include <linux/input.h>
 
-class SideImageSHMWriteWorker : public Thread
+class FocusSourceSHMWriteWorker : public Thread
 {
 public:
-    SideImageSHMWriteWorker(ICapture* capture);
-    virtual ~SideImageSHMWriteWorker();
+    FocusSourceSHMWriteWorker(ICapture* capture);
+    virtual ~FocusSourceSHMWriteWorker();
 
 public:
     virtual void run();
@@ -27,14 +28,14 @@ private:
     ImageSHM* mImageSHM;
 };
 
-SideImageSHMWriteWorker::SideImageSHMWriteWorker(ICapture* capture)
+FocusSourceSHMWriteWorker::FocusSourceSHMWriteWorker(ICapture* capture)
 {
     mCapture = capture;
     mImageSHM = new ImageSHM();
-    mImageSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+    mImageSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
 }
 
-SideImageSHMWriteWorker::~SideImageSHMWriteWorker()
+FocusSourceSHMWriteWorker::~FocusSourceSHMWriteWorker()
 {
     if (NULL != mImageSHM)
     {
@@ -44,7 +45,7 @@ SideImageSHMWriteWorker::~SideImageSHMWriteWorker()
     }
 }
 
-void SideImageSHMWriteWorker::run()
+void FocusSourceSHMWriteWorker::run()
 {
     if (NULL == mCapture
         || NULL == mImageSHM)
@@ -52,31 +53,90 @@ void SideImageSHMWriteWorker::run()
         return;
     }
 
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
-    if (NULL != sideImage)
+    surround_image_t* focusSource = mCapture->popOneFrame4FocusSource();
+    if (NULL != focusSource)
     {
-        struct image_shm_header_t header = {};
-        header.channel = mCapture->getFocusChannelIndex();
-        header.width = sideImage->info.width;
-        header.height = sideImage->info.height;
-        header.pixfmt = sideImage->info.pixfmt;
-        header.size = sideImage->info.size;
-        header.timestamp = sideImage->timestamp;
-        unsigned char* frame = (unsigned char*)sideImage->data;
+        unsigned int channel = mCapture->getFocusChannelIndex();
 #if 0
         clock_t start = clock();
 #endif
-        if (NULL != frame)
-        {
-            mImageSHM->writeImage(&header, frame, header.size);
-        }
+        mImageSHM->writeFocusSource(focusSource, channel);
 #if 0
-        std::cout << "SideImageSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
-                << " channel:" << header.channel
-                << " width:" << header.width
-                << " height:" << header.height
-                << " size:" << header.size
-                << " timestamp:" << header.timestamp
+        std::cout << "FocusSourceSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
+                << " channel:" << channel
+                << " width:" << sideImage->width
+                << " height:" << sideImage->height
+                << " size:" << sideImage->size
+                << " timestamp:" << sideImage->timestamp
+                << std::endl;
+#endif
+    }
+}
+
+class AllSourcesSHMWriteWorker : public Thread
+{
+public:
+    AllSourcesSHMWriteWorker(ICapture* capture);
+    virtual ~AllSourcesSHMWriteWorker();
+
+public:
+    virtual void run();
+
+private:
+    ICapture* mCapture;
+    ImageSHM* mImageSHM;
+    clock_t mLastCallTime;
+};
+
+AllSourcesSHMWriteWorker::AllSourcesSHMWriteWorker(ICapture* capture)
+{
+    mCapture = capture;
+    mImageSHM = new ImageSHM();
+    mImageSHM->create((key_t)SHM_ALL_SOURCES_ID, SHM_ALL_SOURCES_SIZE);
+    mLastCallTime = 0;
+}
+
+AllSourcesSHMWriteWorker::~AllSourcesSHMWriteWorker()
+{
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
+}
+
+void AllSourcesSHMWriteWorker::run()
+{
+#if DEBUG_CAPTURE
+    clock_t start = clock();
+    double elapsed_to_last = 0;
+    if (mLastCallTime != 0)
+    {
+        elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
+    }
+    mLastCallTime = start;
+#endif
+
+    if (NULL == mCapture
+        || NULL == mImageSHM)
+    {
+        return;
+    }
+
+    surround_images_t* sources = mCapture->popOneFrame();
+    if (NULL != sources)
+    {
+#if DEBUG_CAPTURE
+        clock_t start = clock();
+#endif
+        mImageSHM->writeAllSources(sources);
+#if DEBUG_CAPTURE
+        std::cout << "AllSourcesSHMWriteWorker run: " 
+                << " thread id:" << getTID()
+                << ", elapsed to last time:" << elapsed_to_last
+                << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - sources->timestamp)/1000
+                << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
                 << std::endl;
 #endif
     }
@@ -90,18 +150,18 @@ int main (int argc, char **argv)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = PIX_FMT_UYVY;
-        sink[i].width = 704;
-        sink[i].height = 574;
+        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        sink[i].width = CAPTURE_VIDEO_RES_X;
+        sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = sink[i].width*sink[i].height*2;
         sink[i].crop_x = 0;
         sink[i].crop_y = 0;
-        sink[i].crop_w = 704;
-        sink[i].crop_h = 574;
+        sink[i].crop_w = CAPTURE_VIDEO_RES_X;
+        sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
 
-        source[i].pixfmt = PIX_FMT_UYVY;
-        source[i].width = 704;
-        source[i].height = 574;
+        source[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        source[i].width = CAPTURE_VIDEO_RES_X;
+        source[i].height = CAPTURE_VIDEO_RES_Y;
         source[i].size = source[i].width*source[i].height*2;
     }
 
@@ -116,9 +176,15 @@ int main (int argc, char **argv)
     capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
     capture->start(VIDEO_FPS_15);
 
-    SideImageSHMWriteWorker* sideImageSHMWriteWorker = new SideImageSHMWriteWorker(capture);
-    sideImageSHMWriteWorker->start(VIDEO_FPS_15);
+    //focus source
+    FocusSourceSHMWriteWorker* focusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(capture);
+    focusSourceSHMWriteWorker->start(VIDEO_FPS_15);
 
+    //all source
+    AllSourcesSHMWriteWorker* allSourcesSHMWriteWorker = new AllSourcesSHMWriteWorker(capture);
+    allSourcesSHMWriteWorker->start(VIDEO_FPS_15);
+
+    // touch screen event
     int eventFd = open("/dev/input/event0", O_RDONLY);
     struct input_event event[64] = {0};
 
@@ -168,9 +234,13 @@ int main (int argc, char **argv)
         usleep(100);
     }
 
-    sideImageSHMWriteWorker->stop();
-    delete sideImageSHMWriteWorker;
-    sideImageSHMWriteWorker = NULL;
+    focusSourceSHMWriteWorker->stop();
+    delete focusSourceSHMWriteWorker;
+    focusSourceSHMWriteWorker = NULL;
+
+    allSourcesSHMWriteWorker->stop();
+    delete allSourcesSHMWriteWorker;
+    allSourcesSHMWriteWorker = NULL;
 
     capture->closeDevice();
     capture->stop();

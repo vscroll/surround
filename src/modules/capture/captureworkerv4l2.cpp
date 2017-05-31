@@ -83,16 +83,16 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
 	    mSource[i].width = mSink[i].width;
 	    mSource[i].height = mSink[i].height;
 
-	    if (mSink[i].pixfmt == PIX_FMT_UYVY)
+	    if (mSink[i].pixfmt == V4L2_PIX_FMT_UYVY)
 	    {
             mSink[i].size = mSink[i].width * mSink[i].height * 2;        
 	    }
 
-	    if (mSource[i].pixfmt == PIX_FMT_UYVY)
+	    if (mSource[i].pixfmt == V4L2_PIX_FMT_UYVY)
 	    {
 	        mSource[i].size = mSource[i].width * mSource[i].height * 2;        
 	    }
-	    else if (mSource[i].pixfmt == PIX_FMT_BGR24)
+	    else if (mSource[i].pixfmt == V4L2_PIX_FMT_BGR24)
 	    {
 	        mSource[i].size = mSource[i].width * mSource[i].height * 3;
 	    }
@@ -204,7 +204,7 @@ void CaptureWorkerV4l2::run()
 
     void* image[VIDEO_CHANNEL_SIZE] = {NULL};
     unsigned char flag = 1;
-    long timestamp = Util::get_system_milliseconds();
+    long timestamp[VIDEO_CHANNEL_SIZE] = {0};
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
     {
         if (mVideoFd[i] == -1)
@@ -241,11 +241,12 @@ void CaptureWorkerV4l2::run()
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
+                timestamp[i] = Util::get_system_milliseconds();
                 if (mFocusChannelIndex == i
                     && mFocusSource.pixfmt == mSink[i].pixfmt)
                 {
                     surround_image_t* surround_image = new surround_image_t();
-                    surround_image->timestamp = timestamp;
+                    surround_image->timestamp = timestamp[i];
                     surround_image->info.pixfmt = mFocusSource.pixfmt;
                     surround_image->info.width = mFocusSource.width;
                     surround_image->info.height = mFocusSource.height;
@@ -354,10 +355,10 @@ void CaptureWorkerV4l2::run()
     if (flag == (1 << mVideoChannelNum))
     {
         surround_images_t* surroundImage = new surround_images_t();
-        surroundImage->timestamp = timestamp;
+        surroundImage->timestamp = timestamp[0];
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
-            surroundImage->frame[i].timestamp = timestamp;
+            surroundImage->frame[i].timestamp = timestamp[i];
             surroundImage->frame[i].info.width = mSource[i].width;
             surroundImage->frame[i].info.height = mSource[i].height;
             surroundImage->frame[i].info.pixfmt = mSource[i].pixfmt;

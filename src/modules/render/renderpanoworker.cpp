@@ -20,7 +20,7 @@ void RenderPanoWorker::setPanoImageModule(IPanoImage* panoImage)
     if (NULL == panoImage)
     {
         mPanoSHM = new ImageSHM();
-        mPanoSHM->create((key_t)SHM_PANO_ID, SHM_PANO_SIZE);
+        mPanoSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
     }
 }
 
@@ -46,7 +46,6 @@ void RenderPanoWorker::getPanoImageRect(unsigned int* left,
     *height = mPanoImageHeight;
 }
 
-unsigned char gFakeData[SHM_PANO_DATA_SIZE] = {0};
 void RenderPanoWorker::run()
 {
 #if DEBUG_UPDATE
@@ -70,7 +69,7 @@ void RenderPanoWorker::run()
         {
 #if 0
             unsigned char imageBuf[SHM_PANO_SIZE] = {};
-            if (mPanoSHM->readImage(imageBuf, sizeof(imageBuf)) < 0)
+            if (mPanoSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
             {
                 return;
             }
@@ -82,14 +81,6 @@ void RenderPanoWorker::run()
             panoImage->info.size = header->size;
             panoImage->timestamp = header->timestamp;
             panoImage->data = imageBuf + sizeof(image_shm_header_t);
-#else
-            panoImage = new surround_image_t();
-            panoImage->info.width = 424;
-            panoImage->info.height = 600;
-            panoImage->info.pixfmt = PIX_FMT_UYVY;
-            panoImage->info.size = SHM_PANO_DATA_SIZE;
-            panoImage->timestamp = Util::get_system_milliseconds();
-            panoImage->data = gFakeData;
 #endif
         }
     }

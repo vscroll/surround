@@ -30,7 +30,7 @@ public:
 
 private:
     ICapture* mCapture;
-    ImageSHM* mSideSHM;
+    ImageSHM* mImageSHM;
 
     unsigned int mSideImageLeft;
     unsigned int mSideImageTop;
