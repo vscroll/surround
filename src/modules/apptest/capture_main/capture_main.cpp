@@ -10,9 +10,12 @@
 #include "common.h"
 #include "ICapture.h"
 #include "captureimpl.h"
+#include "capture1impl.h"
 #include "imageshm.h"
 #include "util.h"
 #include <linux/input.h>
+#include "IPanoImage.h"
+#include "panoimageimpl.h"
 
 class FocusSourceSHMWriteWorker : public Thread
 {
@@ -142,9 +145,84 @@ void AllSourcesSHMWriteWorker::run()
     }
 }
 
+class SourceSHMWriteWorker : public Thread
+{
+public:
+    SourceSHMWriteWorker(ICapture* capture, unsigned int channelIndex);
+    virtual ~SourceSHMWriteWorker();
+
+public:
+    virtual void run();
+
+private:
+    unsigned int mChannelIndex;
+    ICapture* mCapture;
+    ImageSHM* mImageSHM;
+    clock_t mLastCallTime;
+};
+
+SourceSHMWriteWorker::SourceSHMWriteWorker(ICapture* capture, unsigned int channelIndex)
+{
+    mChannelIndex = channelIndex;
+    mCapture = capture;
+    mImageSHM = new ImageSHM();
+    mImageSHM->create((key_t)(SHM_FRONT_SOURCE_ID + mChannelIndex), SHM_FRONT_SOURCE_SIZE);
+    mLastCallTime = 0;
+}
+
+SourceSHMWriteWorker::~SourceSHMWriteWorker()
+{
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
+}
+
+void SourceSHMWriteWorker::run()
+{
+#if DEBUG_CAPTURE
+    clock_t start = clock();
+    double elapsed_to_last = 0;
+    if (mLastCallTime != 0)
+    {
+        elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
+    }
+    mLastCallTime = start;
+#endif
+
+    if (NULL == mCapture
+        || NULL == mImageSHM)
+    {
+        return;
+    }
+
+    surround_image_t* source = mCapture->popOneFrame(mChannelIndex);
+    if (NULL != source)
+    {
+#if DEBUG_CAPTURE
+        clock_t start = clock();
+#endif
+        mImageSHM->writeSource(source);
+#if DEBUG_CAPTURE
+        std::cout << "AllSourcesSHMWriteWorker run: " 
+                << " thread id:" << getTID()
+                << ", elapsed to last time:" << elapsed_to_last
+                << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - source->timestamp)/1000
+                << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
+                << std::endl;
+#endif
+    }
+}
+
 int main (int argc, char **argv)
 {
+#if 0
     ICapture* capture = new CaptureImpl();
+#else
+    ICapture* capture = new Capture1Impl(VIDEO_CHANNEL_SIZE);
+#endif
     unsigned int channel[VIDEO_CHANNEL_SIZE] = {4,2,3,5};
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
@@ -180,9 +258,28 @@ int main (int argc, char **argv)
     FocusSourceSHMWriteWorker* focusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(capture);
     focusSourceSHMWriteWorker->start(VIDEO_FPS_15);
 
+    //4 source
+    SourceSHMWriteWorker* sourceSHMWriteWorker[VIDEO_CHANNEL_SIZE] = {NULL};
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        sourceSHMWriteWorker[i] = new SourceSHMWriteWorker(capture, i);
+        sourceSHMWriteWorker[i]->start(VIDEO_FPS_15);
+    }
+
+#if 0
     //all source
-    AllSourcesSHMWriteWorker* allSourcesSHMWriteWorker = new AllSourcesSHMWriteWorker(capture);
-    allSourcesSHMWriteWorker->start(VIDEO_FPS_15);
+    //AllSourcesSHMWriteWorker* allSourcesSHMWriteWorker = new AllSourcesSHMWriteWorker(capture);
+    //allSourcesSHMWriteWorker->start(VIDEO_FPS_15);
+#endif
+
+#if 0
+    IPanoImage* panoImage = new PanoImageImpl();
+    panoImage->init(capture,
+            CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_BGR24,
+            RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_BGR24,
+            "/home/root/ckt-demo/PanoConfig.bin", true);
+    panoImage->start(VIDEO_FPS_15);
+#endif
 
     // touch screen event
     int eventFd = open("/dev/input/event0", O_RDONLY);
@@ -238,9 +335,17 @@ int main (int argc, char **argv)
     delete focusSourceSHMWriteWorker;
     focusSourceSHMWriteWorker = NULL;
 
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        sourceSHMWriteWorker[i]->stop();
+        delete sourceSHMWriteWorker[i];
+        sourceSHMWriteWorker[i] = NULL;
+    }
+#if 0
     allSourcesSHMWriteWorker->stop();
     delete allSourcesSHMWriteWorker;
     allSourcesSHMWriteWorker = NULL;
+#endif
 
     capture->closeDevice();
     capture->stop();

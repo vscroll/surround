@@ -38,6 +38,17 @@ CaptureWorkerBase::~CaptureWorkerBase()
 {
 }
 
+
+void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
+{
+    mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
+    for (unsigned int i = 0; i < mVideoChannelNum; ++i)
+    {
+	    memcpy(&mSink[i], &sink[i], sizeof(mSink[i]));
+	    memcpy(&mSource[i], &source[i], sizeof(mSource[i]));
+    }	
+}
+
 void CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
     if (focusChannelIndex >= VIDEO_CHANNEL_SIZE)
@@ -54,14 +65,37 @@ unsigned int CaptureWorkerBase::getFocusChannelIndex()
     return mFocusChannelIndex;
 }
 
-void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
+int CaptureWorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
 {
-    mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
-    for (unsigned int i = 0; i < mVideoChannelNum; ++i)
+    if (channelIndex >= VIDEO_CHANNEL_SIZE)
     {
-	    memcpy(&mSink[i], &sink[i], sizeof(mSink[i]));
-	    memcpy(&mSource[i], &source[i], sizeof(mSource[i]));
-    }	
+        return -1;
+    }
+
+    *width = mSource[channelIndex].width;
+    *height = mSource[channelIndex].height;
+
+    return 0;
+}
+
+int CaptureWorkerBase::getFPS(unsigned int* fps)
+{
+#if 0
+    unsigned int interval = getInterval();
+    if (interval > 0)
+    {
+        *fps = 1000/interval;
+	return 0;
+    }
+#else
+    if (mRealFPS > 0)
+    {
+        *fps = mRealFPS;
+	    return 0;
+    }
+
+#endif
+    return -1;
 }
 
 surround_images_t* CaptureWorkerBase::popOneFrame()
@@ -108,35 +142,8 @@ surround_image_t* CaptureWorkerBase::captureOneFrame4FocusSource()
     return frame;
 }
 
-int CaptureWorkerBase::getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height)
+surround_image_t* CaptureWorkerBase::popOneFrame(unsigned int channelIndex)
 {
-    if (channelIndex >= VIDEO_CHANNEL_SIZE)
-    {
-        return -1;
-    }
-
-    *width = mSource[channelIndex].width;
-    *height = mSource[channelIndex].height;
-
-    return 0;
-}
-
-int CaptureWorkerBase::getFPS(unsigned int* fps)
-{
-#if 0
-    unsigned int interval = getInterval();
-    if (interval > 0)
-    {
-        *fps = 1000/interval;
-	return 0;
-    }
-#else
-    if (mRealFPS > 0)
-    {
-        *fps = mRealFPS;
-	    return 0;
-    }
-
-#endif
-    return -1;
+    surround_image_t* frame = NULL;
+    return frame;
 }

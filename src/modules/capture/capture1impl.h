@@ -1,15 +1,14 @@
-#ifndef CAPTUREIMPL_H
-#define CAPTUREIMPL_H
+#ifndef CAPTURE1IMPL_H
+#define CAPTURE1IMPL_H
 
 #include "ICapture.h"
-#include "captureworkerbase.h"
 
-class CaptureWorkerBase;
-class CaptureImpl : public ICapture
+class Capture1WorkerV4l2;
+class Capture1Impl : public ICapture
 {
 public:
-    CaptureImpl();
-    virtual ~CaptureImpl();
+    Capture1Impl(unsigned int channelNum);
+    virtual ~Capture1Impl();
 
     virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
     virtual void setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
@@ -27,7 +26,9 @@ public:
 
     virtual surround_image_t* popOneFrame(unsigned int channelIndex);
 private:
-    CaptureWorkerBase *mCaptureWorker;
+    unsigned int mChannelNum;
+    unsigned int mFocusChannelIndex;
+    Capture1WorkerV4l2* mCaptureWorker[VIDEO_CHANNEL_SIZE];
 };
 
-#endif // CAPTUREIMPL_H
+#endif // CAPTURE1IMPL_H

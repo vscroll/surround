@@ -11,7 +11,11 @@ using namespace cv;
 StitchWorker::StitchWorker()
 {
     mCapture = NULL;
-    mImageSHM = NULL;
+
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        mImageSHM[i] = NULL;
+    }
 
     pthread_mutex_init(&mInputImagesMutex, NULL);
     pthread_mutex_init(&mOutputPanoImageMutex, NULL);
@@ -29,11 +33,14 @@ StitchWorker::StitchWorker()
 
 StitchWorker::~StitchWorker()
 {
-    if (NULL != mImageSHM)
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        mImageSHM->destroy();
-        delete mImageSHM;
-        mImageSHM = NULL;
+        if (NULL != mImageSHM[i])
+        {
+            mImageSHM[i]->destroy();
+            delete mImageSHM[i];
+            mImageSHM[i] = NULL;
+        }
     }
 }
 
@@ -51,8 +58,11 @@ int StitchWorker::init(
     mCapture = capture;
     if (NULL == capture)
     {
-        mImageSHM = new ImageSHM();
-        mImageSHM->create((key_t)SHM_ALL_SOURCES_ID, SHM_ALL_SOURCES_SIZE);
+        for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+        {
+            mImageSHM[i] = new ImageSHM();
+            mImageSHM[i]->create((key_t)(SHM_FRONT_SOURCE_ID + i), SHM_FRONT_SOURCE_SIZE);
+        }
     }
 
     mPanoWidth = panoWidth;
@@ -221,33 +231,32 @@ void StitchWorker::run()
     else
     {
         //one source may be come from share memory
-        if (NULL != mImageSHM)
+        surroundImage = new surround_images_t();
+        surroundImage->timestamp = 0;
+        for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
-            unsigned char imageBuf[SHM_ALL_SOURCES_SIZE] = {};
-            if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
+            if (NULL != mImageSHM[i])
             {
-                return;
-            }
+                unsigned char imageBuf[SHM_FRONT_SOURCE_SIZE] = {};
+                if (mImageSHM[i]->readSource(imageBuf, sizeof(imageBuf)) < 0)
+                {
+                    delete surroundImage;
+                    surroundImage = NULL;
+                    return;
+                }
 
-            surroundImage = new surround_images_t();
-            void* start = imageBuf;
-            long tmp = 0;
-            for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-            {
-                image_shm_header_t* header = (image_shm_header_t*)start;
+                image_shm_header_t* header = (image_shm_header_t*)imageBuf;
                 surroundImage->frame[i].info.width = header->width;
                 surroundImage->frame[i].info.height = header->height;
                 surroundImage->frame[i].info.pixfmt = header->pixfmt;
                 surroundImage->frame[i].info.size = header->size;
                 surroundImage->frame[i].timestamp = header->timestamp;
-                surroundImage->frame[i].data = start + sizeof(image_shm_header_t);
-                if (tmp < surroundImage->frame[i].timestamp)
+                surroundImage->frame[i].data = imageBuf + sizeof(image_shm_header_t);
+                if (surroundImage->timestamp < surroundImage->frame[i].timestamp)
                 {
-                    tmp = surroundImage->frame[i].timestamp;
+                    surroundImage->timestamp = surroundImage->frame[i].timestamp;
                 }
-                start += sizeof(image_shm_header_t) + header->size;
             }
-            surroundImage->timestamp = tmp;
         }
 #if 0
         pthread_mutex_lock(&mInputImagesMutex);
@@ -275,7 +284,7 @@ void StitchWorker::run()
     {
         if (mEnableOpenCL)
         {
-            stitching_cl(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
+            /*stitching_cl(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
                          surroundImage->frame[VIDEO_CHANNEL_REAR].data,
                          surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
                          surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
@@ -284,7 +293,7 @@ void StitchWorker::run()
                          mStitchMaskAlign,
                          &outPano,
                          mPanoWidth,
-                         mPanoHeight);
+                         mPanoHeight);*/
         }
         else
         {
@@ -307,7 +316,7 @@ void StitchWorker::run()
     {
         if (NULL != surroundImage->frame[i].data)
         {
-            delete (cv::Mat*)surroundImage->frame[i].data;
+            //delete (cv::Mat*)surroundImage->frame[i].data;
         }
     }
 

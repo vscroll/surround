@@ -13,8 +13,6 @@
 
 #define DATA_FAKE 0
 
-#define USE_IMX_IPU 1
-
 #define V4L2_BUF_COUNT 1
 
 #define CAPTURE_VIDEO_RES_X 704

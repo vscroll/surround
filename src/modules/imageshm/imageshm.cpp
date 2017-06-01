@@ -40,6 +40,32 @@ int ImageSHM::readSource(unsigned char* buf, unsigned int size)
     return 0;
 }
 
+int ImageSHM::writeSource(surround_image_t* image)
+{
+    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == shmAddr)
+    {
+	    return -1;
+    }
+
+    mSHMUtil.p_w();
+
+    struct image_shm_header_t header = {};
+    header.channel = 0;
+    header.width = image->info.width;
+    header.height = image->info.height;
+    header.pixfmt = image->info.pixfmt;
+    header.size = image->info.size;
+    header.timestamp = image->timestamp;
+    unsigned char* frame = (unsigned char*)image->data;
+
+    memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
+    memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
+    mSHMUtil.v_r();
+
+    return 0;
+}
+
 int ImageSHM::writeFocusSource(surround_image_t* image, unsigned int focusChannelIndex)
 {
     void* shmAddr = mSHMUtil.getSHMAddr();

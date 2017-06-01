@@ -46,7 +46,7 @@ private:
                 void** outPano2D, int outPano2DWidth, int outPano2DHeight);
 private:
     ICapture* mCapture;
-    ImageSHM* mImageSHM;
+    ImageSHM* mImageSHM[VIDEO_CHANNEL_SIZE];
 
     pthread_mutex_t mInputImagesMutex;
     std::queue<surround_images_t*> mInputImagesQueue;

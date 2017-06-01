@@ -23,6 +23,7 @@ public:
     virtual int getFPS(unsigned int* fps);
     virtual void enableCapture();
     virtual surround_image_t* captureOneFrame4FocusSource();
+    virtual surround_image_t* popOneFrame(unsigned int channelIndex);
 protected:
     struct cap_sink_t mSink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t mSource[VIDEO_CHANNEL_SIZE];

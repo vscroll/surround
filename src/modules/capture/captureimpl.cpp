@@ -87,7 +87,7 @@ int CaptureImpl::getResolution(unsigned int channelIndex, unsigned int* width, u
     return mCaptureWorker->getResolution(channelIndex, width, height);
 }
 
-int CaptureImpl::getFPS(unsigned int* fps)
+int CaptureImpl::getFPS(unsigned int channelIndex, unsigned int* fps)
 {
     if (NULL == mCaptureWorker)
     {
@@ -131,5 +131,11 @@ surround_image_t* CaptureImpl::captureOneFrame4FocusSource()
     {
         frame = mCaptureWorker->captureOneFrame4FocusSource();
     }
+    return frame;
+}
+
+surround_image_t* CaptureImpl::popOneFrame(unsigned int channelIndex)
+{
+    surround_image_t* frame = NULL;
     return frame;
 }

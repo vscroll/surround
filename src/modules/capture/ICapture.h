@@ -15,11 +15,13 @@ public:
     virtual int start(unsigned int fps) = 0;
     virtual void stop() = 0;
     virtual int getResolution(unsigned int channelIndex, unsigned int* width, unsigned int* height) = 0;
-    virtual int getFPS(unsigned int* fps) = 0;
+    virtual int getFPS(unsigned int channelIndex, unsigned int* fps) = 0;
     virtual surround_images_t* popOneFrame() = 0;
     virtual surround_image_t* popOneFrame4FocusSource() = 0;
     virtual void enableCapture() = 0;
     virtual surround_image_t* captureOneFrame4FocusSource() = 0;
+
+    virtual surround_image_t* popOneFrame(unsigned int channelIndex) = 0;
 };
 
 #endif // ICAPTURE_H
