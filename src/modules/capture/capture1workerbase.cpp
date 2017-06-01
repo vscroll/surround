@@ -57,16 +57,13 @@ void Capture1WorkerBase::clearFocusSourceQueue()
 {
     pthread_mutex_lock(&mMutexFocusSourceQueue);
     int size = mFocusSourceQueue.size();
-    if (size > 5)
+    for (int i = 0; i < size; ++i)
     {
-        for (int i = 0; i < size; ++i)
+        struct surround_image_t* surroundImage = mFocusSourceQueue.front();
+        mFocusSourceQueue.pop();
+        if (NULL != surroundImage)
         {
-            struct surround_image_t* surroundImage = mFocusSourceQueue.front();
-            mFocusSourceQueue.pop();
-            if (NULL != surroundImage)
-            {
-                delete surroundImage;
-            }
+            delete surroundImage;
         }
     }
     pthread_mutex_unlock(&mMutexFocusSourceQueue); 

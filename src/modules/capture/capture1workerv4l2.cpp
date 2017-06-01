@@ -176,7 +176,7 @@ bool Capture1WorkerV4l2::isNeedConvert()
 
 void Capture1WorkerV4l2::run()
 {
-    //clearOverstock();
+    clearOverstock();
 #if DEBUG_CAPTURE
     clock_t start = clock();
     int size = 0;

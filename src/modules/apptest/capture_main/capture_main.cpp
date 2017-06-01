@@ -206,7 +206,7 @@ void SourceSHMWriteWorker::run()
 #endif
         mImageSHM->writeSource(source);
 #if DEBUG_CAPTURE
-        std::cout << "AllSourcesSHMWriteWorker run: " 
+        std::cout << "SourceSHMWriteWorker run: " 
                 << " thread id:" << getTID()
                 << ", elapsed to last time:" << elapsed_to_last
                 << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - source->timestamp)/1000

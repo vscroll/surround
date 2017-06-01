@@ -221,7 +221,7 @@ void StitchWorker::run()
     }
     mLastCallTime = start;
 #endif
- 
+
     surround_images_t* surroundImage = NULL;
     if (NULL != mCapture)
     {
@@ -312,14 +312,6 @@ void StitchWorker::run()
        clock_t end = clock();
 #endif
 
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        if (NULL != surroundImage->frame[i].data)
-        {
-            //delete (cv::Mat*)surroundImage->frame[i].data;
-        }
-    }
-
     delete surroundImage;
     surroundImage = NULL;
 
@@ -351,7 +343,6 @@ void StitchWorker::run()
             << ", pano_size:" << panoSize
             << std::endl;
 #endif
-
 }
 
 surround_image_t* StitchWorker::dequeuePanoImage()
