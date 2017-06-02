@@ -3,52 +3,74 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include "shmutil.h"
 
-ImageSHM::ImageSHM()
+ImageSHM::ImageSHM(bool isNoWait)
 {
-
+    mSHMUtil = new SHMUtil(isNoWait);
 }
 
 ImageSHM::~ImageSHM()
 {
-
+    if (NULL != mSHMUtil)
+    {
+        delete mSHMUtil;
+        mSHMUtil = NULL;
+    }
 }
 
 int ImageSHM::create(key_t key, unsigned int size)
 {
-    return mSHMUtil.create(key, size);
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    return mSHMUtil->create(key, size);
 }
 
 void ImageSHM::destroy()
 {
-    mSHMUtil.destroy();
+    if (NULL != mSHMUtil)
+    {
+        mSHMUtil->destroy();
+    }
 }
-
 
 int ImageSHM::readSource(unsigned char* buf, unsigned int size)
 {
-    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    void* shmAddr = mSHMUtil->getSHMAddr();
     if (NULL == shmAddr)
     {
 	    return -1;
     }
 
-    mSHMUtil.p_r();
+    mSHMUtil->p_r();
     memcpy(buf, shmAddr, size);
-    mSHMUtil.v_w();
+    mSHMUtil->v_w();
 
     return 0;
 }
 
 int ImageSHM::writeSource(surround_image_t* image)
 {
-    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    void* shmAddr = mSHMUtil->getSHMAddr();
     if (NULL == shmAddr)
     {
 	    return -1;
     }
 
-    mSHMUtil.p_w();
+    mSHMUtil->p_w();
 
     struct image_shm_header_t header = {};
     header.channel = 0;
@@ -61,20 +83,25 @@ int ImageSHM::writeSource(surround_image_t* image)
 
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
     memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
-    mSHMUtil.v_r();
+    mSHMUtil->v_r();
 
     return 0;
 }
 
 int ImageSHM::writeFocusSource(surround_image_t* image, unsigned int focusChannelIndex)
 {
-    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    void* shmAddr = mSHMUtil->getSHMAddr();
     if (NULL == shmAddr)
     {
 	    return -1;
     }
 
-    mSHMUtil.p_w();
+    mSHMUtil->p_w();
 
     struct image_shm_header_t header = {};
     header.channel = focusChannelIndex;
@@ -87,20 +114,25 @@ int ImageSHM::writeFocusSource(surround_image_t* image, unsigned int focusChanne
 
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
     memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
-    mSHMUtil.v_r();
+    mSHMUtil->v_r();
 
     return 0;
 }
 
 int ImageSHM::writeAllSources(surround_images_t* image)
 {
-    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    void* shmAddr = mSHMUtil->getSHMAddr();
     if (NULL == shmAddr)
     {
 	    return -1;
     }
 
-    mSHMUtil.p_w();
+    mSHMUtil->p_w();
 
     void* start = shmAddr;
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -119,20 +151,25 @@ int ImageSHM::writeAllSources(surround_images_t* image)
         memcpy(start, frame, header.size);
         start += header.size;
     }
-    mSHMUtil.v_r();
+    mSHMUtil->v_r();
 
     return 0;
 }
 
 int ImageSHM::writePanoSources(surround_image_t* image)
 {
-    void* shmAddr = mSHMUtil.getSHMAddr();
+    if (NULL == mSHMUtil)
+    {
+        return -1;
+    }
+
+    void* shmAddr = mSHMUtil->getSHMAddr();
     if (NULL == shmAddr)
     {
 	    return -1;
     }
 
-    mSHMUtil.p_w();
+    mSHMUtil->p_w();
 
     struct image_shm_header_t header = {};
     header.channel = 0;
@@ -145,7 +182,7 @@ int ImageSHM::writePanoSources(surround_image_t* image)
 
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
     memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
-    mSHMUtil.v_r();
+    mSHMUtil->v_r();
 
     return 0;
 }

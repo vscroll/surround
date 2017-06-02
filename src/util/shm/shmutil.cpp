@@ -15,11 +15,12 @@ union semun
     unsigned short *array;
 };
 
-SHMUtil::SHMUtil()
+SHMUtil::SHMUtil(bool isNoWait)
 {
     mSHMId = -1;
     mSHMAddr = NULL;
     mSemId = -1;
+    mIsNoWait = isNoWait;
 }
 
 SHMUtil::~SHMUtil()
@@ -32,19 +33,19 @@ int SHMUtil::create(key_t key, unsigned int size)
     mSemId = sem_create(key);
     if (mSemId < 0)
     {
-        perror("sem_open");
+        //perror("sem_open");
         return -1;
     }
 
     if ((mSHMId = shmget(key, size, 0666 | IPC_CREAT)) == -1)
     {
-        perror("shmget");
+        //perror("shmget");
         return -1;
     }
 
     if ((mSHMAddr = shmat(mSHMId, NULL, 0)) == NULL)
     {
-        perror("shmat");
+        //perror("shmat");
         return -1;
     }
 
@@ -101,7 +102,7 @@ int SHMUtil::sem_create(key_t key)
     int semid = semget(key, SEM_N, IPC_CREAT | 0666);
     if (semid < 0)
     {
-	    perror("sem_create");
+	    //perror("sem_create");
 	    return -1;
     }
 
@@ -117,7 +118,7 @@ int SHMUtil::sem_del(int semid)
     sem.val = 0;
     if (semctl(semid, 0, IPC_RMID, sem) < 0)
     {
-        perror("sem_del");
+        //perror("sem_del");
         return -1;
     }
     return 0;
@@ -129,7 +130,7 @@ int SHMUtil::sem_set_value(int semid, int num, int val)
     sem_un.val = val;
     if (semctl(semid, num, SETVAL, sem_un) < 0)
     {
-        perror("sem_set_value");
+        //perror("sem_set_value");
         return -1;
     }
     return 0;
@@ -140,10 +141,10 @@ int SHMUtil::p(int semid, int num)
     struct sembuf sem;
     sem.sem_num = num;
     sem.sem_op = -1;
-    sem.sem_flg = 0;//IPC_NOWAIT;
+    sem.sem_flg = mIsNoWait ? IPC_NOWAIT : 0;
     if (semop(semid, &sem, 1) < 0)
     {
-        perror("semop");
+        //perror("semop");
 	    return -1;
     }
     return 0;
@@ -154,10 +155,10 @@ int SHMUtil::v(int semid, int num)
     struct sembuf sem;
     sem.sem_num = num;
     sem.sem_op = +1;
-    sem.sem_flg = 0;//IPC_NOWAIT;
+    sem.sem_flg = mIsNoWait ? IPC_NOWAIT : 0;
     if (semop(semid, &sem, 1) < 0)
     {
-        perror("semop");
+        //perror("semop");
 	    return -1;
     }
     return 0;

@@ -2,7 +2,7 @@
 #define IMAGESHM_H
 
 #include "common.h"
-#include "shmutil.h"
+#include <sys/shm.h>
 
 typedef struct image_shm_header_t {
     unsigned int channel;    
@@ -42,10 +42,11 @@ typedef struct image_shm_header_t {
 #define SHM_PANO_SOURCE_DATA_SIZE       (RENDER_VIDEO_RES_PANO_X*RENDER_VIDEO_RES_PANO_Y*2)
 #define SHM_PANO_SOURCE_SIZE            (sizeof(image_shm_header_t) + SHM_PANO_SOURCE_DATA_SIZE)
 
+class SHMUtil;
 class ImageSHM
 {
 public:
-    ImageSHM();
+    ImageSHM(bool isNoWait = true);
     virtual ~ImageSHM();
     int create(key_t key, unsigned int size);
     void destroy();
@@ -56,7 +57,7 @@ public:
     int writePanoSources(surround_image_t* image);
 
 private:
-    SHMUtil mSHMUtil;
+    SHMUtil* mSHMUtil;
 };
 
 #endif // IMAGESHM_H

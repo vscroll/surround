@@ -11,7 +11,7 @@
 class SHMUtil
 {
 public:
-    SHMUtil();
+    SHMUtil(bool isNoWait = true);
     virtual ~SHMUtil();
     int create(key_t key, unsigned int size);
     void destroy();
@@ -33,6 +33,7 @@ private:
     int mSemId;
     int mSHMId;
     void* mSHMAddr;
+    bool mIsNoWait;
 };
 
 #endif // SHMUTIL_H
