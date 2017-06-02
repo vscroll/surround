@@ -7,6 +7,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+#include <fcntl.h>
 #include "common.h"
 #include "ICapture.h"
 #include "captureimpl.h"
@@ -62,17 +65,17 @@ void FocusSourceSHMWriteWorker::run()
     if (NULL != focusSource)
     {
         unsigned int channel = mCapture->getFocusChannelIndex();
-#if 0
+#if DEBUG_CAPTURE
         clock_t start = clock();
 #endif
         mImageSHM->writeFocusSource(focusSource, channel);
-#if 0
+#if DEBUG_CAPTURE
         std::cout << "FocusSourceSHMWriteWorker run: " << (double)(clock()-start)/CLOCKS_PER_SEC
                 << " channel:" << channel
-                << " width:" << sideImage->width
-                << " height:" << sideImage->height
-                << " size:" << sideImage->size
-                << " timestamp:" << sideImage->timestamp
+                << " width:" << focusSource->info.width
+                << " height:" << focusSource->info.height
+                << " size:" << focusSource->info.size
+                << " timestamp:" << focusSource->timestamp
                 << std::endl;
 #endif
     }

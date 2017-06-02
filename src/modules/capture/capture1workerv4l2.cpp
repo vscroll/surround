@@ -106,9 +106,9 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
 #endif
 
 #if DEBUG_CAPTURE
-        std::cout << "Capture1WorkerV4l2::openDevice:" << devName
-                << " initV4l2Buf ok"
-		        << std::endl;
+    std::cout << "Capture1WorkerV4l2::openDevice:" << devName
+            << " initV4l2Buf ok"
+            << std::endl;
 #endif
 
     if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, mMemType))
@@ -117,9 +117,9 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
     }
 
 #if DEBUG_CAPTURE
-        std::cout << "Capture1WorkerV4l2::openDevice"
-                << " startCapture ok"
-                << std::endl;
+    std::cout << "Capture1WorkerV4l2::openDevice"
+            << " startCapture ok"
+            << std::endl;
 #endif
 
     return 0;
