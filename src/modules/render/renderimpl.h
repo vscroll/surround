@@ -3,7 +3,7 @@
 
 #include "IRender.h"
 
-#define RENDER_MARK_ALONE 1
+#define RENDER_MARK_ALONE 0
 
 class RenderSideWorker;
 class RenderMarkWorker;

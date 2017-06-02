@@ -134,7 +134,7 @@ void RenderSideWorker::run()
     clock_t start_draw = clock();
 #endif
 
-#if 0
+#if RENDER_MARK_ALONE
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)sideImage->data;
     surface.srcPixfmt = sideImage->info.pixfmt;
