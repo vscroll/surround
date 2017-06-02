@@ -5,9 +5,9 @@
 #include "capture1workerbase.h"
 #include "v4l2.h"
 #include "imxipu.h"
-#include "thread.h"
+#include "wrap_thread.h"
 
-class Capture1WorkerV4l2 : public Capture1WorkerBase, public Thread
+class Capture1WorkerV4l2 : public Capture1WorkerBase, public WrapThread
 {
 public:
     Capture1WorkerV4l2();
@@ -18,9 +18,6 @@ public:
 
     virtual void run();
 
-private:
-    void clearOverstock();
-    bool isNeedConvert();
 private:
     v4l2_memory mMemType;
     struct V4l2::buffer mV4l2Buf[V4L2_BUF_COUNT];

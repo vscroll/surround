@@ -24,23 +24,30 @@ Capture1Impl::~Capture1Impl()
     }
 }
 
-void Capture1Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
+int Capture1Impl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
+    int ret = -1;
     unsigned int num = mChannelNum <= channelNum ? mChannelNum:channelNum;
     for (unsigned int i = 0; i < num; ++i)
     {
         if (NULL != mCaptureWorker[i])
         {
-            mCaptureWorker[i]->setCapCapacity(&sink[i], &source[i]);
+            ret = mCaptureWorker[i]->setCapCapacity(&sink[i], &source[i]);
+            if (ret  < 0)
+            {
+                break;
+            }
         }
     }
+
+    return ret;
 }
 
-void Capture1Impl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
+int Capture1Impl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
     if (focusChannelIndex >= mChannelNum)
     {
-        return;
+        return -1;
     }
 
     if (mFocusChannelIndex != focusChannelIndex)
@@ -55,8 +62,10 @@ void Capture1Impl::setFocusSource(unsigned int focusChannelIndex, struct cap_src
     mFocusChannelIndex = focusChannelIndex;
     if (NULL != mCaptureWorker[mFocusChannelIndex])
     {
-        mCaptureWorker[mFocusChannelIndex]->setFocusSource(focusSource);
+        return mCaptureWorker[mFocusChannelIndex]->setFocusSource(focusSource);
     }
+
+    return -1;
 }
 
 unsigned int Capture1Impl::getFocusChannelIndex()

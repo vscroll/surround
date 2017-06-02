@@ -2,17 +2,16 @@
 #define CAPTUREIMPL_H
 
 #include "ICapture.h"
-#include "captureworkerbase.h"
 
-class CaptureWorkerBase;
+class CaptureWorkerV4l2;
 class CaptureImpl : public ICapture
 {
 public:
     CaptureImpl();
     virtual ~CaptureImpl();
 
-    virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
-    virtual void setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
+    virtual int setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
+    virtual int setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
     virtual unsigned int getFocusChannelIndex();
     virtual int openDevice(unsigned int channel[], unsigned int channelNum);
     virtual void closeDevice();
@@ -27,7 +26,7 @@ public:
 
     virtual surround_image_t* popOneFrame(unsigned int channelIndex);
 private:
-    CaptureWorkerBase *mCaptureWorker;
+    CaptureWorkerV4l2 *mCaptureWorker;
 };
 
 #endif // CAPTUREIMPL_H

@@ -33,7 +33,7 @@ int CLPano2D::init(char* clFileName, char* clKernelName)
     ret = initEnv();
     if (ret < 0)
     {
-	return ret;
+        return ret;
     }
 
     return loadKernel(clFileName, clKernelName, &mKernel);
@@ -43,6 +43,8 @@ int CLPano2D::uninit()
 {
     releaseKernel(mKernel);
     uninitEnv();
+
+    return 0;
 }
 
 int CLPano2D::stitch_cl_2d(const std::vector<cv::Mat>& side_imgs,
@@ -444,6 +446,8 @@ int CLPano2D::stitch_cl_new_output_buffer(const std::vector<cv::Mat>& side_imgs,
 
     mOutputBufferReady = TRUE;
     printf ("\nAllocation buffer ok\n");
+
+    return 0;
 }
 
 void CLPano2D::stitch_cl_delete_output_buffer()

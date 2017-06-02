@@ -3,16 +3,16 @@
 
 #include <queue>
 #include "common.h"
-#include "thread.h"
+#include "wrap_thread.h"
 
-class CaptureWorkerBase: public Thread
+class CaptureWorkerBase
 {
 public:
     CaptureWorkerBase();
     virtual ~CaptureWorkerBase();
 
-    virtual void setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
-    virtual void setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
+    virtual int setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum);
+    virtual int setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource);
     virtual unsigned int getFocusChannelIndex();
     virtual int openDevice(unsigned int channel[], unsigned int channelNum) = 0;
     virtual void closeDevice() = 0;
@@ -24,6 +24,11 @@ public:
     virtual void enableCapture();
     virtual surround_image_t* captureOneFrame4FocusSource();
     virtual surround_image_t* popOneFrame(unsigned int channelIndex);
+
+protected:
+    void clearOverstock();
+    bool isNeedConvert(struct cap_sink_t* sink, struct cap_src_t* source);
+
 protected:
     struct cap_sink_t mSink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t mSource[VIDEO_CHANNEL_SIZE];
@@ -35,7 +40,7 @@ protected:
     pthread_mutex_t mMutexQueue;
     std::queue<surround_images_t*> mSurroundImagesQueue;
 
-    int mFocusChannelIndex;
+    unsigned int mFocusChannelIndex;
     struct cap_src_t mFocusSource;
     pthread_mutex_t mMutexFocusSourceQueue;
     std::queue<surround_image_t*> mFocusSourceQueue;

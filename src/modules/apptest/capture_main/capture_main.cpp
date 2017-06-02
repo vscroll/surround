@@ -13,11 +13,13 @@
 #include "capture1impl.h"
 #include "imageshm.h"
 #include "util.h"
+#include "v4l2.h"
 #include <linux/input.h>
 #include "IPanoImage.h"
 #include "panoimageimpl.h"
+#include "wrap_thread.h"
 
-class FocusSourceSHMWriteWorker : public Thread
+class FocusSourceSHMWriteWorker : public WrapThread
 {
 public:
     FocusSourceSHMWriteWorker(ICapture* capture);
@@ -76,7 +78,7 @@ void FocusSourceSHMWriteWorker::run()
     }
 }
 
-class AllSourcesSHMWriteWorker : public Thread
+class AllSourcesSHMWriteWorker : public WrapThread
 {
 public:
     AllSourcesSHMWriteWorker(ICapture* capture);
@@ -145,7 +147,7 @@ void AllSourcesSHMWriteWorker::run()
     }
 }
 
-class SourceSHMWriteWorker : public Thread
+class SourceSHMWriteWorker : public WrapThread
 {
 public:
     SourceSHMWriteWorker(ICapture* capture, unsigned int channelIndex);
@@ -231,19 +233,26 @@ int main (int argc, char **argv)
         sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
-        sink[i].size = sink[i].width*sink[i].height*2;
+        sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
         sink[i].crop_x = 0;
         sink[i].crop_y = 0;
         sink[i].crop_w = CAPTURE_VIDEO_RES_X;
         sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
 
-        source[i].pixfmt = V4L2_PIX_FMT_UYVY;
-        source[i].width = CAPTURE_VIDEO_RES_X;
-        source[i].height = CAPTURE_VIDEO_RES_Y;
-        source[i].size = source[i].width*source[i].height*2;
+        // source is same as sink
+        source[i].pixfmt = sink[i].pixfmt;
+        source[i].width = sink[i].width;
+        source[i].height = sink[i].height;
+        source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
+    }
+    if (capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE))
+    {
+        std::cout << "capture_main::setCapCapacity error"
+                << std::endl;
+        return -1;        
     }
 
-    capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE);
+    // focus source is same as sink
     int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
     focusSource.pixfmt = sink[0].pixfmt;
@@ -251,7 +260,14 @@ int main (int argc, char **argv)
     focusSource.height = sink[0].height;
     focusSource.size = sink[0].size;
     capture->setFocusSource(focusChannelIndex, &focusSource);
-    capture->openDevice(channel, VIDEO_CHANNEL_SIZE);
+
+    if (capture->openDevice(channel, VIDEO_CHANNEL_SIZE) < 0)
+    {
+        std::cout << "capture_main::openDevice error"
+                << std::endl;
+        return -1;
+    }
+
     capture->start(VIDEO_FPS_15);
 
     //focus source
@@ -275,8 +291,8 @@ int main (int argc, char **argv)
 #if 0
     IPanoImage* panoImage = new PanoImageImpl();
     panoImage->init(capture,
-            CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_BGR24,
-            RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_BGR24,
+            CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_YUYV,
+            RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_YUYV,
             "/home/root/ckt-demo/PanoConfig.bin", true);
     panoImage->start(VIDEO_FPS_15);
 #endif

@@ -1,4 +1,4 @@
-#include "thread.h"
+#include "wrap_thread.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,7 +10,7 @@ void* thread_func(void* args)
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
-    Thread* pThread = static_cast<Thread*>(args);
+    WrapThread* pThread = static_cast<WrapThread*>(args);
 
     if (pThread->mBindCPUNo >= 0)
     {
@@ -48,47 +48,47 @@ void* thread_func(void* args)
     return NULL;   
 }
 
-Thread::Thread()
+WrapThread::WrapThread()
 {
     mThreadId = 0;
     mInterval = 10;
     mBindCPUNo = -1;
 }
 
-Thread::~Thread()
+WrapThread::~WrapThread()
 {
 
 }
 
-bool Thread::start(unsigned int interval, int bindCPUNo)
+bool WrapThread::start(unsigned int interval, int bindCPUNo)
 {
     mInterval = interval;
     mBindCPUNo = bindCPUNo;
     return pthread_create(&mThreadId, NULL, thread_func, this) == 0;
 }
 
-void Thread::stop()
+void WrapThread::stop()
 {
     pthread_cancel(mThreadId);
     pthread_join(mThreadId, NULL);
 }
 
-pthread_t Thread::getThreadID()
+pthread_t WrapThread::getThreadID()
 {
     return mThreadId;
 }
 
-long int Thread::getTID()
+long int WrapThread::getTID()
 {
     return syscall(__NR_gettid);
 }
 
-int Thread::getCPUNumber()
+int WrapThread::getCPUNumber()
 {
     return sysconf(_SC_NPROCESSORS_CONF);
 }
 
-void Thread::bindCPU(int cpuNo)
+void WrapThread::bindCPU(int cpuNo)
 {
     cpu_set_t mask;  
     CPU_ZERO(&mask);  

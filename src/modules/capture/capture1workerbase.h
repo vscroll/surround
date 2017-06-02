@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include <queue>
-#include "thread.h"
+#include "wrap_thread.h"
 
 class Capture1WorkerBase
 {
@@ -11,21 +11,22 @@ public:
     Capture1WorkerBase();
     virtual ~Capture1WorkerBase();
 
-    virtual void setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source);
-    virtual void setFocusSource(struct cap_src_t* focusSource);
-    virtual void clearFocusSource();
+    int setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source);
+    int setFocusSource(struct cap_src_t* focusSource);
+    void clearFocusSource();
     virtual int openDevice(unsigned int channel) = 0;
     virtual void closeDevice() = 0;
-    virtual surround_image_t* popOneFrame();
-    virtual surround_image_t* popOneFrame4FocusSource();
-    virtual int getResolution(unsigned int* width, unsigned int* height);
-    virtual int getFPS(unsigned int* fps);
-    virtual unsigned int getFrameCount();
-    virtual void enableCapture();
-    virtual surround_image_t* captureOneFrame4FocusSource();
+    surround_image_t* popOneFrame();
+    surround_image_t* popOneFrame4FocusSource();
+    int getResolution(unsigned int* width, unsigned int* height);
+    int getFPS(unsigned int* fps);
+    unsigned int getFrameCount();
+    void enableCapture();
+    surround_image_t* captureOneFrame4FocusSource();
 
-private:
-    void clearFocusSourceQueue();
+protected:
+    void clearOverstock();
+    bool isNeedConvert(struct cap_sink_t* sink, struct cap_src_t* source);
 
 protected:
     struct cap_sink_t mSink;

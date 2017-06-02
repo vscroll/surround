@@ -291,3 +291,24 @@ void V4l2::v4l2QueueBuf(int fd, struct v4l2_buffer* buf)
 {
     ioctl(fd, VIDIOC_QBUF, buf); //再将其入列
 }
+
+int V4l2::getVideoSize(unsigned int pixfmt, unsigned int width, unsigned int height)
+{
+    int size = 0;
+    switch (pixfmt)
+    {
+    case V4L2_PIX_FMT_UYVY:
+    case V4L2_PIX_FMT_YUYV:
+        size = width * height * 2;
+        break;
+    case V4L2_PIX_FMT_RGB24:
+    case V4L2_PIX_FMT_BGR24:
+        size = width * height * 3;
+        break;
+    default:
+        break;
+    }
+
+    return size;
+}
+

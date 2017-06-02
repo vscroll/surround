@@ -2,11 +2,11 @@
 #define RENDERSIDEWORKER_H
 
 #include "renderbase.h"
-#include "thread.h"
+#include "wrap_thread.h"
 
 class ICapture;
 class ImageSHM;
-class RenderSideWorker : public RenderBase, public Thread
+class RenderSideWorker : public RenderBase, public WrapThread
 {
 public:
     RenderSideWorker();

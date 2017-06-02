@@ -1,6 +1,7 @@
 #include "captureworkerbase.h"
 #include <string.h>
 #include <stdio.h>
+#include <iostream>
 
 CaptureWorkerBase::CaptureWorkerBase()
 {
@@ -39,25 +40,48 @@ CaptureWorkerBase::~CaptureWorkerBase()
 }
 
 
-void CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
+int CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
+    for (unsigned int i = 0; i < channelNum; ++i)
+    {
+        if (isNeedConvert(&sink[i], &source[i]))
+        {
+            std::cout << "CaptureWorkerBase::setCapCapacity:"
+                    << " not support convert sink to source"
+                    << std::endl;
+            return -1;
+        }
+    }
+
     mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
     {
 	    memcpy(&mSink[i], &sink[i], sizeof(mSink[i]));
 	    memcpy(&mSource[i], &source[i], sizeof(mSource[i]));
-    }	
+    }
+
+    return 0;
 }
 
-void CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
+int CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
     if (focusChannelIndex >= VIDEO_CHANNEL_SIZE)
     {
-        return;
+        return -1;
+    }
+
+    if (isNeedConvert(&mSink[focusChannelIndex], focusSource))
+    {
+        std::cout << "CaptureWorkerBase::setFocusSource:"
+                << " not support convert sink to source"
+                << std::endl;
+        return -1;
     }
 
     mFocusChannelIndex = focusChannelIndex;
     memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
+
+    return 0;
 }
 
 unsigned int CaptureWorkerBase::getFocusChannelIndex()
@@ -146,4 +170,30 @@ surround_image_t* CaptureWorkerBase::popOneFrame(unsigned int channelIndex)
 {
     surround_image_t* frame = NULL;
     return frame;
+}
+
+void CaptureWorkerBase::clearOverstock()
+{
+    pthread_mutex_lock(&mMutexQueue);
+    int size = mSurroundImagesQueue.size();
+    if (size > 5)
+    {
+        for (int i = 0; i < size; ++i)
+        {
+            struct surround_images_t* surroundImage = mSurroundImagesQueue.front();
+            mSurroundImagesQueue.pop();
+            if (NULL != surroundImage)
+            {
+                delete surroundImage;
+            }
+        }
+    }
+    pthread_mutex_unlock(&mMutexQueue);
+}
+
+bool CaptureWorkerBase::isNeedConvert(struct cap_sink_t* sink, struct cap_src_t* source)
+{
+    return (sink->pixfmt != source->pixfmt
+                    || sink->width != source->width
+                    || sink->height != source->height);
 }

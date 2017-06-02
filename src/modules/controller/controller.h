@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "thread.h"
+#include "wrap_thread.h"
 
 class ICapture;
 class IPanoImage;
@@ -9,7 +9,7 @@ class ISideImage;
 class ImageSHM;
 class PanoSHMWorker;
 class IRender;
-class Controller : public Thread
+class Controller : public WrapThread
 {
 public:
     Controller();

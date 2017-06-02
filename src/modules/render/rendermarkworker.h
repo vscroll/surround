@@ -2,9 +2,9 @@
 #define RENDERMARKWORKER_H
 
 #include "renderbase.h"
-#include "thread.h"
+#include "wrap_thread.h"
 
-class RenderMarkWorker : public RenderBase, public Thread
+class RenderMarkWorker : public RenderBase, public WrapThread
 {
 public:
     RenderMarkWorker();

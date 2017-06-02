@@ -7,6 +7,9 @@
 #include <sys/ioctl.h>
 #include <iostream>
 #include <opencv/cv.h>
+
+#define USE_IMX_IPU 0
+
 #if USE_IMX_IPU
 #include <linux/ipu.h>
 #endif
@@ -64,12 +67,17 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
 
         V4l2::getVideoCap(mVideoFd[i]);
         V4l2::getVideoFmt(mVideoFd[i], &pixfmt, &width, &height);
-        //i don't know why
-        V4l2::setVideoFmt(mVideoFd[i], mSink[i].pixfmt, width-2, height-2);
-        V4l2::getVideoFmt(mVideoFd[i], &mSink[i].pixfmt, &mSink[i].width, &mSink[i].height);
 
-        V4l2::setFps(mVideoFd[i], 15);
-        V4l2::getFps(mVideoFd[i]);
+        //V4l2::setVideoFmt(mVideoFd[i], mSink[i].pixfmt, width-2, height-2);
+        //V4l2::getVideoFmt(mVideoFd[i], &mSink[i].pixfmt, &mSink[i].width, &mSink[i].height);
+        //V4l2::setFps(mVideoFd[i], 15);
+        //V4l2::getFps(mVideoFd[i]);
+
+        if (V4l2::setVideoFmt(mVideoFd[i], mSink[i].pixfmt, mSink[i].width, mSink[i].height) < 0)
+        {
+            return -1;
+        }
+
 #if DEBUG_CAPTURE
         std::cout << "CaptureWorkerV4l2::openDevice:" << devName
                 << " mem type: " << mMemType
@@ -77,25 +85,9 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
                 << " in_pixfmt:" << mSink[i].pixfmt
                 << " in_width:" << mSink[i].width
                 << " in_height:" << mSink[i].height
+                << " in_size:" << mSink[i].size
 		        << std::endl;
 #endif
-
-	    mSource[i].width = mSink[i].width;
-	    mSource[i].height = mSink[i].height;
-
-	    if (mSink[i].pixfmt == V4L2_PIX_FMT_UYVY)
-	    {
-            mSink[i].size = mSink[i].width * mSink[i].height * 2;        
-	    }
-
-	    if (mSource[i].pixfmt == V4L2_PIX_FMT_UYVY)
-	    {
-	        mSource[i].size = mSource[i].width * mSource[i].height * 2;        
-	    }
-	    else if (mSource[i].pixfmt == V4L2_PIX_FMT_BGR24)
-	    {
-	        mSource[i].size = mSource[i].width * mSource[i].height * 3;
-	    }
 
         for (unsigned int j = 0; j < V4L2_BUF_COUNT; ++j)
         {
@@ -155,39 +147,9 @@ void CaptureWorkerV4l2::closeDevice()
     }
 }
 
-void CaptureWorkerV4l2::clearOverstock()
-{
-    pthread_mutex_lock(&mMutexQueue);
-    int size = mSurroundImagesQueue.size();
-    if (size > 5)
-    {
-        for (int i = 0; i < size; ++i)
-        {
-            struct surround_images_t* surroundImage = mSurroundImagesQueue.front();
-            mSurroundImagesQueue.pop();
-            if (NULL != surroundImage)
-            {
-                for (unsigned int i = 0; i < mVideoChannelNum; ++i)
-                {
-                    delete (cv::Mat*)(surroundImage->frame[i].data);
-                }
-                delete surroundImage;
-            }
-        }
-    }
-    pthread_mutex_unlock(&mMutexQueue);
-}
-
-bool CaptureWorkerV4l2::isNeedConvert(unsigned int channelIndex)
-{
-    return (mSink[channelIndex].pixfmt != mSource[channelIndex].pixfmt
-                    || mSink[channelIndex].width != mSource[channelIndex].width
-                    || mSink[channelIndex].height != mSource[channelIndex].height);
-}
-
 void CaptureWorkerV4l2::run()
 {
-    //clearOverstock();
+    clearOverstock();
 #if DEBUG_CAPTURE
     clock_t start = clock();
     int size = 0;
@@ -243,7 +205,7 @@ void CaptureWorkerV4l2::run()
             {
                 timestamp[i] = Util::get_system_milliseconds();
                 if (mFocusChannelIndex == i
-                    && mFocusSource.pixfmt == mSink[i].pixfmt)
+                    && !isNeedConvert(&mSink[i], &mFocusSource))
                 {
                     surround_image_t* surround_image = new surround_image_t();
                     surround_image->timestamp = timestamp[i];
@@ -273,9 +235,9 @@ void CaptureWorkerV4l2::run()
                 }
 
                 // call IPU to convert
-                if (isNeedConvert(i))
+                if (isNeedConvert(&mSink[i], &mSource[i]))
                 {
-
+#if 0
 #if DEBUG_CAPTURE
                     clock_t convert_start = clock();
 #endif
@@ -337,6 +299,7 @@ void CaptureWorkerV4l2::run()
                         flag = flag << 1;
                         image[i] = matImage;
                     }
+#endif
                 }
                 else
                 {
@@ -395,14 +358,16 @@ void CaptureWorkerV4l2::run()
     }
     else
     {
+#if 0
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
             if (NULL != image[i]
-                && isNeedConvert(i))
+                && isNeedConvert(mSink[i], mSource[i]))
             {
                 delete (cv::Mat*)image[i];
             }
         }
+#endif
     }
 #if DEBUG_CAPTURE
     std::cout << "CaptureWorkerV4l2::run"

@@ -15,20 +15,24 @@ CaptureImpl::~CaptureImpl()
     }
 }
 
-void CaptureImpl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
+int CaptureImpl::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
-    if (NULL != mCaptureWorker)
+    if (NULL == mCaptureWorker)
     {
-        return mCaptureWorker->setCapCapacity(sink, source, channelNum);
+        return -1;
     }
+
+    return mCaptureWorker->setCapCapacity(sink, source, channelNum);
 }
 
-void CaptureImpl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
+int CaptureImpl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_t* focusSource)
 {
-    if (NULL != mCaptureWorker)
+    if (NULL == mCaptureWorker)
     {
-        return mCaptureWorker->setFocusSource(focusChannelIndex, focusSource);
+        return -1;
     }
+
+    return mCaptureWorker->setFocusSource(focusChannelIndex, focusSource);
 }
 
 unsigned int CaptureImpl::getFocusChannelIndex()

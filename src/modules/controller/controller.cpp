@@ -112,9 +112,12 @@ IRender* Controller::initRenderModule(
     {
         mRender = new RenderImpl();
     }
-    mRender->init(capture, panoImage,
-            sideLeft, sideTop, sideWidth, sideHeight,
-            panoLeft, panoTop, panoWidth, panoHeight);
+    mRender->setCaptureModule(capture);
+    mRender->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
+    mRender->setChannelMarkRect(sideLeft, sideTop, sideWidth, 26);
+
+    mRender->setPanoImageModule(panoImage);
+    mRender->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);
 
     return mRender;
 } 
@@ -154,10 +157,10 @@ void Controller::stopModules()
 void Controller::startLoop(unsigned int freq)
 {
     mSideSHM = new ImageSHM();
-    mSideSHM->create((key_t)SHM_SIDE_ID, SHM_SIDE_SIZE);
+    mSideSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
 
     mPanoSHM = new ImageSHM();
-    mPanoSHM->create((key_t)SHM_PANO2D_ID, SHM_PANO2D_SIZE);
+    mPanoSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
 
     start(1000/freq);
 }

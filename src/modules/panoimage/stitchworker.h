@@ -2,14 +2,14 @@
 #define STITCHWORKER_H
 
 #include "common.h"
-#include "thread.h"
+#include "wrap_thread.h"
 #include <opencv/cv.h>
 #include <queue>
 
 class ICapture;
 class ImageSHM;
 class CLPano2D;
-class StitchWorker : public Thread
+class StitchWorker : public WrapThread
 {
 public:
     StitchWorker();

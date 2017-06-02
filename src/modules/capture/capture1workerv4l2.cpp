@@ -65,38 +65,26 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
 
     V4l2::getVideoCap(mVideoFd);
     V4l2::getVideoFmt(mVideoFd, &pixfmt, &width, &height);
-    //i don't know why
-    V4l2::setVideoFmt(mVideoFd, mSink.pixfmt, mSink.width, mSink.height);
-    V4l2::getVideoFmt(mVideoFd, &mSink.pixfmt, &mSink.width, &mSink.height);
 
-    V4l2::setFps(mVideoFd, 15);
-    V4l2::getFps(mVideoFd);
+    //V4l2::setVideoFmt(mVideoFd, mSink.pixfmt, mSink.width, mSink.height);
+    //V4l2::getVideoFmt(mVideoFd, &mSink.pixfmt, &mSink.width, &mSink.height);
+    //V4l2::setFps(mVideoFd, 15);
+    //V4l2::getFps(mVideoFd);
+
+    if (V4l2::setVideoFmt(mVideoFd, mSink.pixfmt, mSink.width, mSink.height) < 0)
+    {
+        return -1;
+    }
 #if DEBUG_CAPTURE
-        std::cout << "Capture1WorkerV4l2::openDevice:" << devName
-                << " mem type: " << mMemType
-                << " buf count:" << V4L2_BUF_COUNT
-                << " in_pixfmt:" << mSink.pixfmt
-                << " in_width:" << mSink.width
-                << " in_height:" << mSink.height
-		        << std::endl;
+    std::cout << "Capture1WorkerV4l2::openDevice:" << devName
+            << " mem type: " << mMemType
+            << " buf count:" << V4L2_BUF_COUNT
+            << " in_pixfmt:" << mSink.pixfmt
+            << " in_width:" << mSink.width
+            << " in_height:" << mSink.height
+            << " in_size:" << mSink.size
+            << std::endl;
 #endif
-
-    mSource.width = mSink.width;
-    mSource.height = mSink.height;
-
-    if (mSink.pixfmt == V4L2_PIX_FMT_UYVY)
-    {
-        mSink.size = mSink.width * mSink.height * 2;        
-    }
-
-    if (mSource.pixfmt == V4L2_PIX_FMT_UYVY)
-    {
-        mSource.size = mSource.width * mSource.height * 2;        
-    }
-    else if (mSource.pixfmt == V4L2_PIX_FMT_BGR24)
-    {
-        mSource.size = mSource.width * mSource.height * 3;
-    }
 
     for (unsigned int i = 0; i < V4L2_BUF_COUNT; ++i)
     {
@@ -146,32 +134,6 @@ void Capture1WorkerV4l2::closeDevice()
         close(mVideoFd);
         mVideoFd = -1;
     }
-}
-
-void Capture1WorkerV4l2::clearOverstock()
-{
-    pthread_mutex_lock(&mMutexQueue);
-    int size = mSurroundImageQueue.size();
-    if (size > 5)
-    {
-        for (int i = 0; i < size; ++i)
-        {
-            struct surround_image_t* surroundImage = mSurroundImageQueue.front();
-            mSurroundImageQueue.pop();
-            if (NULL != surroundImage)
-            {
-                delete surroundImage;
-            }
-        }
-    }
-    pthread_mutex_unlock(&mMutexQueue);
-}
-
-bool Capture1WorkerV4l2::isNeedConvert()
-{
-    return (mSink.pixfmt != mSource.pixfmt
-                    || mSink.width != mSource.width
-                    || mSink.height != mSource.height);
 }
 
 void Capture1WorkerV4l2::run()
@@ -228,7 +190,7 @@ void Capture1WorkerV4l2::run()
     {
         if (buf.index < V4L2_BUF_COUNT)
         {
-            if (mFocusSource.pixfmt == mSink.pixfmt)
+            if (!isNeedConvert(&mSink, &mFocusSource))
             {
                 surround_image_t* surround_image = new surround_image_t();
                 surround_image->timestamp = Util::get_system_milliseconds();
@@ -257,7 +219,7 @@ void Capture1WorkerV4l2::run()
                 }
             }
 
-            if (mSource.pixfmt == mSink.pixfmt)
+            if (!isNeedConvert(&mSink, &mSource))
             {
                 surround_image_t* surround_image = new surround_image_t();
                 surround_image->timestamp = Util::get_system_milliseconds();

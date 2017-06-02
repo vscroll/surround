@@ -3,11 +3,11 @@
  
 #include <pthread.h>
     
-class Thread
+class WrapThread
 {
 public:
-    Thread();
-    virtual ~Thread();
+    WrapThread();
+    virtual ~WrapThread();
     virtual void run() = 0;
 
     bool start(unsigned int interval, int bindCPUNo = -1);

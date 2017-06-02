@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <iostream>
 
 Capture1WorkerBase::Capture1WorkerBase()
 {
@@ -35,26 +36,39 @@ Capture1WorkerBase::~Capture1WorkerBase()
 
 }
 
-void Capture1WorkerBase::setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source)
+int Capture1WorkerBase::setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source)
 {
+    if (isNeedConvert(sink, source))
+    {
+        std::cout << "Capture1WorkerBase::setCapCapacity:"
+                << " not support convert sink to source"
+                << std::endl;
+        return -1;
+    }
+
     memcpy(&mSink, sink, sizeof(mSink));
     memcpy(&mSource, source, sizeof(mSource));
+    return 0;
 }
 
-void Capture1WorkerBase::setFocusSource(struct cap_src_t* focusSource)
+int Capture1WorkerBase::setFocusSource(struct cap_src_t* focusSource)
 {
+    if (isNeedConvert(&mSink, focusSource))
+    {
+        std::cout << "Capture1WorkerBase::setFocusSource:"
+                << " not support convert sink to source"
+                << std::endl;
+        return -1;
+    }
+
     memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
+    return 0;
 }
 
 void Capture1WorkerBase::clearFocusSource()
 {
     memset(&mFocusSource, 0, sizeof(mFocusSource));
 
-    clearFocusSourceQueue();
-}
-
-void Capture1WorkerBase::clearFocusSourceQueue()
-{
     pthread_mutex_lock(&mMutexFocusSourceQueue);
     int size = mFocusSourceQueue.size();
     for (int i = 0; i < size; ++i)
@@ -138,4 +152,30 @@ surround_image_t* Capture1WorkerBase::captureOneFrame4FocusSource()
         frame = &mCaptureFrame4FocusSource;
     }
     return frame;
+}
+
+bool Capture1WorkerBase::isNeedConvert(struct cap_sink_t* sink, struct cap_src_t* source)
+{
+    return (sink->pixfmt != source->pixfmt
+                    || sink->width != source->width
+                    || sink->height != source->height);
+}
+
+void Capture1WorkerBase::clearOverstock()
+{
+    pthread_mutex_lock(&mMutexQueue);
+    int size = mSurroundImageQueue.size();
+    if (size > 5)
+    {
+        for (int i = 0; i < size; ++i)
+        {
+            struct surround_image_t* surroundImage = mSurroundImageQueue.front();
+            mSurroundImageQueue.pop();
+            if (NULL != surroundImage)
+            {
+                delete surroundImage;
+            }
+        }
+    }
+    pthread_mutex_unlock(&mMutexQueue);
 }

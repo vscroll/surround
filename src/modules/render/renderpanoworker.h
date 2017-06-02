@@ -2,11 +2,11 @@
 #define RENDERPANOWORKER_H
 
 #include "renderbase.h"
-#include "thread.h"
+#include "wrap_thread.h"
 
 class IPanoImage;
 class ImageSHM;
-class RenderPanoWorker : public RenderBase, public Thread
+class RenderPanoWorker : public RenderBase, public WrapThread
 {
 public:
     RenderPanoWorker();

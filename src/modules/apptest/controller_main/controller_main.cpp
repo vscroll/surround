@@ -27,7 +27,7 @@ int main (int argc, char **argv)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = PIX_FMT_UYVY;
+        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
         sink[i].width = 704;
         sink[i].height = 574;
         sink[i].size = sink[i].width*sink[i].height*2;
@@ -39,7 +39,7 @@ int main (int argc, char **argv)
         source[i].width = 704;
         source[i].height = 574;
 #if USE_YUV4PANO
-        source[i].pixfmt = PIX_FMT_UYVY;
+        source[i].pixfmt = V4L2_PIX_FMT_UYVY;
         source[i].size = source[i].width*source[i].height*2;
 #else
         source[i].pixfmt = PIX_FMT_BGR24;
@@ -53,14 +53,14 @@ int main (int argc, char **argv)
 #if USE_YUV4PANO
     panoImage = controller.initPanoImageModule(
                 capture,
-                704, 574, PIX_FMT_UYVY,
-                424, 600, PIX_FMT_UYVY,
+                704, 574, V4L2_PIX_FMT_UYVY,
+                424, 600, V4L2_PIX_FMT_UYVY,
                 "/home/root/ckt-demo/PanoConfig.bin", true);
 #else
     panoImage = controller.initPanoImageModule(
                 capture,
-                704, 574, PIX_FMT_BGR24,
-                424, 600, PIX_FMT_BGR24,
+                704, 574, V4L2_PIX_FMT_BGR24,
+                424, 600, V4L2_PIX_FMT_BGR24,
                 "/home/root/ckt-demo/PanoConfig.bin", true);
 #endif
 #endif
