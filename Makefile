@@ -1,3 +1,5 @@
+# make debug="capture_main panoimage_main render_main"
+
 SUBDIRS = \
         src/modules/apptest/capture_main \
         src/modules/apptest/panoimage_main \
@@ -10,9 +12,14 @@ SUBDIRS = \
         src/modules/apptest/fb_main \
         src/modules/apptest/colorconvert_main
 
+MAKECMD = make
+ifneq ($(debug),)
+MAKECMD = make debug="$(debug)"
+endif
+
 define make_subdir
 	@for subdir in $1 ; do \
-		( cd $$subdir && make) \
+		( cd $$subdir && $(MAKECMD)) \
 	done;
 endef
 
