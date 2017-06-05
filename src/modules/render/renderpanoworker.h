@@ -26,7 +26,7 @@ public:
 
 private:
     IPanoImage* mPanoImage;
-    ImageSHM* mPanoSHM;
+    ImageSHM* mImageSHM;
 
     unsigned int mPanoImageLeft;
     unsigned int mPanoImageTop;

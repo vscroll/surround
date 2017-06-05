@@ -4,14 +4,22 @@
 #include "common.h"
 #include "imageshm.h"
 #include "util.h"
+#include "IPanoImage.h"
 
 RenderPanoWorker::RenderPanoWorker()
 {
     mPanoImage = NULL;
+    mImageSHM = NULL;
 }
 
 RenderPanoWorker::~RenderPanoWorker()
 {
+    if (NULL != mImageSHM)
+    {
+        mImageSHM->destroy();
+        delete mImageSHM;
+        mImageSHM = NULL;
+    }
 }
 
 void RenderPanoWorker::setPanoImageModule(IPanoImage* panoImage)
@@ -19,8 +27,8 @@ void RenderPanoWorker::setPanoImageModule(IPanoImage* panoImage)
     mPanoImage = panoImage;
     if (NULL == panoImage)
     {
-        mPanoSHM = new ImageSHM();
-        mPanoSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
+        mImageSHM = new ImageSHM();
+        mImageSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
     }
 }
 
@@ -61,15 +69,16 @@ void RenderPanoWorker::run()
     surround_image_t* panoImage = NULL;
     if (NULL != mPanoImage)
     {
+        //one source may be come from PanoImage Module
+        panoImage = mPanoImage->dequeuePanoImage();
     }
     else
     {
         //one source from share memory
-        if (NULL != mPanoSHM)
+        if (NULL != mImageSHM)
         {
-#if 0
-            unsigned char imageBuf[SHM_PANO_SIZE] = {};
-            if (mPanoSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
+            unsigned char imageBuf[SHM_PANO_SOURCE_SIZE] = {};
+            if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
             {
                 return;
             }
@@ -81,13 +90,19 @@ void RenderPanoWorker::run()
             panoImage->info.size = header->size;
             panoImage->timestamp = header->timestamp;
             panoImage->data = imageBuf + sizeof(image_shm_header_t);
-#endif
         }
     }
 
-    if (NULL == panoImage
-        || NULL == panoImage->data)
+    if (NULL == panoImage)
     {
+        return;
+    }
+
+    if (V4L2_PIX_FMT_YUYV != panoImage->info.pixfmt
+        && V4L2_PIX_FMT_UYVY != panoImage->info.pixfmt)
+    {
+        delete panoImage;
+        panoImage = NULL;
         return;
     }
 

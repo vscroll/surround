@@ -3,15 +3,11 @@
 
 #include <linux/videodev2.h>
 
-#define DEBUG 1
-#define DEBUG_CAPTURE 1
+#if DEBUG
+#define DEBUG_CAPTURE 0
 #define DEBUG_STITCH 1
 #define DEBUG_UPDATE 1
-
-#define CAPTURE_4_CHANNEL_ONCE 1
-#define CAPTURE_ON_V4L2 1
-
-#define DATA_FAKE 0
+#endif
 
 #define V4L2_BUF_COUNT 1
 

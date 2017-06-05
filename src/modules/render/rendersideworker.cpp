@@ -124,9 +124,16 @@ void RenderSideWorker::run()
         }
     }
 
-    if (NULL == sideImage
-        || NULL == sideImage->data)
+    if (NULL == sideImage)
     {
+        return;
+    }
+
+    if (V4L2_PIX_FMT_YUYV != sideImage->info.pixfmt
+        && V4L2_PIX_FMT_UYVY != sideImage->info.pixfmt)
+    {
+        delete sideImage;
+        sideImage = NULL;
         return;
     }
 
