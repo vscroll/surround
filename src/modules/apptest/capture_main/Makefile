@@ -27,7 +27,9 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(SRC_ROOT)/util/shm \
 			                    -I$(SRC_ROOT)/util/cl \
 			                    -I$(SRC_ROOT)/modules/imageshm \
-			                    -I$(SRC_ROOT)/modules/panoimage
+			                    -I$(SRC_ROOT)/modules/panoimage \
+			                    -I$(SRC_ROOT)/util/ini \
+			                    -I$(SRC_ROOT)/modules/config
 
 ifneq ($(findstring $(TARGET),$(debug)),)
 CFLAGS                      += -DDEBUG=1
@@ -45,6 +47,8 @@ SRCS 		                += $(wildcard $(SRC_ROOT)/util/shm/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/util/cl/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/imageshm/*.cpp)
 SRCS 		                += $(wildcard $(SRC_ROOT)/modules/panoimage/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/modules/config/*.cpp)
+SRCS 		                += $(wildcard $(SRC_ROOT)/util/ini/*.cpp)
 
 OBJS 			            = $(patsubst %.cpp, %.o, $(SRCS))
 

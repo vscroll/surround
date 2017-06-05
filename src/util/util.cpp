@@ -1,4 +1,6 @@
 #include "util.h"
+#include <unistd.h>
+#include <string.h>
 
 Util::Util()
 {
@@ -97,4 +99,28 @@ void Util::uyvy_to_rgb24(int width, int height, unsigned char *src, unsigned cha
      *d++ = r;
       }
    }
+}
+
+int Util::getAbsolutePath(char* path, int length)
+{
+    char buf[length] = {0}; 
+    int count = readlink( "/proc/self/exe", buf, length);
+    if (count < 0 || count >= length) 
+    {
+        perror("getAbsolutePath");
+        return -1;
+    }
+
+    int i;
+    for (i = count; i >=0; --i)
+    {
+        if (buf[i] == '/')
+        {
+            buf[i+1] = '\0';
+            memcpy(path, buf, i+1);
+            break;
+        }
+    }
+
+    return 0;
 }

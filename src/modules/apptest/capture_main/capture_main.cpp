@@ -1,6 +1,3 @@
-// author: Andre Silva 
-// email: andreluizeng@yahoo.com.br
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +16,8 @@
 #include "IPanoImage.h"
 #include "panoimageimpl.h"
 #include "wrap_thread.h"
+#include "IConfig.h"
+#include "configimpl.h"
 
 class FocusSourceSHMWriteWorker : public WrapThread
 {
@@ -221,12 +220,42 @@ void SourceSHMWriteWorker::run()
 
 int main (int argc, char **argv)
 {
+    IConfig* config = new ConfigImpl();
+    char cfgPath[1024] = {0};
+    if (Util::getAbsolutePath(cfgPath, 1024) < 0)
+    {
+        return -1;
+    }
+
+    char cfgPathName[1024] = {0};
+    sprintf(cfgPathName, "%sconfig.ini", cfgPath);
+    if (config->loadFile(cfgPathName) < 0)
+    {
+        return -1;
+    }
+
+    int frontChn;
+    int rearChn;
+    int leftChn;
+    int rightChn;
+    if (config->getChannelNo(&frontChn, &rearChn, &leftChn, &rightChn) < 0)
+    {
+        return -1;
+    }
+
+    int fps = config->getCaptureFPS();
+    if (fps <= 0)
+    {
+        fps = VIDEO_FPS_15;
+    }
+
 #if 0
     ICapture* capture = new CaptureImpl();
 #else
     ICapture* capture = new Capture1Impl(VIDEO_CHANNEL_SIZE);
 #endif
-    unsigned int channel[VIDEO_CHANNEL_SIZE] = {4,2,3,5};
+
+    unsigned int channel[VIDEO_CHANNEL_SIZE] = {frontChn,rearChn,leftChn,rightChn};
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -269,7 +298,7 @@ int main (int argc, char **argv)
         return -1;
     }
 
-    capture->start(VIDEO_FPS_15);
+    capture->start(fps);
 
     //focus source
     FocusSourceSHMWriteWorker* focusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(capture);
@@ -368,6 +397,10 @@ int main (int argc, char **argv)
     capture->stop();
     delete capture;
     capture = NULL;
+
+    config->unloadFile();
+    delete config;
+    config = NULL;
 
     return 0;
 }
