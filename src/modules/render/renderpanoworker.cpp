@@ -125,7 +125,7 @@ void RenderPanoWorker::run()
     std::cout << "RenderPanoWorker::run"
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
-            << ", elapsed to capture:" << Util::get_system_milliseconds() - panoImage->timestamp
+            << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - panoImage->timestamp)/1000
             << ", draw:" << (double)(clock() - start_draw)/CLOCKS_PER_SEC
             << " width:"  << panoImage->info.width
             << " height:" << panoImage->info.height

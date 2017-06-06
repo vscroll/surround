@@ -178,4 +178,20 @@ void Capture1WorkerBase::clearOverstock()
         }
     }
     pthread_mutex_unlock(&mMutexQueue);
+
+    pthread_mutex_lock(&mMutexFocusSourceQueue);
+    int focusSize = mFocusSourceQueue.size();
+    if (focusSize > 5)
+    {
+        for (int i = 0; i < focusSize; ++i)
+        {
+            struct surround_image_t* surroundImage = mFocusSourceQueue.front();
+            mFocusSourceQueue.pop();
+            if (NULL != surroundImage)
+            {
+                delete surroundImage;
+            }
+        }
+    }
+    pthread_mutex_unlock(&mMutexFocusSourceQueue);
 }
