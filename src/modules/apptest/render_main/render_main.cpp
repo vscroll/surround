@@ -72,7 +72,7 @@ int main (int argc, char **argv)
             << ", height:" << panoHeight
             << std::endl;
 
-    int fps = config->getCaptureFPS();
+    int fps = config->getRenderFPS();
     if (fps <= 0)
     {
         fps = VIDEO_FPS_15;

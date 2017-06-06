@@ -35,11 +35,31 @@ public:
 private:
     void clearOverstock();
 
-    void stitching_init(const std::string config_path, cv::Mat& map, cv::Mat& mask, bool enableOpenCL);
+    void stitching_init(
+        const std::string configPath,
+        cv::Mat& LutFront,
+    	cv::Mat& LutRear,
+    	cv::Mat& LutLeft,
+    	cv::Mat& LutRight,
+    	cv::Mat& mask,
+    	cv::Mat& weight,
+        bool enableOpenCL);
 
-    void stitching(const void* front, const void* rear, const void* left, const void* right,
-               const cv::Mat& map, const cv::Mat& mask,
-               void** outPano2D, int outPano2DWidth, int outPano2DHeight);
+    void stitching(
+        const unsigned char* front,
+        const unsigned char* rear,
+    	const unsigned char* left,
+    	const unsigned char* right,
+    	const cv::Mat& LutFront,
+    	const cv::Mat& LutRear,
+    	const cv::Mat& LutLeft,
+    	const cv::Mat& LutRight,
+    	const cv::Mat& mask,
+    	const cv::Mat& weight,
+        unsigned char* outPano,
+        unsigned int outPanoWidth,
+        unsigned int outPanoHeight,
+        unsigned int outPanoSize);
 
     void stitching_cl(const void* front, const void* rear, const void* left, const void* right,
                 const cv::Mat& mapX, const cv::Mat& mapY, const cv::Mat& mask,
@@ -57,6 +77,13 @@ private:
     unsigned int mPanoSize;
     pthread_mutex_t mOutputPanoImageMutex;
     std::queue<surround_image_t*> mOutputPanoImageQueue;
+
+    cv::Mat mLutFront;
+    cv::Mat mLutRear;
+    cv::Mat mLutLeft;
+    cv::Mat mLutRight;
+    cv::Mat mMask;
+    cv::Mat mWeight;
 
     cv::Mat mStitchMap;
     cv::Mat mStitchMask;

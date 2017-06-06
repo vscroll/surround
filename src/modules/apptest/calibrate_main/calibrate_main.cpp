@@ -78,6 +78,8 @@ void FocusSourceSHMWriteWorker::run()
                 << " timestamp:" << focusSource->timestamp
                 << std::endl;
 #endif
+        delete focusSource;
+        focusSource = NULL;
     }
 }
 

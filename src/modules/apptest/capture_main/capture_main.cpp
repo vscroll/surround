@@ -75,6 +75,8 @@ void FocusSourceSHMWriteWorker::run()
                 << " timestamp:" << focusSource->timestamp
                 << std::endl;
 #endif
+        delete focusSource;
+        focusSource = NULL;
     }
 }
 
@@ -144,6 +146,8 @@ void AllSourcesSHMWriteWorker::run()
                 << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
                 << std::endl;
 #endif
+        delete sources;
+        sources = NULL;
     }
 }
 
@@ -157,6 +161,8 @@ public:
     virtual void run();
 
 private:
+    //pthread_mutex_t mMutex;
+
     unsigned int mChannelIndex;
     ICapture* mCapture;
     ImageSHM* mImageSHM;
@@ -165,6 +171,8 @@ private:
 
 SourceSHMWriteWorker::SourceSHMWriteWorker(ICapture* capture, unsigned int channelIndex)
 {
+    //pthread_mutex_init(&mMutex, NULL);
+
     mChannelIndex = channelIndex;
     mCapture = capture;
     mImageSHM = new ImageSHM();
@@ -206,15 +214,21 @@ void SourceSHMWriteWorker::run()
 #if DEBUG_CAPTURE
         clock_t start = clock();
 #endif
+        //pthread_mutex_lock(&mMutex);
         mImageSHM->writeSource(source);
+        //pthread_mutex_unlock(&mMutex);
 #if DEBUG_CAPTURE
         std::cout << "SourceSHMWriteWorker run: " 
                 << " thread id:" << getTID()
                 << ", elapsed to last time:" << elapsed_to_last
                 << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - source->timestamp)/1000
                 << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
+                << ", channel:" << mChannelIndex
+                << ", addr:" << source->data
                 << std::endl;
 #endif
+        delete source;
+        source = NULL;
     }
 }
 
@@ -302,14 +316,14 @@ int main (int argc, char **argv)
 
     //focus source
     FocusSourceSHMWriteWorker* focusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(capture);
-    focusSourceSHMWriteWorker->start(VIDEO_FPS_15);
+    focusSourceSHMWriteWorker->start(fps);
 
     //4 source
     SourceSHMWriteWorker* sourceSHMWriteWorker[VIDEO_CHANNEL_SIZE] = {NULL};
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         sourceSHMWriteWorker[i] = new SourceSHMWriteWorker(capture, i);
-        sourceSHMWriteWorker[i]->start(VIDEO_FPS_15);
+        sourceSHMWriteWorker[i]->start(fps);
     }
 
 #if 0

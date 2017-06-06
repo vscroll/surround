@@ -65,22 +65,42 @@ int StitchWorker::init(
         }
     }
 
+    if (inPixfmt != V4L2_PIX_FMT_UYVY
+        && inPixfmt != V4L2_PIX_FMT_YUYV)
+    {
+        return -1;
+    }
+
     mPanoWidth = panoWidth;
     mPanoHeight = panoHeight;
     mPanoPixfmt = panoPixfmt;
-    if (panoPixfmt == V4L2_PIX_FMT_BGR24)
+    if (panoPixfmt == V4L2_PIX_FMT_RGB24
+        || panoPixfmt == V4L2_PIX_FMT_BGR24)
     {
         mPanoSize = panoWidth*panoHeight*3;
     }
-    else if (panoPixfmt == V4L2_PIX_FMT_UYVY)
+    else if (panoPixfmt == V4L2_PIX_FMT_UYVY
+        || panoPixfmt == V4L2_PIX_FMT_YUYV)
     {
         mPanoSize = panoWidth*panoHeight*2;
+    }
+    else
+    {
+        return -1;
     }
 
     mEnableOpenCL = enableOpenCL;
 
-    stitching_init(algoCfgFilePath, mStitchMap, mStitchMask, mEnableOpenCL);
+    stitching_init(algoCfgFilePath,
+        mLutFront,
+    	mLutRear,
+    	mLutLeft,
+    	mLutRight,
+    	mMask,
+    	mWeight,
+        mEnableOpenCL);
 
+#if 0
     if (mEnableOpenCL)
     {
         // align to input image frame for CL: CL_MEM_USE_HOST_PTR
@@ -167,41 +187,6 @@ int StitchWorker::init(
                 << std::endl;
 #endif
     }
-
-#if 0
-    uchar* data0 = mStitchMaskAlign.ptr<uchar>(0);
-    uchar* dataX0 = mStitchMapAlignX.ptr<uchar>(0);
-    uchar* dataY0 = mStitchMapAlignY.ptr<uchar>(0);
-    for (int i = 0; i < 3; i++)
-    {
-        uchar* data = mStitchMaskAlign.ptr<uchar>(i);
-        uchar* dataX = mStitchMapAlignX.ptr<uchar>(i);
-        uchar* dataY = mStitchMapAlignY.ptr<uchar>(i);
-        for (int j = 0; j < mStitchMaskAlign.cols; j++)
-        {
-	        printf("\n %d %d", i, j);
-            printf(" org: %d mask0:%d %d %d mask1:%d %d %d",
-		    mStitchMask.ptr<uchar>(i)[j],
-		    *(data0+i*mStitchMaskAlign.cols*3+j*3),
-		    *(data0+i*mStitchMaskAlign.cols*3+j*3+1),
-                    *(data0+i*mStitchMaskAlign.cols*3+j*3+2),
-		    *(data+j*3), *(data+j*3+1), *(data+j*3+2));
-
-            printf(" org: %d mapx0:%d %d %d mapx1:%d %d %d",
-            (int)(mStitchMap.ptr<Point2f>(i)[j].x),
-		    *(dataX0+i*mStitchMapAlignX.cols*3+j*3),
-		    *(dataX0+i*mStitchMapAlignX.cols*3+j*3+1),
-            *(dataX0+i*mStitchMapAlignX.cols*3+j*3+2),
-            *(dataX+j*3), *(dataX+j*3+1), *(dataX+j*3+2));
-
-            printf(" org: %d mapy0:%d %d %d mapy1:%d %d %d\n",
-            (int)(mStitchMap.ptr<Point2f>(i)[j].y),
-		    *(dataY0+i*mStitchMapAlignY.cols*3+j*3),
-		    *(dataY0+i*mStitchMapAlignY.cols*3+j*3+1),
-            *(dataY0+i*mStitchMapAlignY.cols*3+j*3+2),
-            *(dataY+j*3), *(dataY+j*3+1), *(dataY+j*3+2));
-        }
-    }
 #endif
 
     return 0;
@@ -222,6 +207,8 @@ void StitchWorker::run()
     mLastCallTime = start;
 #endif
 
+    unsigned char imageBuf[VIDEO_CHANNEL_SIZE][SHM_FRONT_SOURCE_SIZE] = {};
+
     surround_images_t* surroundImage = NULL;
     if (NULL != mCapture)
     {
@@ -237,21 +224,20 @@ void StitchWorker::run()
         {
             if (NULL != mImageSHM[i])
             {
-                unsigned char imageBuf[SHM_FRONT_SOURCE_SIZE] = {};
-                if (mImageSHM[i]->readSource(imageBuf, sizeof(imageBuf)) < 0)
+                if (mImageSHM[i]->readSource(imageBuf[i], sizeof(imageBuf[i])) < 0)
                 {
                     delete surroundImage;
                     surroundImage = NULL;
                     return;
                 }
 
-                image_shm_header_t* header = (image_shm_header_t*)imageBuf;
+                image_shm_header_t* header = (image_shm_header_t*)imageBuf[i];
                 surroundImage->frame[i].info.width = header->width;
                 surroundImage->frame[i].info.height = header->height;
                 surroundImage->frame[i].info.pixfmt = header->pixfmt;
                 surroundImage->frame[i].info.size = header->size;
                 surroundImage->frame[i].timestamp = header->timestamp;
-                surroundImage->frame[i].data = imageBuf + sizeof(image_shm_header_t);
+                surroundImage->frame[i].data = imageBuf[i] + sizeof(image_shm_header_t);
                 if (surroundImage->timestamp < surroundImage->frame[i].timestamp)
                 {
                     surroundImage->timestamp = surroundImage->frame[i].timestamp;
@@ -275,7 +261,7 @@ void StitchWorker::run()
         return;
     }
 
-    void* outPano = NULL;
+    unsigned char* outPano = new unsigned char[mPanoSize*sizeof(unsigned char)];
 
     long timestamp = surroundImage->timestamp;
     long elapsed = Util::get_system_milliseconds() - surroundImage->timestamp;
@@ -297,15 +283,20 @@ void StitchWorker::run()
         }
         else
         {
-            stitching(surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
-                      surroundImage->frame[VIDEO_CHANNEL_REAR].data,
-                      surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
-                      surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
-                      mStitchMap,
-                      mStitchMask,
-                      &outPano,
-                      mPanoWidth,
-                      mPanoHeight);
+            stitching((unsigned char*)surroundImage->frame[VIDEO_CHANNEL_FRONT].data,
+                    (unsigned char*)surroundImage->frame[VIDEO_CHANNEL_REAR].data,
+                    (unsigned char*)surroundImage->frame[VIDEO_CHANNEL_LEFT].data,
+                    (unsigned char*)surroundImage->frame[VIDEO_CHANNEL_RIGHT].data,
+                    mLutFront,
+                    mLutRear,
+                    mLutLeft,
+                    mLutRight,
+                    mMask,
+                    mWeight,
+                    outPano,
+                    mPanoWidth,
+                    mPanoHeight,
+                    mPanoSize);
         }
     }
 #if DEBUG_STITCH
@@ -380,7 +371,7 @@ void StitchWorker::clearOverstock()
             {
                 for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
                 {
-                    delete (cv::Mat*)(surroundImage->frame[i].data);
+                    delete (unsigned char*)(surroundImage->frame[i].data);
                 }
                 delete surroundImage;
             }
@@ -398,7 +389,7 @@ void StitchWorker::clearOverstock()
             mOutputPanoImageQueue.pop();
             if (NULL != surroundImage)
             {
-                delete (cv::Mat*)(surroundImage->data);
+                delete (unsigned char*)(surroundImage->data);
                 delete surroundImage;
             }
         }
@@ -406,15 +397,28 @@ void StitchWorker::clearOverstock()
     pthread_mutex_unlock(&mOutputPanoImageMutex);
 }
 
-void StitchWorker::stitching_init(const string config_path, Mat& map, Mat& mask, bool enableOpenCL)
+void StitchWorker::stitching_init(
+        const std::string configPath,
+        cv::Mat& LutFront,
+    	cv::Mat& LutRear,
+    	cv::Mat& LutLeft,
+    	cv::Mat& LutRight,
+    	cv::Mat& mask,
+    	cv::Mat& weight,
+        bool enableOpenCL)
 {
 #if DEBUG_STITCH
-    std::cout << "System Initialization:" << config_path << std::endl;
+    std::cout << "System Initialization:" << configPath << std::endl;
 #endif
-    FileStorage fs(config_path, FileStorage::READ);
-    fs["Map"] >> map;
-    fs["Mask"] >> mask;
-    fs.release();
+	FileStorage fs(configPath, FileStorage::READ);
+	fs["map1"] >> LutFront;
+	fs["map2"] >> LutRear;
+	fs["map3"] >> LutLeft;
+	fs["map4"] >> LutRight;
+
+	fs["mask"] >> mask;
+	fs["weight"] >> weight;
+	fs.release();
 
     if (enableOpenCL)
     {
@@ -424,96 +428,106 @@ void StitchWorker::stitching_init(const string config_path, Mat& map, Mat& mask,
     return;
 }
 
-void StitchWorker::stitching(const void* front, const void* rear, const void* left, const void* right,
-               const cv::Mat& map, const cv::Mat& mask,
-               void** outPano2D, int outPano2DWidth, int outPano2DHeight)
+void StitchWorker::stitching(
+        const unsigned char* front,
+        const unsigned char* rear,
+    	const unsigned char* left,
+    	const unsigned char* right,
+    	const cv::Mat& LutFront,
+    	const cv::Mat& LutRear,
+    	const cv::Mat& LutLeft,
+    	const cv::Mat& LutRight,
+    	const cv::Mat& mask,
+    	const cv::Mat& weight,
+        unsigned char* outPano,
+        unsigned int outPanoWidth,
+        unsigned int outPanoHeight,
+        unsigned int outPanoSize)
 {
     if (NULL == front || NULL == rear || NULL == left || NULL == right)
     {
         return;
     }
 
-#if DATA_FAKE
+	for (int i = 0; i < outPanoSize; i++)
+	{
+		//424x600x2 value:0~8
+		int flag = mask.ptr<uchar>(i)[0];
+		switch (flag)
+		{
+			case 0:
+			{
+				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				size_t index1 = LutFront.ptr<float>(i)[0];
+				size_t index2 = LutLeft.ptr<float>(i)[0];
+				outPano[i] = /*front[index1];*/w*front[index1] + (1- w)*left[index2];
+				break;
+			}
 
-    switch (channel)
-    {
-        case VIDEO_CHANNEL_FRONT:
-            {
-                *outPano2D = new cv::Mat(*((cv::Mat*)front));
-            }
-            break;
-        case VIDEO_CHANNEL_REAR:
-            {
-                *outPano2D = new cv::Mat(*((cv::Mat*)rear));
-            }
-            break;
-        case VIDEO_CHANNEL_LEFT:
-            {
-                *outPano2D = new cv::Mat(*((cv::Mat*)left));
-            }
-            break;
-        case VIDEO_CHANNEL_RIGHT:
-            {
-                *outPano2D = new cv::Mat(*((cv::Mat*)right));
-            }
-            break;
-        default:
-            break;
-    }
+			case 1:
+			{
+				size_t index1 = LutFront.ptr<float>(i)[0];
+				outPano[i] = front[index1];
+				break;
+			}
 
-#else
+			case 2:
+			{
+				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				size_t index1 = LutFront.ptr<float>(i)[0];
+				size_t index2 = LutRight.ptr<float>(i)[0];
+				outPano[i] = /*front[index1];*/w*front[index1] + (1 - w)*right[index2];
+				break;
+			}
 
-    std::vector<cv::Mat> fishImgs;
-    cv::Mat matFront(*(cv::Mat*)front);
-    cv::Mat matRear(*(cv::Mat*)rear);
-    cv::Mat matLeft(*(cv::Mat*)left);
-    cv::Mat matRight(*(cv::Mat*)right);
+			case 3:
+			{
+				size_t index1 = LutLeft.ptr<float>(i)[0];
+				outPano[i] = left[index1];
+				break;
+			}
 
-    fishImgs.push_back(matFront);
-    fishImgs.push_back(matRear);
-    fishImgs.push_back(matLeft);
-    fishImgs.push_back(matRight);
+			case 4:
+			{
+				outPano[i] = 0;
+				break;
+			}
 
-    *outPano2D = new Mat(outPano2DHeight, outPano2DWidth, CV_8UC3);
-    for (int i = 0; i < outPano2DHeight; i++)
-    {
-        for (int j = 0; j < outPano2DWidth; j++)
-        {
-            int flag = mask.ptr<uchar>(i)[j];
-            int x = map.ptr<Point2f>(i)[j].x;
-            int y = map.ptr<Point2f>(i)[j].y;
-            switch (flag)
-            {
-            case 50:
-            {
-                ((cv::Mat*)*outPano2D)->ptr<Vec3b>(i)[j] = fishImgs[0].ptr<Vec3b>(y)[x];
-                continue;
-            }
+			case 5:
+			{
+				size_t index1 = LutRight.ptr<float>(i)[0];
+				outPano[i] = right[index1];
+				break;
+			}
 
-            case 100:
-            {
-                ((cv::Mat*)*outPano2D)->ptr<Vec3b>(i)[j] = fishImgs[3].ptr<Vec3b>(y)[x];
-                continue;
-            }
+			case 6:
+			{
+				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				size_t index1 = LutRear.ptr<float>(i)[0];
+				size_t index2 = LutLeft.ptr<float>(i)[0];
+				outPano[i] = /*rear[index1];*/w*rear[index1] + (1 - w)*left[index2];
+				break;
+			}
 
-            case 150:
-            {
-                ((cv::Mat*)*outPano2D)->ptr<Vec3b>(i)[j] = fishImgs[2].ptr<Vec3b>(y)[x];
-                continue;
-            }
+			case 7:
+			{
+				size_t index1 = LutRear.ptr<float>(i)[0];
+				outPano[i] = rear[index1];
+				break;
+			}
 
-            case 200:
-            {
-                ((cv::Mat*)*outPano2D)->ptr<Vec3b>(i)[j] = fishImgs[1].ptr<Vec3b>(y)[x];
-                continue;
-            }
-            default:
-                break;
-            }
-        }
-    }
-
-#endif
+			case 8:
+			{
+				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				size_t index1 = LutRear.ptr<float>(i)[0];
+				size_t index2 = LutRight.ptr<float>(i)[0];
+				outPano[i] =/* rear[index1];*/w*rear[index1] + (1 - w)*right[index2];
+				break;
+			}
+			default:
+				break;
+		}
+	}
 }
 
 void StitchWorker::stitching_cl(const void* front, const void* rear, const void* left, const void* right,
