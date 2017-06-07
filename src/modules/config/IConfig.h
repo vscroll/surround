@@ -18,7 +18,9 @@ public:
     virtual int getStitchFPS() = 0;
 
     //render
-    virtual int getRenderFPS() = 0;
+    virtual int getSideFPS() = 0;
+    virtual int getMarkFPS() = 0;
+    virtual int getPanoFPS() = 0;
     virtual int getSideRect(int* left, int* top, int* width, int* height) = 0;
     virtual int getMarkRect(int* left, int* top, int* width, int* height) = 0;
     virtual int getPanoRect(int* left, int* top, int* width, int* height) = 0;

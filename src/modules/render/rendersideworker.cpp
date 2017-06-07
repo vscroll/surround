@@ -17,11 +17,6 @@ RenderSideWorker::RenderSideWorker()
     mSideImageWidth = 0;
     mSideImageHeight = 0;
 
-    mChannelMarkLeft = 0;
-    mChannelMarkTop = 0;
-    mChannelMarkWidth = 0;
-    mChannelMarkHeight = 0;
-
     mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
 
     mLastCallTime = 0;
@@ -69,18 +64,6 @@ void RenderSideWorker::getSideImageRect(unsigned int* left,
     *height = mSideImageHeight;
 }
 
-void RenderSideWorker::setChannelMarkRect(unsigned int left,
-		    unsigned int top,
-		    unsigned int width,
-		    unsigned int height)
-{
-    mChannelMarkLeft = left;
-    mChannelMarkTop = top;
-    mChannelMarkWidth = width;
-    mChannelMarkHeight = height;
-}
-
-unsigned char gChannelMarkData[100*100*2] = {0};
 void RenderSideWorker::run()
 {
 #if DEBUG_UPDATE
@@ -93,8 +76,8 @@ void RenderSideWorker::run()
     mLastCallTime = start;
 #endif
 
-    surround_image_t* sideImage = NULL;
-    
+    unsigned char imageBuf[SHM_FOCUS_SOURCE_SIZE] = {};
+    surround_image_t* sideImage = NULL; 
     
     if (NULL != mCapture)
     {
@@ -107,7 +90,6 @@ void RenderSideWorker::run()
         //one source may be come from share memory
         if (NULL != mImageSHM)
         {
-            unsigned char imageBuf[SHM_FOCUS_SOURCE_SIZE] = {};
             if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
             {
                 return;
@@ -141,7 +123,6 @@ void RenderSideWorker::run()
     clock_t start_draw = clock();
 #endif
 
-#if RENDER_MARK_ALONE
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)sideImage->data;
     surface.srcPixfmt = sideImage->info.pixfmt;
@@ -153,38 +134,6 @@ void RenderSideWorker::run()
     surface.dstWidth = mSideImageWidth;
     surface.dstHeight = mSideImageHeight;
     drawImage(&surface);
-#else
-
-    struct render_surface_t surfaces[2];
-
-    surfaces[0].srcBuf = (unsigned char*)sideImage->data;
-    surfaces[0].srcPixfmt = sideImage->info.pixfmt;
-    surfaces[0].srcWidth = sideImage->info.width;
-    surfaces[0].srcHeight = sideImage->info.height;
-    surfaces[0].srcSize = sideImage->info.size;
-    surfaces[0].dstLeft = mSideImageLeft;
-    surfaces[0].dstTop = mSideImageTop;
-    surfaces[0].dstWidth = mSideImageWidth;
-    surfaces[0].dstHeight = mSideImageHeight;
-
-    surfaces[1].srcBuf = (unsigned char*)gChannelMarkData;
-    surfaces[1].srcPixfmt = V4L2_PIX_FMT_YUYV;
-    surfaces[1].srcWidth = 100;
-    surfaces[1].srcHeight = 100;
-    surfaces[1].srcSize = surfaces[1].srcWidth*surfaces[1].srcHeight*2;
-    surfaces[1].dstLeft = mChannelMarkLeft;
-    surfaces[1].dstTop = mChannelMarkTop;
-    surfaces[1].dstWidth = mChannelMarkWidth;
-    surfaces[1].dstHeight = mChannelMarkHeight;
-
-#if 1
-    drawImage(&surfaces[0]);
-    drawImage(&surfaces[1]);
-#else
-    drawMultiImages(surfaces, 2);
-#endif
-
-#endif
 
 #if DEBUG_UPDATE
     std::cout << "RenderSideWorker::run"

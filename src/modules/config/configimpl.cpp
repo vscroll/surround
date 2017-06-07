@@ -13,15 +13,17 @@
 #define STITCH_KEY_FPS "FPS"
 
 #define SECTION_RENDER          "RENDER"
-#define RENDER_KEY_FPS          "FPS"
+#define RENDER_KEY_SIDEFPS      "SideFPS"
 #define RENDER_KEY_SIDELEFT     "SideLeft"
 #define RENDER_KEY_SIDETOP      "SideTop"
 #define RENDER_KEY_SIDEWIDTH    "SideWidth"
 #define RENDER_KEY_SIDEHEIGHT   "SideHeight"
+#define RENDER_KEY_MARKFPS      "MarkFPS"
 #define RENDER_KEY_MARKLEFT     "MarkLeft"
 #define RENDER_KEY_MARKTOP      "MarkTop"
 #define RENDER_KEY_MARKWIDTH    "MarkWidth"
 #define RENDER_KEY_MARKHEIGHT   "MarkHeight"
+#define RENDER_KEY_PANOFPS      "PanoFPS"
 #define RENDER_KEY_PANOLEFT     "PanoLeft"
 #define RENDER_KEY_PANOTOP      "PanoTop"
 #define RENDER_KEY_PANOWIDTH    "PanoWidth"
@@ -102,14 +104,34 @@ int ConfigImpl::getStitchFPS()
 }
 
 //render
-int ConfigImpl::getRenderFPS()
+int ConfigImpl::getSideFPS()
 {
     if (mIniFile == NULL)
     {
         return -1;
     }
 
-    return mIniFile->getInt(SECTION_RENDER, RENDER_KEY_FPS);
+    return mIniFile->getInt(SECTION_RENDER, RENDER_KEY_SIDEFPS);
+}
+
+int ConfigImpl::getMarkFPS()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_RENDER, RENDER_KEY_MARKFPS);
+}
+
+int ConfigImpl::getPanoFPS()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_RENDER, RENDER_KEY_PANOFPS);
 }
 
 int ConfigImpl::getSideRect(int* left, int* top, int* width, int* height)

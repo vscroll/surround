@@ -16,7 +16,8 @@ public:
 		unsigned int top,
 		unsigned int width,
 		unsigned int height) = 0;
-    virtual void setChannelMarkRect(
+
+    virtual void setMarkRect(
         unsigned int left,
 		unsigned int top,
 		unsigned int width,
@@ -28,6 +29,11 @@ public:
 		unsigned int top,
 		unsigned int width,
 		unsigned int height) = 0;
+
+    virtual int startRenderSide(unsigned int fps) = 0;
+    virtual int startRenderMark(unsigned int fps) = 0;
+    virtual int startRenderPano(unsigned int fps) = 0;
+
     virtual int start(unsigned int fps) = 0;
     virtual void stop() = 0;
 };

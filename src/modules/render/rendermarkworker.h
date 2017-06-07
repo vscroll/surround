@@ -15,12 +15,12 @@ public:
 		unsigned int dstWidth,
 		unsigned int dstHeight);
 
-    void setChannelMarkRect(unsigned int left,
+    void setMarkRect(unsigned int left,
 		    unsigned int top,
 		    unsigned int width,
 		    unsigned int height);
 
-    void getChannelMarkRect(unsigned int* left,
+    void getMarkRect(unsigned int* left,
 		    unsigned int* top,
 		    unsigned int* width,
 		    unsigned int* height);
@@ -28,10 +28,10 @@ public:
     virtual void run();
 
 private:
-    unsigned int mChannelMarkLeft;
-    unsigned int mChannelMarkTop;
-    unsigned int mChannelMarkWidth;
-    unsigned int mChannelMarkHeight;
+    unsigned int mMarkLeft;
+    unsigned int mMarkTop;
+    unsigned int mMarkWidth;
+    unsigned int mMarkHeight;
 
     unsigned int mFocusChannelIndex;
     unsigned int mUpdateChannelIndex;

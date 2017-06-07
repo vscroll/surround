@@ -3,8 +3,6 @@
 
 #include "IRender.h"
 
-#define RENDER_MARK_ALONE 0
-
 class RenderSideWorker;
 class RenderMarkWorker;
 class RenderPanoWorker;
@@ -20,7 +18,8 @@ public:
 		unsigned int top,
 		unsigned int width,
 		unsigned int height);
-    virtual void setChannelMarkRect(
+
+    virtual void setMarkRect(
         unsigned int left,
 		unsigned int top,
 		unsigned int width,
@@ -33,13 +32,15 @@ public:
 		unsigned int width,
 		unsigned int height);
 
+    virtual int startRenderSide(unsigned int fps);
+    virtual int startRenderMark(unsigned int fps);
+    virtual int startRenderPano(unsigned int fps);
+
     virtual int start(unsigned int fps);
     virtual void stop();
 private:
     RenderSideWorker* mSideWorker;
-#if RENDER_MARK_ALONE
     RenderMarkWorker* mMarkWorker;
-#endif
     RenderPanoWorker* mPanoWorker;
 };
 

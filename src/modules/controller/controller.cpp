@@ -114,7 +114,7 @@ IRender* Controller::initRenderModule(
     }
     mRender->setCaptureModule(capture);
     mRender->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
-    mRender->setChannelMarkRect(sideLeft, sideTop, sideWidth, 26);
+    mRender->setMarkRect(sideLeft, sideTop, sideWidth, 26);
 
     mRender->setPanoImageModule(panoImage);
     mRender->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);

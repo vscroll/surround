@@ -6,9 +6,7 @@
 RenderImpl::RenderImpl()
 {
     mSideWorker = new RenderSideWorker();
-#if RENDER_MARK_ALONE
     mMarkWorker = new RenderMarkWorker();
-#endif
     mPanoWorker = new RenderPanoWorker();
 }
 
@@ -36,23 +34,16 @@ void RenderImpl::setSideImageRect(
     }
 }
 
-void RenderImpl::setChannelMarkRect(
+void RenderImpl::setMarkRect(
         unsigned int left,
 		unsigned int top,
 		unsigned int width,
 		unsigned int height)
 {
-#if RENDER_MARK_ALONE
     if (NULL != mMarkWorker)
     {
-        mMarkWorker->setChannelMarkRect(left, top, width, height);
+        mMarkWorker->setMarkRect(left, top, width, height);
     }
-#else
-    if (NULL != mSideWorker)
-    {
-        mSideWorker->setChannelMarkRect(left, top, width, height);
-    }
-#endif
 }
 
 void RenderImpl::setPanoImageModule(IPanoImage* panoImage)
@@ -75,10 +66,9 @@ void RenderImpl::setPanoImageRect(
     }
 }
 
-int RenderImpl::start(unsigned int fps)
+int RenderImpl::startRenderSide(unsigned int fps)
 {
-    if (NULL == mSideWorker
-        || NULL == mPanoWorker)
+    if (NULL == mSideWorker)
     {
         return -1;
     }
@@ -94,19 +84,36 @@ int RenderImpl::start(unsigned int fps)
     }
     mSideWorker->start(1000/fps);
 
-#if RENDER_MARK_ALONE
+    return 0;
+}
+
+int RenderImpl::startRenderMark(unsigned int fps)
+{
+    if (NULL == mMarkWorker)
+    {
+        return -1;
+    }
+
     unsigned int markLeft;
     unsigned int markTop;
     unsigned int markWidth;
     unsigned int markHeight;
-    mMarkWorker->getChannelMarkRect(&markLeft, &markTop, &markWidth, &markHeight);
+    mMarkWorker->getMarkRect(&markLeft, &markTop, &markWidth, &markHeight);
     if (mMarkWorker->openDevice(markLeft, markTop, markWidth, markHeight) < 0)
     {
         mMarkWorker->closeDevice();
     }
     mMarkWorker->start(1000/fps);
 
-#endif
+    return 0;
+}
+
+int RenderImpl::startRenderPano(unsigned int fps)
+{
+    if (NULL == mPanoWorker)
+    {
+        return -1;
+    }
 
     unsigned int panoLeft;
     unsigned int panoTop;
@@ -118,6 +125,15 @@ int RenderImpl::start(unsigned int fps)
         mPanoWorker->closeDevice();
     }
     mPanoWorker->start(1000/fps);
+
+    return 0;
+}
+
+int RenderImpl::start(unsigned int fps)
+{
+    startRenderSide(fps);
+    startRenderMark(fps);
+    startRenderPano(fps);
 
     return 0;
 }

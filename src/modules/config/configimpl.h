@@ -22,7 +22,9 @@ public:
     virtual int getStitchFPS();
 
     //render
-    virtual int getRenderFPS();
+    virtual int getSideFPS();
+    virtual int getMarkFPS();
+    virtual int getPanoFPS();
     virtual int getSideRect(int* left, int* top, int* width, int* height);
     virtual int getMarkRect(int* left, int* top, int* width, int* height);
     virtual int getPanoRect(int* left, int* top, int* width, int* height);

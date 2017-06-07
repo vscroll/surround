@@ -72,21 +72,36 @@ int main (int argc, char **argv)
             << ", height:" << panoHeight
             << std::endl;
 
-    int fps = config->getRenderFPS();
-    if (fps <= 0)
+    int sideFPS = config->getSideFPS();
+    if (sideFPS <= 0)
     {
-        fps = VIDEO_FPS_15;
+        sideFPS = VIDEO_FPS_15;
+    }
+
+    int markFPS = config->getMarkFPS();
+    if (markFPS <= 0)
+    {
+        markFPS = VIDEO_FPS_15;
+    }
+
+    int panoFPS = config->getPanoFPS();
+    if (panoFPS <= 0)
+    {
+        panoFPS = VIDEO_FPS_15;
     }
 
     RenderImpl* render = new RenderImpl();
     render->setCaptureModule(NULL);
     render->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
-    render->setChannelMarkRect(markLeft, markTop, markWidth, markHeight);
+
+    render->setMarkRect(markLeft, markTop, markWidth, markHeight);
 
     render->setPanoImageModule(NULL);          
     render->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);
 
-    render->start(fps);
+    render->startRenderSide(sideFPS);
+    render->startRenderMark(markFPS);
+    render->startRenderPano(panoFPS);
 
     while (true)
     {

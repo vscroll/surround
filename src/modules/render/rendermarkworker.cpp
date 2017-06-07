@@ -7,10 +7,10 @@
 
 RenderMarkWorker::RenderMarkWorker()
 {
-    mChannelMarkLeft = 0;
-    mChannelMarkTop = 0;
-    mChannelMarkWidth = 0;
-    mChannelMarkHeight = 0;
+    mMarkLeft = 0;
+    mMarkTop = 0;
+    mMarkWidth = 0;
+    mMarkHeight = 0;
 
     mFocusChannelIndex = VIDEO_CHANNEL_SIZE;
     mUpdateChannelIndex = VIDEO_CHANNEL_FRONT;
@@ -22,26 +22,26 @@ RenderMarkWorker::~RenderMarkWorker()
 {
 }
 
-void RenderMarkWorker::setChannelMarkRect(unsigned int left,
+void RenderMarkWorker::setMarkRect(unsigned int left,
 		    unsigned int top,
 		    unsigned int width,
 		    unsigned int height)
 {
-    mChannelMarkLeft = left;
-    mChannelMarkTop = top;
-    mChannelMarkWidth = width;
-    mChannelMarkHeight = height;
+    mMarkLeft = left;
+    mMarkTop = top;
+    mMarkWidth = width;
+    mMarkHeight = height;
 }
 
-void RenderMarkWorker::getChannelMarkRect(unsigned int* left,
+void RenderMarkWorker::getMarkRect(unsigned int* left,
 		    unsigned int* top,
 		    unsigned int* width,
 		    unsigned int* height)
 {
-    *left = mChannelMarkLeft;
-    *top = mChannelMarkTop;
-    *width = mChannelMarkWidth;
-    *height = mChannelMarkHeight;
+    *left = mMarkLeft;
+    *top = mMarkTop;
+    *width = mMarkWidth;
+    *height = mMarkHeight;
 }
 
 int RenderMarkWorker::openDevice(unsigned int dstLeft,
@@ -89,10 +89,10 @@ void RenderMarkWorker::run()
         surface.srcWidth = 100;
         surface.srcHeight = 100;
         surface.srcSize = surface.srcWidth*surface.srcHeight*2;
-        surface.dstLeft = mChannelMarkLeft;
-        surface.dstTop = mChannelMarkTop;
-        surface.dstWidth = mChannelMarkWidth;
-        surface.dstHeight = mChannelMarkHeight;
+        surface.dstLeft = mMarkLeft;
+        surface.dstTop = mMarkTop;
+        surface.dstWidth = mMarkWidth;
+        surface.dstHeight = mMarkHeight;
         drawImage(&surface);
     }
 
