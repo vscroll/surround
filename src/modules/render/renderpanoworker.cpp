@@ -121,6 +121,7 @@ void RenderPanoWorker::run()
     surface.dstHeight = mPanoImageHeight;
     drawImage(&surface);
 
+    statFPS();
 #if DEBUG_UPDATE
     std::cout << "RenderPanoWorker::run"
             << " thread id:" << getTID()
@@ -129,7 +130,7 @@ void RenderPanoWorker::run()
             << ", draw:" << (double)(clock() - start_draw)/CLOCKS_PER_SEC
             << " width:"  << panoImage->info.width
             << " height:" << panoImage->info.height
-            << " size:" << panoImage->info.size
+            << " fps:" << mRealFPS
             << std::endl;
 #endif
 

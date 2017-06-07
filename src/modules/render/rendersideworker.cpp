@@ -135,6 +135,8 @@ void RenderSideWorker::run()
     surface.dstHeight = mSideImageHeight;
     drawImage(&surface);
 
+    statFPS();
+
 #if DEBUG_UPDATE
     std::cout << "RenderSideWorker::run"
             << " thread id:" << getTID()
@@ -144,7 +146,7 @@ void RenderSideWorker::run()
             << ", channel:" << mFocusChannelIndex
             << " width:"  << sideImage->info.width
             << " height:" << sideImage->info.height
-            << " size:" << sideImage->info.size
+            << " fps:" << mRealFPS
             << std::endl;
 #endif
 

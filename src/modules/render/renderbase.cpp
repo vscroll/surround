@@ -5,6 +5,11 @@
 RenderBase::RenderBase()
 {
     mRenderDevice = NULL;
+
+    mRealFPS = 0;
+    mStartStatTime = 0;
+    mStatDuration = 0;
+    mRealFrameCount = 0;
 }
 
 RenderBase::~RenderBase()
@@ -54,4 +59,27 @@ void RenderBase::drawMultiImages(struct render_surface_t surfaces[], unsigned in
     {
         mRenderDevice->drawMultiImages(surfaces, num, alpha);
     }
+}
+
+unsigned int RenderBase::statFPS()
+{
+    if (mRealFrameCount == 0)
+    {
+        mStartStatTime = clock();
+    }
+
+    mRealFrameCount++;
+    mStatDuration = (clock() - mStartStatTime)/CLOCKS_PER_SEC;
+    if (mStatDuration < 1)
+    {
+        mStatDuration = 1;
+    }
+
+    if (mStatDuration > 5*60)
+    {
+        mRealFrameCount = 0;
+    }
+
+    mRealFPS = mRealFrameCount/mStatDuration;
+    return mRealFPS;
 }
