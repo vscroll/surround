@@ -4,12 +4,12 @@ __kernel void stitch_2d	(__global uchar* image_front,
                         __global uchar* image_right,
                         int side_width,
                         int side_height,
-                        __global uchar* lut_front,
-                        __global uchar* lut_rear,
-                        __global uchar* lut_left,
-                        __global uchar* lut_right,
+                        __global float* lut_front,
+                        __global float* lut_rear,
+                        __global float* lut_left,
+                        __global float* lut_right,
                         __global uchar* mask,
-                        __global uchar* weight,
+                        __global float* weight,
                         int pano_width,
                         int pano_height,
                         __global uchar* pano)
@@ -31,10 +31,10 @@ __kernel void stitch_2d	(__global uchar* image_front,
     {
     case 0:
         {
-            float w = 0.5;//float w = weight[id];
+            float w = weight[id];
             int index1 = lut_front[id];
             int index2 = lut_left[id];
-            pano[id] = /*image_front[index1];*/w*image_front[index1] + (1- w)*image_left[index2];
+            pano[id] = w*image_front[index1] + (1- w)*image_left[index2];
             break;
         }
     case 1:
@@ -45,10 +45,10 @@ __kernel void stitch_2d	(__global uchar* image_front,
         }
     case 2:
         {
-            float w = 0.5;//float w = weight[id];
+            float w = weight[id];
             int index1 = lut_front[id];
             int index2 = lut_right[id];
-            pano[id] = /*image_front[index1];*/w*image_front[index1] + (1 - w)*image_right[index2];
+            pano[id] = w*image_front[index1] + (1 - w)*image_right[index2];
             break;
         }
     case 3:
@@ -70,10 +70,10 @@ __kernel void stitch_2d	(__global uchar* image_front,
         }
     case 6:
         {
-            float w = 0.5;//float w = weight[id];
+            float w = weight[id];
             int index1 = lut_rear[id];
             int index2 = lut_left[id];
-            pano[id] = /*image_rear[index1];*/w*image_rear[index1] + (1 - w)*image_left[index2];
+            pano[id] = w*image_rear[index1] + (1 - w)*image_left[index2];
             break;
         }
     case 7:
@@ -84,10 +84,10 @@ __kernel void stitch_2d	(__global uchar* image_front,
         }
     case 8:
         {
-            float w = 0.5;//float w = weight[id];
+            float w = weight[id];
             size_t index1 = lut_rear[id];
             size_t index2 = lut_right[id];
-            pano[id] =/* image_rear[index1];*/w*image_rear[index1] + (1 - w)*image_right[index2];
+            pano[id] = w*image_rear[index1] + (1 - w)*image_right[index2];
             break;
         }
     default:

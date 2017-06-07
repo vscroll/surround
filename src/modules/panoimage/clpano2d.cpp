@@ -181,7 +181,7 @@ int CLPano2D::allocBuffer(surround_image_t* sideImage[],
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mMemLookupTab[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY,
-                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(uchar),
+                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
                                 NULL, &ret);
         if (ret != CL_SUCCESS)
         {
@@ -200,7 +200,7 @@ int CLPano2D::allocBuffer(surround_image_t* sideImage[],
     }
 
     mMemWeight = clCreateBuffer(mContext, CL_MEM_READ_ONLY,
-                                weight.channels()*weight.cols*weight.rows*sizeof(uchar),
+                                weight.channels()*weight.cols*weight.rows*sizeof(float),
                                 NULL, &ret);
     if (ret != CL_SUCCESS)
     {
@@ -305,7 +305,7 @@ int CLPano2D::writeBuffer(surround_image_t* sideImage[],
         ret = clEnqueueWriteBuffer(mCQ,
                                mMemLookupTab[i],
                                CL_TRUE, 0,
-                               lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(uchar),
+                               lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
                                (void*)(lookupTab[i]->data),
                                0, NULL, NULL);
         if (ret != CL_SUCCESS)
@@ -339,7 +339,7 @@ int CLPano2D::writeBuffer(surround_image_t* sideImage[],
     ret = clEnqueueWriteBuffer(mCQ,
                                mMemWeight,
                                CL_TRUE, 0,
-                               weight.channels()*weight.cols*weight.rows*sizeof(uchar),
+                               weight.channels()*weight.cols*weight.rows*sizeof(float),
                                (void*)(weight.data),
                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
@@ -456,7 +456,7 @@ int CLPano2D::allocInputBuffer(surround_image_t* sideImage[],
         //clock_t start2 = clock();
 #endif
         mMemLookupTab[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(uchar),
+                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
                                 (void*)(lookupTab[i]->data),
                                 &ret);
         if (ret != CL_SUCCESS)
@@ -488,7 +488,7 @@ int CLPano2D::allocInputBuffer(surround_image_t* sideImage[],
     //clock_t start5 = clock();
 #endif
     mMemWeight = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                            weight.channels()*weight.cols*weight.rows*sizeof(uchar),
+                            weight.channels()*weight.cols*weight.rows*sizeof(float),
                             (void*)(weight.data),
                             &ret);
     if (ret != CL_SUCCESS)
