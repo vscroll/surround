@@ -35,35 +35,29 @@ public:
 private:
     void clearOverstock();
 
-    void stitching_init(
-        const std::string configPath,
-        cv::Mat& LutFront,
-    	cv::Mat& LutRear,
-    	cv::Mat& LutLeft,
-    	cv::Mat& LutRight,
+    void stitching_init(const std::string configPath,
+        cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
         bool enableOpenCL);
 
-    void stitching(
-        const unsigned char* front,
-        const unsigned char* rear,
-    	const unsigned char* left,
-    	const unsigned char* right,
-    	const cv::Mat& LutFront,
-    	const cv::Mat& LutRear,
-    	const cv::Mat& LutLeft,
-    	const cv::Mat& LutRight,
-    	const cv::Mat& mask,
-    	const cv::Mat& weight,
-        unsigned char* outPano,
-        unsigned int outPanoWidth,
-        unsigned int outPanoHeight,
-        unsigned int outPanoSize);
+    void stitching(surround_image_t* sideImage[],
+    	cv::Mat* lookupTab[],
+    	cv::Mat& mask,
+    	cv::Mat& weight,
+        unsigned int panoWidth,
+        unsigned int panoHeight,
+        unsigned int panoSize,
+        unsigned char* panoImage);
 
-    void stitching_cl(const void* front, const void* rear, const void* left, const void* right,
-                const cv::Mat& mapX, const cv::Mat& mapY, const cv::Mat& mask,
-                void** outPano2D, int outPano2DWidth, int outPano2DHeight);
+    void stitching_cl(surround_image_t* sideImage[],
+    	cv::Mat* lookupTab[],
+    	cv::Mat& mask,
+    	cv::Mat& weight,
+        unsigned int panoWidth,
+        unsigned int panoHeight,
+        unsigned int panoSize,
+        unsigned char* panoImage);
 private:
     ICapture* mCapture;
     ImageSHM* mImageSHM[VIDEO_CHANNEL_SIZE];
@@ -78,15 +72,9 @@ private:
     pthread_mutex_t mOutputPanoImageMutex;
     std::queue<surround_image_t*> mOutputPanoImageQueue;
 
-    cv::Mat mLutFront;
-    cv::Mat mLutRear;
-    cv::Mat mLutLeft;
-    cv::Mat mLutRight;
+    cv::Mat* mLookupTab[VIDEO_CHANNEL_SIZE];
     cv::Mat mMask;
     cv::Mat mWeight;
-
-    cv::Mat mStitchMap;
-    cv::Mat mStitchMask;
 
     cv::Mat mStitchMapAlignX;
     cv::Mat mStitchMapAlignY;
