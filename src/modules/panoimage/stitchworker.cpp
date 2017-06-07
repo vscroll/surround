@@ -466,10 +466,10 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 		{
 			case 0:
 			{
-				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				float w = weight.ptr<float>(i)[0];
 				size_t index1 = lutFront->ptr<float>(i)[0];
 				size_t index2 = lutLeft->ptr<float>(i)[0];
-				panoImage[i] = /*front[index1];*/w*front[index1] + (1- w)*left[index2];
+				panoImage[i] = w*front[index1] + (1- w)*left[index2];
 				break;
 			}
 
@@ -482,10 +482,10 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 
 			case 2:
 			{
-				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				float w = weight.ptr<float>(i)[0];
 				size_t index1 = lutFront->ptr<float>(i)[0];
 				size_t index2 = lutRight->ptr<float>(i)[0];
-				panoImage[i] = /*front[index1];*/w*front[index1] + (1 - w)*right[index2];
+				panoImage[i] = w*front[index1] + (1 - w)*right[index2];
 				break;
 			}
 
@@ -511,10 +511,10 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 
 			case 6:
 			{
-				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				float w = weight.ptr<float>(i)[0];
 				size_t index1 = lutRear->ptr<float>(i)[0];
 				size_t index2 = lutLeft->ptr<float>(i)[0];
-				panoImage[i] = /*rear[index1];*/w*rear[index1] + (1 - w)*left[index2];
+				panoImage[i] = w*rear[index1] + (1 - w)*left[index2];
 				break;
 			}
 
@@ -527,10 +527,10 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 
 			case 8:
 			{
-				float w = 0.5;//float w = weight.ptr<uchar>(i)[0];
+				float w = weight.ptr<float>(i)[0];
 				size_t index1 = lutRear->ptr<float>(i)[0];
 				size_t index2 = lutRight->ptr<float>(i)[0];
-				panoImage[i] =/* rear[index1];*/w*rear[index1] + (1 - w)*right[index2];
+				panoImage[i] = w*rear[index1] + (1 - w)*right[index2];
 				break;
 			}
 			default:
