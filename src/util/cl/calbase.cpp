@@ -50,6 +50,7 @@ int CLBase::loadKernel(char* clFileName, char* clKernelName, cl_kernel* clKernel
     cl_int ret;
     struct kernel_src_str kernel_str;
 
+    printf("\nstart loading %s kernel\n", clFileName);
     ret = cl_load_kernel_source(clFileName, &kernel_str);
     if (ret != CL_SUCCESS)
     {
@@ -61,6 +62,7 @@ int CLBase::loadKernel(char* clFileName, char* clKernelName, cl_kernel* clKernel
         printf("\nLoading CL programs: %s Ok\n", clFileName);
     }
 
+    printf ("\nstart Building kernel\n");
     ret = cl_build_program(&mProgram, &mDeviceId, mContext, &kernel_str);
     if (ret != CL_SUCCESS)
     {
@@ -72,10 +74,11 @@ int CLBase::loadKernel(char* clFileName, char* clKernelName, cl_kernel* clKernel
         printf ("\nBuilding %s kernel Ok\n", clFileName);
     }
 
+    printf ("\nstart Creating kernel\n");
     *clKernel = clCreateKernel(mProgram, clKernelName, &ret);
     if (ret != CL_SUCCESS)
     {
-         printf("\nFailed Creating program\n");
+         printf("\nFailed Creating kernel\n");
          return -1;
     }
     else

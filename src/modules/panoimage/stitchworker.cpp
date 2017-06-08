@@ -209,13 +209,13 @@ void StitchWorker::run()
     int inputImageSize = 0;
     int panoSize = 0;
 
-    clock_t start = clock();
+    clock_t start0 = clock();
     double elapsed_to_last = 0;
     if (mLastCallTime != 0)
     {
-        elapsed_to_last = (double)(start - mLastCallTime)/CLOCKS_PER_SEC;
+        elapsed_to_last = (double)(start0 - mLastCallTime)/CLOCKS_PER_SEC;
     }
-    mLastCallTime = start;
+    mLastCallTime = start0;
 #endif
 
     unsigned char imageBuf[VIDEO_CHANNEL_SIZE][SHM_FRONT_SOURCE_SIZE] = {};
@@ -272,6 +272,9 @@ void StitchWorker::run()
         return;
     }
 
+#if DEBUG_STITCH
+    clock_t start1 = clock();
+#endif
     unsigned char* outPano = new unsigned char[mPanoSize*sizeof(unsigned char)];
 
     long timestamp = surroundImage->timestamp;
@@ -308,8 +311,9 @@ void StitchWorker::run()
                     outPano);
         }
     }
+
 #if DEBUG_STITCH
-       clock_t end = clock();
+    clock_t start2 = clock();
 #endif
 
     delete surroundImage;
@@ -338,7 +342,8 @@ void StitchWorker::run()
             << " thread id:" << getTID()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
-            << ", stitch:" << (double)(end-start)/CLOCKS_PER_SEC
+            << ", read:" << (double)(start1-start0)/CLOCKS_PER_SEC
+            << ", stitch:" << (double)(start2-start1)/CLOCKS_PER_SEC
             << ", input_size:" << inputImageSize
             << ", pano_size:" << panoSize
             << std::endl;

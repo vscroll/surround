@@ -25,7 +25,7 @@ public:
         unsigned int panoSize,
         unsigned char* panoImage);
 private:
-    int allocBuffer(surround_image_t* sideImage[],
+    int allocAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
@@ -33,7 +33,7 @@ private:
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
-    int writeBuffer(surround_image_t* sideImage[],
+    int writeAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
@@ -41,26 +41,23 @@ private:
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
-    void freeBuffer();
+    void freeAllBuffer();
 
-    int allocOutputBuffer(surround_image_t* sideImage[],
-    	cv::Mat* lookupTab[],
-    	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
+    int allocAndWritePanoBuffer(unsigned int panoWidth,
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
-    void freeOutputBuffer();
-    int allocInputBuffer(surround_image_t* sideImage[],
-    	cv::Mat* lookupTab[],
+    void freePanoBuffer();
+
+    int allocAndWriteLookupTabBuffer(cv::Mat* lookupTab[],
     	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
-        unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage);
-    void freeInputBuffer();
+    	cv::Mat& weight);
+    void freeLookupTabBuffer();
+
+    int allocAndWriteSideBuffer(surround_image_t* sideImage[]);
+    void freeSideBuffer();
+
+
 private:
     cl_kernel mKernel;
 
@@ -72,8 +69,9 @@ private:
     cl_mem mMemPanoImage;
     void* mMapPanoImage;
 
-    int mBufferReady ;
-    int mOutputBufferReady;
+    bool mAllBufReady;
+    bool mLookupTabBufReady;
+    bool mPanoBufReady;
 };
 
 #endif // CLPANO2D_H

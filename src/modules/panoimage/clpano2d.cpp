@@ -1,7 +1,6 @@
 #include "clpano2d.h"
 
-#define IMX_OPENCL_ALLOC_ONCE 1
-#define USE_MEM_VERSION_0 1
+#define USE_MEM_VERSION_0 0
 
 #define USE_MAP 0
 
@@ -16,8 +15,9 @@ CLPano2D::CLPano2D()
     mMemPanoImage = NULL;
     mMapPanoImage = NULL;
 
-    mBufferReady = FALSE;
-    mOutputBufferReady = FALSE;
+    mAllBufReady = false;
+    mLookupTabBufReady = false;
+    mPanoBufReady = false;
 }
 
 CLPano2D::~CLPano2D()
@@ -55,31 +55,59 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
         unsigned char* panoImage)
 {
     cl_int ret;
-#if DEBUG_STITCH
-    //clock_t start0 = clock();
-#endif
 #if USE_MEM_VERSION_0
-    if (allocBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+    if (!mAllBufReady)
     {
-        freeBuffer();
-        return -1;
+        if (allocAllBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+        {
+            freeAllBuffer();
+            return -1;
+        }
+
+        mAllBufReady = true;
     }
 
-    if (writeBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+    if (writeAllBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
     {
-        freeBuffer();
         return -1;
     }
 #else
-    if (allocOutputBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+
+#if DEBUG_STITCH
+    clock_t start0 = clock();
+#endif
+    if (allocAndWriteSideBuffer(sideImage) < 0)
     {
-        freeOutputBuffer();
+        freeSideBuffer();
         return -1;
     }
-    if (allocInputBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+
+#if DEBUG_STITCH
+    clock_t start1 = clock();
+#endif
+    if (!mLookupTabBufReady)
     {
-        freeInputBuffer();
-        return -1;
+        if (allocAndWriteLookupTabBuffer(lookupTab, mask, weight) < 0)
+        {
+            freeLookupTabBuffer();
+            return -1;
+        }
+
+        mLookupTabBufReady = true;
+    }
+
+#if DEBUG_STITCH
+    clock_t start2 = clock();
+#endif
+    if (!mPanoBufReady)
+    {
+        if (allocAndWritePanoBuffer(panoWidth, panoHeight, panoSize, panoImage) < 0)
+        {
+            freePanoBuffer();
+            return -1;
+        }
+
+        mPanoBufReady = true;
     }
 #endif
 
@@ -88,12 +116,16 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
     global[1] = panoHeight;
 
 #if DEBUG_STITCH
-    //clock_t start1 = clock();
+    clock_t start3 = clock();
 #endif
+
     ret = clEnqueueNDRangeKernel(mCQ, mKernel, 2, NULL, global, NULL, 0, NULL, NULL);
     //clFlush(mCQ);
     clFinish(mCQ);
-    //clock_t start2 = clock();
+#if DEBUG_STITCH
+    clock_t start4 = clock();
+#endif
+
 #if USE_MAP
     if (mMapPanoImage != NULL)
     {
@@ -109,44 +141,32 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
 #endif
 
 #if DEBUG_STITCH
-    //clock_t start3 = clock();
+    clock_t start5 = clock();
 #endif
 
 #if USE_MEM_VERSION_0
-    // Allocate once
-#if IMX_OPENCL_ALLOC_ONCE
-#else
-    freeBuffer();
-#endif
 
 #else
-    freeInputBuffer();
-
-    // Allocate once
-#if IMX_OPENCL_ALLOC_ONCE
-#else
-    freeOutputBuffer();
-#endif
+    freeSideBuffer();
 
 #endif
 
 #if DEBUG_STITCH
-/*
-    clock_t start4 = clock();
-    printf ("\n stitch_cl_2d: write:%f cmd:%f read:%f del:%f total:%f\n",
-		(start1-start0)/CLOCKS_PER_SEC,
-		(start2-start1)/CLOCKS_PER_SEC,
-		(start3-start2)/CLOCKS_PER_SEC,
-		(start4-start3)/CLOCKS_PER_SEC,
-		(start4-start0)/CLOCKS_PER_SEC	
-		);
-*/
+    clock_t start6 = clock();
+    printf ("\n stitch_cl_2d: %f %f %f %f %f %f %f\n",
+		(double)(start1-start0)/CLOCKS_PER_SEC,
+		(double)(start2-start1)/CLOCKS_PER_SEC,
+		(double)(start3-start2)/CLOCKS_PER_SEC,
+		(double)(start4-start3)/CLOCKS_PER_SEC,
+		(double)(start5-start4)/CLOCKS_PER_SEC,
+		(double)(start6-start5)/CLOCKS_PER_SEC,
+		(double)(start6-start0)/CLOCKS_PER_SEC);
 #endif
 
     return 0;
 }
 
-int CLPano2D::allocBuffer(surround_image_t* sideImage[],
+int CLPano2D::allocAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
@@ -155,15 +175,7 @@ int CLPano2D::allocBuffer(surround_image_t* sideImage[],
         unsigned int panoSize,
         unsigned char* panoImage)
 {
-#if IMX_OPENCL_ALLOC_ONCE
-    //allocation once
-    if (mBufferReady)
-    {
-        return 0;
-    }
-#endif
-
-    printf ("\nAllocation buffer start\n");
+    printf ("\nAllocation buffer all start\n");
 
     cl_int ret;
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -242,27 +254,11 @@ int CLPano2D::allocBuffer(surround_image_t* sideImage[],
          return -1;
     }
 
-    mBufferReady = TRUE;
-    printf ("\nAllocation buffer ok\n");
+    printf ("\nAllocation buffer all ok\n");
     return 0;
 }
 
-void CLPano2D::freeBuffer()
-{
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        clReleaseMemObject(mMemSideImage[i]);
-        clReleaseMemObject(mMemLookupTab[i]);
-    }
-
-    clReleaseMemObject(mMemMask);
-    clReleaseMemObject(mMemWeight);
-    clReleaseMemObject(mMemPanoImage);
-
-    mBufferReady = FALSE;
-}
-
-int CLPano2D::writeBuffer(surround_image_t* sideImage[],
+int CLPano2D::writeAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
@@ -272,15 +268,8 @@ int CLPano2D::writeBuffer(surround_image_t* sideImage[],
         unsigned char* panoImage)
 {
     cl_int ret;
-#if DEBUG_STITCH
-    //clock_t start0 = clock();
-#endif
-
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-#if DEBUG_STITCH
-        //clock_t start1 = clock();
-#endif
         ret = clEnqueueWriteBuffer(mCQ,
                                mMemSideImage[i],
                                CL_TRUE, 0,
@@ -292,256 +281,51 @@ int CLPano2D::writeBuffer(surround_image_t* sideImage[],
             printf ("\nFailed write buffer sideImage[%d] ret=%d\n", i, ret);
             return -1;
         }
-#if DEBUG_STITCH
-        //clock_t start2 = clock();
-#endif
     }
 
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-#if DEBUG_STITCH
-        //clock_t start3 = clock();
-#endif
         ret = clEnqueueWriteBuffer(mCQ,
-                               mMemLookupTab[i],
-                               CL_TRUE, 0,
-                               lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
-                               (void*)(lookupTab[i]->data),
-                               0, NULL, NULL);
+                                mMemLookupTab[i],
+                                CL_TRUE, 0,
+                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
+                                (void*)(lookupTab[i]->data),
+                                0, NULL, NULL);
         if (ret != CL_SUCCESS)
         {
             printf ("\nFailed write buffer lookupTab[%d] ret=%d\n", i, ret);
             return -1;
         }
-#if DEBUG_STITCH
-        //clock_t start4 = clock();
-#endif
     }
 
-#if DEBUG_STITCH
-    //clock_t start5 = clock();
-#endif
     ret = clEnqueueWriteBuffer(mCQ,
-                               mMemMask,
-                               CL_TRUE, 0,
-                               mask.channels()*mask.cols*mask.rows*sizeof(uchar),
-                               (void*)(mask.data),
-                               0, NULL, NULL);
+                                mMemMask,
+                                CL_TRUE, 0,
+                                mask.channels()*mask.cols*mask.rows*sizeof(uchar),
+                                (void*)(mask.data),
+                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         printf ("\nFailed write buffer mask ret=%d %d %d %d\n", ret, mask.channels(), mask.cols, mask.rows);
         return -1;
     }
 
-#if DEBUG_STITCH
-    //clock_t start6 = clock();
-#endif
     ret = clEnqueueWriteBuffer(mCQ,
-                               mMemWeight,
-                               CL_TRUE, 0,
-                               weight.channels()*weight.cols*weight.rows*sizeof(float),
-                               (void*)(weight.data),
-                               0, NULL, NULL);
+                                mMemWeight,
+                                CL_TRUE, 0,
+                                weight.channels()*weight.cols*weight.rows*sizeof(float),
+                                (void*)(weight.data),
+                                0, NULL, NULL);
     if (ret != CL_SUCCESS)
     {
         printf ("\nFailed write buffer weight ret=%d %d %d %d\n", ret, weight.channels(), weight.cols, weight.rows);
         return -1;
     }
 
-#if DEBUG_STITCH
-/*    clock_t start7 = clock();
-    printf ("\n = stitch_cl_write_pano2d_buffer: %f %f %f %f %f %f %f %f\n",
-		(start1-start0)/CLOCKS_PER_SEC,
-		(start2-start1)/CLOCKS_PER_SEC,
-		(start3-start2)/CLOCKS_PER_SEC,
-		(start4-start3)/CLOCKS_PER_SEC,
-		(start5-start4)/CLOCKS_PER_SEC,
-		(start6-start5)/CLOCKS_PER_SEC,
-		(start7-start6)/CLOCKS_PER_SEC,
-		(start7-start0)/CLOCKS_PER_SEC
-		);
-*/
-#endif
-
     return 0;
 }
 
-int CLPano2D::allocOutputBuffer(surround_image_t* sideImage[],
-    	cv::Mat* lookupTab[],
-    	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
-        unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage)
-{
-    cl_int ret;
-#if IMX_OPENCL_ALLOC_ONCE
-    //allocation once
-    if (mOutputBufferReady)
-    {
-        return 0;
-    }
-#endif
-
-    printf ("\nAllocation buffer start\n");
-
-    int size = panoSize*sizeof(uchar);
-    mMemPanoImage = clCreateBuffer(mContext,
-                        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                        size, NULL, &ret);
-    if (ret != CL_SUCCESS)
-    {
-        printf ("\nFailed Allocation buffer panoimage %d\n", ret);
-        return -1;
-    }
-
-#if USE_MAP
-    mMapPanoImage = clEnqueueMapBuffer(mCQ, mMemPanoImage, CL_TRUE, CL_MAP_READ, 0,
-		                size, 0, NULL, NULL, &ret);
-    if (ret != CL_SUCCESS)
-    {
-        printf ("\nFailed Map panoimage buffer\n");
-        return -1;
-    }
-#endif
-
-    mOutputBufferReady = TRUE;
-    printf ("\nAllocation buffer ok\n");
-
-    return 0;
-}
-
-void CLPano2D::freeOutputBuffer()
-{
-    clEnqueueUnmapMemObject(mCQ, mMemPanoImage, mMapPanoImage, 0, NULL, NULL);
-    clReleaseMemObject(mMemPanoImage);
-    mOutputBufferReady = FALSE;
-}
-
-int CLPano2D::allocInputBuffer(surround_image_t* sideImage[],
-    	cv::Mat* lookupTab[],
-    	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
-        unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage)
-{
-    cl_int ret;
-
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-#if DEBUG_STITCH
-        //clock_t start0 = clock();
-#endif
-        mMemSideImage[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                                sideImage[i]->info.size*sizeof(uchar),
-                                (void*)(sideImage[i]->data),
-                                &ret);
-        if (ret != CL_SUCCESS)
-        {
-            printf ("\nFailed Allocation buffer sideimage[%d] ret=%d\n", i, ret);
-            return -1;
-        }
-
-#if DEBUG_STITCH
-        //clock_t start1 = clock();
-#endif
-    }
-
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-#if DEBUG_STITCH
-        //clock_t start2 = clock();
-#endif
-        mMemLookupTab[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
-                                (void*)(lookupTab[i]->data),
-                                &ret);
-        if (ret != CL_SUCCESS)
-        {
-            printf ("\nFailed Allocation buffer sideimage[%d] ret=%d\n", i, ret);
-            return -1;
-        }
-
-#if DEBUG_STITCH
-        //clock_t start3 = clock();
-#endif
-    }
-
-
-#if DEBUG_STITCH
-    //clock_t start4 = clock();
-#endif
-    mMemMask = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                            mask.channels()*mask.cols*mask.rows*sizeof(uchar),
-                            (void*)(mask.data),
-                            &ret);
-    if (ret != CL_SUCCESS)
-    {
-        printf ("\nFailed Allocation buffer mask %d\n", ret);
-        return -1;
-    }
-
-#if DEBUG_STITCH
-    //clock_t start5 = clock();
-#endif
-    mMemWeight = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-                            weight.channels()*weight.cols*weight.rows*sizeof(float),
-                            (void*)(weight.data),
-                            &ret);
-    if (ret != CL_SUCCESS)
-    {
-        printf ("\nFailed Allocation buffer weight %d\n", ret);
-        return -1;
-    }
-
-#if DEBUG_STITCH
-    //clock_t start6 = clock();
-#endif
-
-    int argc = 0;
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        ret = clSetKernelArg(mKernel, argc++, sizeof(cl_mem), &mMemSideImage[i]);
-    }
-
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(int), &(sideImage[0]->info.width));
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(int), &(sideImage[0]->info.height));
-
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        ret |= clSetKernelArg (mKernel, argc++, sizeof(cl_mem), &mMemLookupTab[i]);
-    }
-
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(cl_mem), &mMemMask);
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(cl_mem), &mMemWeight);
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(int), &(panoWidth));
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(int), &(panoHeight));
-    ret |= clSetKernelArg(mKernel, argc++, sizeof(cl_mem), &mMemPanoImage);
-    if (ret != CL_SUCCESS)
-    {
-         printf ("\nFailed set kernel arg\n");
-         return -1;
-    }
-
-#if DEBUG_STITCH
-/*
-    printf ("\n stitch_cl_write_pano2d_buffer2: front:%f rear:%f left:%f right:%f mask:%f mapx:%f mapy:%f total:%f\n",
-		(start1-start0)/CLOCKS_PER_SEC,
-		(start2-start1)/CLOCKS_PER_SEC,
-		(start3-start2)/CLOCKS_PER_SEC,
-		(start4-start3)/CLOCKS_PER_SEC,
-		(start5-start4)/CLOCKS_PER_SEC,
-		(start6-start5)/CLOCKS_PER_SEC
-		);
-*/
-#endif
-    return 0;
-}
-
-void CLPano2D::freeInputBuffer()
+void CLPano2D::freeAllBuffer()
 {
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
@@ -551,5 +335,165 @@ void CLPano2D::freeInputBuffer()
 
     clReleaseMemObject(mMemMask);
     clReleaseMemObject(mMemWeight);
+    clReleaseMemObject(mMemPanoImage);
 }
+
+int CLPano2D::allocAndWriteSideBuffer(surround_image_t* sideImage[])
+{
+    cl_int ret;
+
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        mMemSideImage[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                                sideImage[i]->info.size*sizeof(uchar),
+                                (void*)(sideImage[i]->data),
+                                &ret);
+        if (ret != CL_SUCCESS)
+        {
+            printf ("\nFailed Allocation buffer sideimage[%d] ret=%d\n", i, ret);
+            return -1;
+        }
+    }
+
+    ret = clSetKernelArg(mKernel, 0, sizeof(cl_mem), &mMemSideImage[VIDEO_CHANNEL_FRONT]);
+    ret |= clSetKernelArg(mKernel, 1, sizeof(cl_mem), &mMemSideImage[VIDEO_CHANNEL_REAR]);
+    ret |= clSetKernelArg(mKernel, 2, sizeof(cl_mem), &mMemSideImage[VIDEO_CHANNEL_LEFT]);
+    ret |= clSetKernelArg(mKernel, 3, sizeof(cl_mem), &mMemSideImage[VIDEO_CHANNEL_RIGHT]);
+
+    ret |= clSetKernelArg(mKernel, 4, sizeof(int), &(sideImage[VIDEO_CHANNEL_FRONT]->info.width));
+    ret |= clSetKernelArg(mKernel, 5, sizeof(int), &(sideImage[VIDEO_CHANNEL_FRONT]->info.height));
+    if (ret != CL_SUCCESS)
+    {
+         printf ("\nFailed set kernel side arg\n");
+         return -1;
+    }
+
+    return 0;
+}
+
+void CLPano2D::freeSideBuffer()
+{
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        clReleaseMemObject(mMemSideImage[i]);
+    }
+}
+
+int CLPano2D::allocAndWriteLookupTabBuffer(cv::Mat* lookupTab[],
+    	cv::Mat& mask,
+    	cv::Mat& weight)
+{
+    cl_int ret;
+
+    printf ("\nAllocation buffer lookuptab start\n");
+
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        mMemLookupTab[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                                lookupTab[i]->channels()*lookupTab[i]->cols*lookupTab[i]->rows*sizeof(float),
+                                (void*)(lookupTab[i]->data),
+                                &ret);
+        if (ret != CL_SUCCESS)
+        {
+            printf ("\nFailed Allocation buffer lookuptab[%d] ret=%d\n", i, ret);
+            return -1;
+        }
+    }
+
+    mMemMask = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                        mask.channels()*mask.cols*mask.rows*sizeof(uchar),
+                        (void*)(mask.data),
+                        &ret);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("\nFailed Allocation buffer mask %d\n", ret);
+        return -1;
+    }
+
+    mMemWeight = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+            weight.channels()*weight.cols*weight.rows*sizeof(float),
+            (void*)(weight.data),
+            &ret);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("\nFailed Allocation buffer weight %d\n", ret);
+        return -1;
+    }
+
+    ret = clSetKernelArg (mKernel, 6, sizeof(cl_mem), &mMemLookupTab[VIDEO_CHANNEL_FRONT]);
+    ret |= clSetKernelArg (mKernel, 7, sizeof(cl_mem), &mMemLookupTab[VIDEO_CHANNEL_REAR]);
+    ret |= clSetKernelArg (mKernel, 8, sizeof(cl_mem), &mMemLookupTab[VIDEO_CHANNEL_LEFT]);
+    ret |= clSetKernelArg (mKernel, 9, sizeof(cl_mem), &mMemLookupTab[VIDEO_CHANNEL_RIGHT]);
+    ret |= clSetKernelArg(mKernel, 10, sizeof(cl_mem), &mMemMask);
+    ret |= clSetKernelArg(mKernel, 11, sizeof(cl_mem), &mMemWeight);
+    if (ret != CL_SUCCESS)
+    {
+         printf ("\nFailed set kernel lookuptab arg\n");
+         return -1;
+    }
+
+    printf ("\nAllocation buffer lookuptab ok\n");
+    return 0;
+}
+
+void CLPano2D::freeLookupTabBuffer()
+{
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        clReleaseMemObject(mMemLookupTab[i]);
+    }
+
+    clReleaseMemObject(mMemMask);
+    clReleaseMemObject(mMemWeight);
+}
+
+int CLPano2D::allocAndWritePanoBuffer(unsigned int panoWidth,
+        unsigned int panoHeight,
+        unsigned int panoSize,
+        unsigned char* panoImage)
+{
+    cl_int ret;
+
+    printf ("\nAllocation buffer pano start\n");
+
+    int size = panoSize*sizeof(uchar);
+    mMemPanoImage = clCreateBuffer(mContext,
+                        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                        size, NULL, &ret);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("\nFailed Allocation buffer pano %d\n", ret);
+        return -1;
+    }
+
+#if USE_MAP
+    mMapPanoImage = clEnqueueMapBuffer(mCQ, mMemPanoImage, CL_TRUE, CL_MAP_READ, 0,
+		                size, 0, NULL, NULL, &ret);
+    if (ret != CL_SUCCESS)
+    {
+        printf ("\nFailed Map pano buffer\n");
+        return -1;
+    }
+#endif
+
+    ret = clSetKernelArg(mKernel, 12, sizeof(int), &(panoWidth));
+    ret |= clSetKernelArg(mKernel, 13, sizeof(int), &(panoHeight));
+    ret |= clSetKernelArg(mKernel, 14, sizeof(cl_mem), &mMemPanoImage);
+    if (ret != CL_SUCCESS)
+    {
+         printf ("\nFailed set kernel arg\n");
+         return -1;
+    }
+
+    printf ("\nAllocation buffer pano ok\n");
+
+    return 0;
+}
+
+void CLPano2D::freePanoBuffer()
+{
+    clEnqueueUnmapMemObject(mCQ, mMemPanoImage, mMapPanoImage, 0, NULL, NULL);
+    clReleaseMemObject(mMemPanoImage);
+}
+
 
