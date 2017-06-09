@@ -1,6 +1,8 @@
 #include "sourceshmwriteworker.h"
+#include <iostream>
 #include "ICapture.h"
 #include "imageshm.h"
+#include "util.h"
 
 SourceSHMWriteWorker::SourceSHMWriteWorker(ICapture* capture, unsigned int channelIndex)
 {

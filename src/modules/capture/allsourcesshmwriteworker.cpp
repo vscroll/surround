@@ -1,6 +1,8 @@
 #include "allsourcesshmwriteworker.h"
+#include <iostream>
 #include "ICapture.h"
 #include "imageshm.h"
+#include "util.h"
 
 AllSourcesSHMWriteWorker::AllSourcesSHMWriteWorker(ICapture* capture)
 {

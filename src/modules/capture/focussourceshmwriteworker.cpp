@@ -1,4 +1,5 @@
 #include "focussourceshmwriteworker.h"
+#include <iostream>
 #include "ICapture.h"
 #include "imageshm.h"
 
