@@ -46,7 +46,7 @@ class SHMUtil;
 class ImageSHM
 {
 public:
-    ImageSHM(bool isNoWait = false);
+    ImageSHM(bool isNoWait = true);
     virtual ~ImageSHM();
     int create(key_t key, unsigned int size);
     void destroy();
