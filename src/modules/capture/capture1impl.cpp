@@ -1,5 +1,6 @@
 #include "capture1impl.h"
 #include "capture1workerv4l2.h"
+#include <stdio.h>
 
 Capture1Impl::Capture1Impl(unsigned int channelNum)
 {
@@ -155,40 +156,39 @@ int Capture1Impl::getFPS(unsigned int channelIndex, unsigned int* fps)
 
 surround_images_t* Capture1Impl::popOneFrame()
 {
-    surround_images_t* pFrame = NULL;
-    bool isFullFrame = true;
+    surround_images_t* pFrame = new surround_images_t();
+    pFrame->timestamp = 0;
+    bool isFull = true;
     for (unsigned int i = 0; i < mChannelNum; ++i)
     {
-        if (mCaptureWorker[i]->getFrameCount() == 0)
+        surround_image_t* tmp = mCaptureWorker[i]->popOneFrame();
+        if (NULL != tmp)
         {
-            isFullFrame = false;
+            pFrame->frame[i].data = tmp->data;
+            pFrame->frame[i].info.width = tmp->info.width;
+            pFrame->frame[i].info.height = tmp->info.height;
+            pFrame->frame[i].info.pixfmt = tmp->info.pixfmt;
+            pFrame->frame[i].info.size = tmp->info.size;
+
+            // get the earliest one
+            if (pFrame->timestamp == 0
+                || pFrame->timestamp > tmp->timestamp)
+            {
+                pFrame->timestamp = tmp->timestamp;
+            }
+            delete tmp;
+        }
+        else
+        {
+            isFull = false;
+            break;
         }
     }
 
-    if (isFullFrame)
+    if (!isFull)
     {
-        pFrame = new surround_images_t();
-        pFrame->timestamp = 0;
-        for (unsigned int i = 0; i < mChannelNum; ++i)
-        {
-            surround_image_t* tmp = mCaptureWorker[i]->popOneFrame();
-            if (NULL != tmp)
-            {
-                pFrame->frame[i].data = tmp->data;
-                pFrame->frame[i].info.width = tmp->info.width;
-                pFrame->frame[i].info.height = tmp->info.height;
-                pFrame->frame[i].info.pixfmt = tmp->info.pixfmt;
-                pFrame->frame[i].info.size = tmp->info.size;
-
-                // get the earliest one
-                if (pFrame->timestamp == 0
-                    || pFrame->timestamp > tmp->timestamp)
-                {
-                    pFrame->timestamp = tmp->timestamp;
-                }
-                delete tmp;
-            }
-        }
+        delete pFrame;
+        pFrame = NULL;
     }
 
     return pFrame;

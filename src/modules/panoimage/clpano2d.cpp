@@ -180,12 +180,22 @@ int CLPano2D::allocAllBuffer(surround_image_t* sideImage[],
     cl_int ret;
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
+        if (sideImage[i]->info.width == 0
+            || sideImage[i]->info.height == 0
+            || sideImage[i]->info.size == 0)
+        {
+            printf ("\nFailed Allocation buffer sideimage[%d] width=%d height=%d size=%d ret=%d\n",
+                i, sideImage[i]->info.width, sideImage[i]->info.height, sideImage[i]->info.size, ret);
+            return -1;
+        }
+
         mMemSideImage[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY,
                                 sideImage[i]->info.size*sizeof(uchar),
                                 NULL, &ret);
         if (ret != CL_SUCCESS)
         {
-            printf("\nFailed Allocation sideImage[%d] buffer ret=%d\n", i, ret);
+            printf ("\nFailed Allocation buffer sideimage[%d] width=%d height=%d size=%d ret=%d\n",
+                i, sideImage[i]->info.width, sideImage[i]->info.height, sideImage[i]->info.size, ret);
             return -1;
         }
     }
@@ -344,6 +354,15 @@ int CLPano2D::allocAndWriteSideBuffer(surround_image_t* sideImage[])
 
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
+        if (sideImage[i]->info.width == 0
+            || sideImage[i]->info.height == 0
+            || sideImage[i]->info.size == 0)
+        {
+            printf ("\nFailed Allocation buffer sideimage[%d] width=%d height=%d size=%d ret=%d\n",
+                i, sideImage[i]->info.width, sideImage[i]->info.height, sideImage[i]->info.size, ret);
+            return -1;
+        }
+
         mMemSideImage[i] = clCreateBuffer(mContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
                                 sideImage[i]->info.size*sizeof(uchar),
                                 (void*)(sideImage[i]->data),
