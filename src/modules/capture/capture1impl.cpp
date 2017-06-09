@@ -175,6 +175,10 @@ surround_images_t* Capture1Impl::popOneFrame()
             if (NULL != tmp)
             {
                 pFrame->frame[i].data = tmp->data;
+                pFrame->frame[i].info.width = tmp->info.width;
+                pFrame->frame[i].info.height = tmp->info.height;
+                pFrame->frame[i].info.pixfmt = tmp->info.pixfmt;
+                pFrame->frame[i].info.size = tmp->info.size;
 
                 // get the earliest one
                 if (pFrame->timestamp == 0

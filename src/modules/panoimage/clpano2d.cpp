@@ -350,7 +350,8 @@ int CLPano2D::allocAndWriteSideBuffer(surround_image_t* sideImage[])
                                 &ret);
         if (ret != CL_SUCCESS)
         {
-            printf ("\nFailed Allocation buffer sideimage[%d] ret=%d\n", i, ret);
+            printf ("\nFailed Allocation buffer sideimage[%d] width=%d height=%d size=%d ret=%d\n",
+                i, sideImage[i]->info.width, sideImage[i]->info.height, sideImage[i]->info.size, ret);
             return -1;
         }
     }
