@@ -25,7 +25,7 @@ public:
     static int setFps(int fd, int fps);
     static int v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type, int fd_ipu, unsigned int frame_size);
     static int v4l2AllocBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type, unsigned int frame_size);
-    static int startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type);
+    static int startCapture(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type);
     static void stoptCapture(int fd);
     static int readFrame(int fd, struct v4l2_buffer* buf, v4l2_memory mem_type);
     static void v4l2QueueBuf(int fd, struct v4l2_buffer* buf);

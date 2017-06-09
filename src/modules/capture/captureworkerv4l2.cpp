@@ -118,7 +118,7 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
 
 #endif
 
-        if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], mMemType))
+        if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType))
         {
             return -1;
         }

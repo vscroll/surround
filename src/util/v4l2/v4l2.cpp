@@ -5,11 +5,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
-#include "common.h"
-
-#if USE_IMX_IPU
 #include <linux/ipu.h>
-#endif
 
 V4l2::V4l2()
 {
@@ -178,7 +174,7 @@ int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4
             {
                 std::cout << "V4l2::initV4l2Buf"
                         << ", mmap failed"
-			<< std::endl;
+                        << std::endl;
                 return -1;
             }
             memset(v4l2_buf[i].start, 0xFF, v4l2_buf[i].length);
@@ -186,7 +182,6 @@ int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4
     }
     else if (mem_type == V4L2_MEMORY_USERPTR)
     {
-#if USE_IMX_IPU
         for (unsigned int i = 0; i < req.count; ++i)
         {
             //unsigned int page_size = getpagesize();
@@ -197,7 +192,7 @@ int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4
             {
                 std::cout << "V4l2::initV4l2Buf"
                         << ", IPU_ALLOC failed"
-			<< std::endl;
+                        << std::endl;
                 return -1;
             }
 
@@ -207,7 +202,7 @@ int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4
             {
                 std::cout << "V4l2::initV4l2Buf"
                         << ", ipu map failed"
-			<< std::endl;
+                        << std::endl;
                 return -1;
             }
 /*
@@ -226,16 +221,15 @@ int V4l2::v4l2ReqBuf(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4
             }
 */
         }
-#endif
     }
 
     return 0;
 }
 
-int V4l2::startCapture(int fd, struct buffer* v4l2_buf, v4l2_memory mem_type)
+int V4l2::startCapture(int fd, struct buffer* v4l2_buf, unsigned int buf_count, v4l2_memory mem_type)
 {
     unsigned int i = 0;
-    for (i = 0; i < V4L2_BUF_COUNT; ++i)
+    for (i = 0; i < buf_count; ++i)
     {
         struct v4l2_buffer buf;
         memset(&buf, 0, sizeof(buf));

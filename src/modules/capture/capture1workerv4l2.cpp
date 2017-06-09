@@ -111,7 +111,7 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
             << std::endl;
 #endif
 
-    if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, mMemType))
+    if (-1 == V4l2::startCapture(mVideoFd, mV4l2Buf, V4L2_BUF_COUNT, mMemType))
     {
         return -1;
     }
@@ -221,6 +221,39 @@ void Capture1WorkerV4l2::run()
 
             if (!isNeedConvert(&mSink, &mSource))
             {
+             
+#if USE_IMX_IPU
+                // IPU can improve image quality, even though the source is same as the sink
+                struct ipu_task task;
+                memset(&task, 0, sizeof(struct ipu_task));
+                task.input.width  = mSink.width;
+                task.input.height = mSink.height;
+                task.input.crop.pos.x = mSink.crop_x;
+                task.input.crop.pos.y = mSink.crop_y;
+                task.input.crop.w = mSink.crop_w;
+                task.input.crop.h = mSink.crop_h;
+                task.input.format = mSink.pixfmt;
+                task.input.deinterlace.enable = 1;
+                task.input.deinterlace.motion = 2;
+
+                task.output.width = mSource.width;
+                task.output.height = mSource.height;
+                task.output.crop.pos.x = 0;
+                task.output.crop.pos.y = 0;
+                task.output.crop.w = mSource.width;
+                task.output.crop.h = mSource.height;
+                task.output.format = mSource.pixfmt;
+
+                task.input.paddr = (int)mV4l2Buf[buf.index].offset;
+                task.output.paddr = (int)mOutIPUBuf.offset;
+                if (ioctl(mIPUFd, IPU_QUEUE_TASK, &task) < 0) {
+                    std::cout << "CaptureWorkerV4l2::onCapture"
+                            << ", ipu task failed:" << mIPUFd
+                            << std::endl;
+                    return;
+                }
+#endif
+
                 surround_image_t* surround_image = new surround_image_t();
                 surround_image->timestamp = Util::get_system_milliseconds();
                 surround_image->info.pixfmt = mSource.pixfmt;
@@ -229,7 +262,11 @@ void Capture1WorkerV4l2::run()
                 surround_image->info.size = mSource.size;
                 //surround_image->data = new unsigned char[mFocusSource.size];
                 //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
+#if USE_IMX_IPU
+                surround_image->data = mOutIPUBuf.start;         
+#else
                 surround_image->data = mV4l2Buf[buf.index].start;
+#endif
 
                 pthread_mutex_lock(&mMutexQueue);
                 mSurroundImageQueue.push(surround_image);
