@@ -1,8 +1,9 @@
-# make debug="capture_main panoimage_main render_main"
+# make debug="capture_main panoimage_main capture_pano_main render_main"
 
 SUBDIRS = \
         src/modules/apptest/capture_main \
         src/modules/apptest/panoimage_main \
+        src/modules/apptest/capture_pano_main \
         src/modules/apptest/render_main \
         src/modules/apptest/calibrate_main \
         src/modules/apptest/controller_main \
