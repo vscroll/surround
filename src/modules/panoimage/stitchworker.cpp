@@ -8,6 +8,35 @@
 
 using namespace cv;
 
+StitchWorker::SourceSHMReadWorker::SourceSHMReadWorker(ImageSHM* imageSHM)
+{
+    mImageSHM = imageSHM;
+}
+
+
+StitchWorker::SourceSHMReadWorker::~SourceSHMReadWorker()
+{
+}
+
+void StitchWorker::SourceSHMReadWorker::run()
+{
+    if (NULL != mImageSHM)
+    {
+        if (mImageSHM->readSource(mImageBuf, sizeof(mImageBuf)) < 0)
+        {
+            return;
+        }
+
+        image_shm_header_t* header = (image_shm_header_t*)mImageBuf;
+        mImage.info.width = header->width;
+        mImage.info.height = header->height;
+        mImage.info.pixfmt = header->pixfmt;
+        mImage.info.size = header->size;
+        mImage.timestamp = header->timestamp;
+        mImage.data = mImageBuf + sizeof(image_shm_header_t);
+    }
+}
+
 StitchWorker::StitchWorker()
 {
     mCapture = NULL;
@@ -15,6 +44,7 @@ StitchWorker::StitchWorker()
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mImageSHM[i] = NULL;
+        mSourceSHMReadWorker[i] = NULL;
     }
 
     pthread_mutex_init(&mInputImagesMutex, NULL);
@@ -46,6 +76,13 @@ StitchWorker::~StitchWorker()
             delete mImageSHM[i];
             mImageSHM[i] = NULL;
         }
+
+        if (NULL != mSourceSHMReadWorker[i])
+        {
+            mSourceSHMReadWorker[i]->stop();
+            delete mSourceSHMReadWorker[i];
+            mSourceSHMReadWorker[i] = NULL;
+        }
     }
 
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -76,6 +113,8 @@ int StitchWorker::init(
         {
             mImageSHM[i] = new ImageSHM();
             mImageSHM[i]->create((key_t)(SHM_FRONT_SOURCE_ID + i), SHM_FRONT_SOURCE_SIZE);
+            mSourceSHMReadWorker[i] = new SourceSHMReadWorker(mImageSHM[i]);
+            mSourceSHMReadWorker[i]->start(VIDEO_FPS_30);
         }
     }
 
@@ -231,6 +270,7 @@ void StitchWorker::run()
         //one source may be come from share memory
         surroundImage = new surround_images_t();
         surroundImage->timestamp = 0;
+#if 0
         for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
             if (NULL != mImageSHM[i])
@@ -254,6 +294,35 @@ void StitchWorker::run()
                     surroundImage->timestamp = surroundImage->frame[i].timestamp;
                 }
             }
+        }
+#endif
+        bool isFull = true;
+        for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+        {
+            if (NULL != mSourceSHMReadWorker[i]
+                && NULL != mSourceSHMReadWorker[i])
+            {
+                surroundImage->frame[i].info.width = mSourceSHMReadWorker[i]->mImage.info.width;
+                surroundImage->frame[i].info.height = mSourceSHMReadWorker[i]->mImage.info.height;
+                surroundImage->frame[i].info.pixfmt = mSourceSHMReadWorker[i]->mImage.info.pixfmt;
+                surroundImage->frame[i].info.size = mSourceSHMReadWorker[i]->mImage.info.size;
+                surroundImage->frame[i].timestamp = mSourceSHMReadWorker[i]->mImage.timestamp;
+                surroundImage->frame[i].data = mSourceSHMReadWorker[i]->mImage.data;
+                if (surroundImage->timestamp < surroundImage->frame[i].timestamp)
+                {
+                    surroundImage->timestamp = surroundImage->frame[i].timestamp;
+                }
+            }
+            else
+            {
+                isFull = false;
+            }
+        }
+
+        if (!isFull)
+        {
+            delete surroundImage;
+            surroundImage = NULL;
         }
 #if 0
         pthread_mutex_lock(&mInputImagesMutex);

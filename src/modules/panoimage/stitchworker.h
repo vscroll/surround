@@ -5,9 +5,9 @@
 #include "wrap_thread.h"
 #include <opencv/cv.h>
 #include <queue>
+#include "imageshm.h"
 
 class ICapture;
-class ImageSHM;
 class CLPano2D;
 class StitchWorker : public WrapThread
 {
@@ -58,6 +58,29 @@ private:
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
+
+private:
+    class SourceSHMReadWorker : public WrapThread
+    {
+    public:
+        SourceSHMReadWorker(ImageSHM* imageSHM);
+        virtual ~SourceSHMReadWorker();
+
+    public:
+        virtual void run();
+
+    private:
+        ImageSHM* mImageSHM;
+
+    protected:
+        unsigned char mImageBuf[SHM_FRONT_SOURCE_SIZE];
+        surround_image_t mImage;
+        
+        friend StitchWorker;
+    };
+
+    SourceSHMReadWorker* mSourceSHMReadWorker[VIDEO_CHANNEL_SIZE];
+
 private:
     ICapture* mCapture;
     ImageSHM* mImageSHM[VIDEO_CHANNEL_SIZE];
