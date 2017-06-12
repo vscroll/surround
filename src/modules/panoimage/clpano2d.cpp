@@ -2,7 +2,9 @@
 
 #define USE_MEM_VERSION_0 0
 
+#if (USE_MEM_VERSION_0 == 0)
 #define USE_MAP 0
+#endif
 
 CLPano2D::CLPano2D()
 {
@@ -134,11 +136,11 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
 #else
     ret |= clEnqueueReadBuffer(mCQ, mMemPanoImage, CL_TRUE, 0,
 			panoSize*sizeof(uchar), (void*)(panoImage), 0, NULL, NULL);
+#endif
     if  (ret != CL_SUCCESS)
     {
         printf ("\nError reading output buffer\n");
     }
-#endif
 
 #if DEBUG_STITCH
     clock_t start5 = clock();

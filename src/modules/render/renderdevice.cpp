@@ -29,13 +29,6 @@ RenderDevice::RenderDevice(unsigned int devIndex, bool blank)
     mFBPhys = 0;;
     mFBMem = NULL;
     mFBSize = 0;
-
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        mG2dbuf[i] = NULL;
-    }
-
-    mG2dBufIndex = 0;
 }
 
 RenderDevice::~RenderDevice()
@@ -58,13 +51,6 @@ int RenderDevice::openDevice(unsigned int dstLeft,
 	    return -1;
     }
 
-    if (openG2d() < 0)
-    {
-        closeFramebuffer();
-        closeG2d();
-	    return -1;
-    }
-
     std::cout << "openDevice ok"
             << ", dst left:" << mDstLeft
             << ", dst top:" << mDstTop
@@ -79,7 +65,6 @@ void RenderDevice::closeDevice()
 {
 
     closeFramebuffer();
-    closeG2d();
 }
 
 int RenderDevice::openFramebuffer()
@@ -146,41 +131,6 @@ void RenderDevice::closeFramebuffer()
     }
 }
 
-int RenderDevice::openG2d()
-{
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-#if CACHEABLE
-        mG2dbuf[i] = g2d_alloc(mDstWidth*mDstHeight*3, 1);
-#else
-        mG2dbuf[i] = g2d_alloc(mDstWidth*mDstHeight*3, 0);
-#endif
-        if(NULL == mG2dbuf[i])
-        {
-            std::cout << "Fail to allocate physical memory for image buffer"
-                      << std::endl;
-            return -1;
-        }
-    }
-
-    std::cout << "RenderDevice::openG2d ok"
-              << std::endl;
-
-    return 0;
-}
-
-void RenderDevice::closeG2d()
-{
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-	    if (mG2dbuf[i] != NULL)
-        {
-            g2d_free(mG2dbuf[i]);
-            mG2dbuf[i] = NULL;
-        }
-    }
-}
-
 void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
 {
     if ((surface->dstLeft + surface->dstWidth) > (int)mScreenInfo.xres || (surface->dstTop + surface->dstHeight) > (int)mScreenInfo.yres)  {
@@ -206,11 +156,12 @@ void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
         src.format = G2D_YUYV;
     }
 
-    struct g2d_buf* g2dbuf = mG2dbuf[mG2dBufIndex];
-    if (++mG2dBufIndex >= BUFFER_SIZE)
-    {
-        mG2dBufIndex = 0;
-    }
+    struct g2d_buf* g2dbuf = NULL;
+#if CACHEABLE
+    g2dbuf = g2d_alloc(surface->srcSize, 1);
+#else
+    g2dbuf = g2d_alloc(surface->srcSize, 0);
+#endif
 
     memcpy(g2dbuf->buf_vaddr, surface->srcBuf, surface->srcSize);
 
@@ -311,6 +262,7 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
     }
 
     g2d_close(g2dHandle);
+    g2d_free(g2dbuf);
 }
 
 void RenderDevice::drawMultiImages(struct render_surface_t surfaces[], unsigned int num, bool alpha)

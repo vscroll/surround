@@ -40,8 +40,6 @@ private:
     int openFramebuffer();
     void closeFramebuffer();
 
-    int openG2d();
-    void closeG2d();
 private:
     unsigned int mDevIndex;
     bool mBlank;
@@ -57,13 +55,6 @@ private:
     int mFBPhys;
     unsigned short *mFBMem;
     int mFBSize;
-
-#define BUFFER_SIZE 2
-    struct g2d_buf* mG2dbuf[BUFFER_SIZE];
-
-    unsigned int mG2dBufIndex;
-private:
-
 };
 
 #endif // RENDERDEVICE_H

@@ -66,6 +66,7 @@ void RenderPanoWorker::run()
     mLastCallTime = start;
 #endif
 
+    unsigned char imageBuf[SHM_PANO_SOURCE_SIZE] = {};
     surround_image_t* panoImage = NULL;
     if (NULL != mPanoImage)
     {
@@ -77,7 +78,6 @@ void RenderPanoWorker::run()
         //one source from share memory
         if (NULL != mImageSHM)
         {
-            unsigned char imageBuf[SHM_PANO_SOURCE_SIZE] = {};
             if (mImageSHM->readSource(imageBuf, sizeof(imageBuf)) < 0)
             {
                 return;
@@ -115,6 +115,7 @@ void RenderPanoWorker::run()
     surface.srcPixfmt = panoImage->info.pixfmt;
     surface.srcWidth = panoImage->info.width;
     surface.srcHeight = panoImage->info.height;
+    surface.srcSize = panoImage->info.size;
     surface.dstLeft = mPanoImageLeft;
     surface.dstTop = mPanoImageTop;
     surface.dstWidth = mPanoImageWidth;
