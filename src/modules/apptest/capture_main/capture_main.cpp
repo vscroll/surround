@@ -142,6 +142,8 @@ int main (int argc, char **argv)
     tv.tv_sec = 2;
     tv.tv_usec = 0;
 
+    bool drop = true;
+
     while (true)
     {
         //touch screen to switch focus channel
@@ -156,7 +158,14 @@ int main (int argc, char **argv)
                 usleep(100);
             }
 
+            // drop invaild event at the beginning of app
             int rd = read(eventFd, event, sizeof(struct input_event) * 64);
+            if (drop)
+            {
+                drop = false;
+                continue;
+            }
+
             if (rd >= (int) sizeof(struct input_event))
             {
                 for (int i = 0; i < rd / sizeof(struct input_event); i++)
