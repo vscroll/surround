@@ -42,7 +42,7 @@ void* thread_func(void* args)
         lastTime = clock();
 
         pThread->run();
-        usleep(5);
+        usleep(1000);
 	    //usleep(pThread->mInterval);
     }
     return NULL;   
@@ -60,9 +60,9 @@ WrapThread::~WrapThread()
 
 }
 
-bool WrapThread::start(unsigned int interval, int bindCPUNo)
+bool WrapThread::start(unsigned int freq, int bindCPUNo)
 {
-    mInterval = interval;
+    mInterval = 1000/freq;
     mBindCPUNo = bindCPUNo;
     return pthread_create(&mThreadId, NULL, thread_func, this) == 0;
 }

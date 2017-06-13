@@ -106,7 +106,7 @@ int Capture1Impl::start(unsigned int fps)
     {
         if (NULL != mCaptureWorker[i])
         {
-            mCaptureWorker[i]->start(1000/fps);
+            mCaptureWorker[i]->start(fps);
         }
     }
 

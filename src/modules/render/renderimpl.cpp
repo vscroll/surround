@@ -82,7 +82,7 @@ int RenderImpl::startRenderSide(unsigned int fps)
     {
         mSideWorker->closeDevice();
     }
-    mSideWorker->start(1000/fps);
+    mSideWorker->start(fps);
 
     return 0;
 }
@@ -103,7 +103,7 @@ int RenderImpl::startRenderMark(unsigned int fps)
     {
         mMarkWorker->closeDevice();
     }
-    mMarkWorker->start(1000/fps);
+    mMarkWorker->start(fps);
 
     return 0;
 }
@@ -124,7 +124,7 @@ int RenderImpl::startRenderPano(unsigned int fps)
     {
         mPanoWorker->closeDevice();
     }
-    mPanoWorker->start(1000/fps);
+    mPanoWorker->start(fps);
 
     return 0;
 }

@@ -54,7 +54,7 @@ int PanoImageImpl::start(unsigned int fps)
         return -1;
     }
 
-    return mWorker->start(1000/fps);
+    return mWorker->start(fps);
 }
 
 void PanoImageImpl::stop()

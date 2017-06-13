@@ -10,7 +10,7 @@ public:
     virtual ~WrapThread();
     virtual void run() = 0;
 
-    bool start(unsigned int interval, int bindCPUNo = -1);
+    bool start(unsigned int freq, int bindCPUNo = -1);
     void stop();
     pthread_t getThreadID();
     long int getTID();

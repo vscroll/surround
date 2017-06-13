@@ -162,7 +162,7 @@ void Controller::startLoop(unsigned int freq)
     mPanoSHM = new ImageSHM();
     mPanoSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
 
-    start(1000/freq);
+    start(freq);
 }
 
 void Controller::stopLoop()

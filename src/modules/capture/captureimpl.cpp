@@ -70,7 +70,7 @@ int CaptureImpl::start(unsigned int fps)
         return -1;
     }
 
-    return mCaptureWorker->start(1000/fps);
+    return mCaptureWorker->start(fps);
 }
 
 void CaptureImpl::stop()
