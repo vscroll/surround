@@ -244,6 +244,7 @@ int StitchWorker::init(
 
 void StitchWorker::run()
 {
+    clearOverstock();
 #if DEBUG_STITCH
     int inputImageSize = 0;
     int panoSize = 0;
@@ -442,6 +443,7 @@ void StitchWorker::queueImages(surround_images_t* surroundImages)
 
 void StitchWorker::clearOverstock()
 {
+#if 0
     pthread_mutex_lock(&mInputImagesMutex);
     int size = mInputImagesQueue.size();
     if (size > 5)
@@ -461,12 +463,13 @@ void StitchWorker::clearOverstock()
         }
     }
     pthread_mutex_unlock(&mInputImagesMutex);
+#endif
 
     pthread_mutex_lock(&mOutputPanoImageMutex);
-    size = mOutputPanoImageQueue.size();
-    if (size > 5)
+    int outSize = mOutputPanoImageQueue.size();
+    if (outSize > 100)
     {
-        for (int i = 0; i < size; ++i)
+        for (int i = 0; i < outSize; ++i)
         {
             struct surround_image_t* surroundImage = mOutputPanoImageQueue.front();
             mOutputPanoImageQueue.pop();
