@@ -70,8 +70,6 @@ int ImageSHM::writeSource(surround_image_t* image)
 	    return -1;
     }
 
-    mSHMUtil->p_w();
-
     struct image_shm_header_t header = {};
     header.channel = 0;
     header.width = image->info.width;
@@ -79,10 +77,10 @@ int ImageSHM::writeSource(surround_image_t* image)
     header.pixfmt = image->info.pixfmt;
     header.size = image->info.size;
     header.timestamp = image->timestamp;
-    unsigned char* frame = (unsigned char*)image->data;
 
+    mSHMUtil->p_w();
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
-    memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
+    memcpy(shmAddr+sizeof(struct image_shm_header_t), image->data, header.size);
     mSHMUtil->v_r();
 
     return 0;
@@ -101,8 +99,6 @@ int ImageSHM::writeFocusSource(surround_image_t* image, unsigned int focusChanne
 	    return -1;
     }
 
-    mSHMUtil->p_w();
-
     struct image_shm_header_t header = {};
     header.channel = focusChannelIndex;
     header.width = image->info.width;
@@ -110,10 +106,10 @@ int ImageSHM::writeFocusSource(surround_image_t* image, unsigned int focusChanne
     header.pixfmt = image->info.pixfmt;
     header.size = image->info.size;
     header.timestamp = image->timestamp;
-    unsigned char* frame = (unsigned char*)image->data;
 
+    mSHMUtil->p_w();
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
-    memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
+    memcpy(shmAddr+sizeof(struct image_shm_header_t), image->data, header.size);
     mSHMUtil->v_r();
 
     return 0;
@@ -169,8 +165,6 @@ int ImageSHM::writePanoSources(surround_image_t* image)
 	    return -1;
     }
 
-    mSHMUtil->p_w();
-
     struct image_shm_header_t header = {};
     header.channel = 0;
     header.width = image->info.width;
@@ -178,10 +172,10 @@ int ImageSHM::writePanoSources(surround_image_t* image)
     header.pixfmt = image->info.pixfmt;
     header.size = image->info.size;
     header.timestamp = image->timestamp;
-    unsigned char* frame = (unsigned char*)image->data;
 
+    mSHMUtil->p_w();
     memcpy(shmAddr, &header, sizeof(struct image_shm_header_t));
-    memcpy(shmAddr+sizeof(struct image_shm_header_t), frame, header.size);
+    memcpy(shmAddr+sizeof(struct image_shm_header_t), image->data, header.size);
     mSHMUtil->v_r();
 
     return 0;
