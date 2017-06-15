@@ -37,8 +37,8 @@ protected:
     unsigned int mVideoChannelNum;
     unsigned int mChannel[VIDEO_CHANNEL_SIZE];
 
-    pthread_mutex_t mMutexQueue;
-    std::queue<surround_images_t*> mSurroundImagesQueue;
+    pthread_mutex_t mMutexQueue[VIDEO_CHANNEL_SIZE];
+    std::queue<surround_image_t*> mSurroundImageQueue[VIDEO_CHANNEL_SIZE];
 
     unsigned int mFocusChannelIndex;
     struct cap_src_t mFocusSource;

@@ -317,24 +317,23 @@ void CaptureWorkerV4l2::run()
     //integrity
     if (flag == (1 << mVideoChannelNum))
     {
-        surround_images_t* surroundImage = new surround_images_t();
-        surroundImage->timestamp = timestamp[0];
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
-            surroundImage->frame[i].timestamp = timestamp[i];
-            surroundImage->frame[i].info.width = mSource[i].width;
-            surroundImage->frame[i].info.height = mSource[i].height;
-            surroundImage->frame[i].info.pixfmt = mSource[i].pixfmt;
-            surroundImage->frame[i].info.size = mSource[i].size;
-            surroundImage->frame[i].data = image[i];
-        }
+            surround_image_t* surroundImage = new surround_image_t();
+            surroundImage->timestamp = timestamp[i];
+            surroundImage->info.width = mSource[i].width;
+            surroundImage->info.height = mSource[i].height;
+            surroundImage->info.pixfmt = mSource[i].pixfmt;
+            surroundImage->info.size = mSource[i].size;
+            surroundImage->data = image[i];
 
-        pthread_mutex_lock(&mMutexQueue);
-        mSurroundImagesQueue.push(surroundImage);
+            pthread_mutex_lock(&mMutexQueue[i]);
+            mSurroundImageQueue[i].push(surroundImage);
 #if DEBUG_CAPTURE
-        size = mSurroundImagesQueue.size();
+            size = mSurroundImageQueue[i].size();
 #endif
-        pthread_mutex_unlock(&mMutexQueue);
+            pthread_mutex_unlock(&mMutexQueue[i]);
+        }
 
 	    if (mRealFrameCount == 0)
 	    {

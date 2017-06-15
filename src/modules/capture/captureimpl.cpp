@@ -141,5 +141,9 @@ surround_image_t* CaptureImpl::captureOneFrame4FocusSource()
 surround_image_t* CaptureImpl::popOneFrame(unsigned int channelIndex)
 {
     surround_image_t* frame = NULL;
+    if (NULL != mCaptureWorker)
+    {
+        frame = mCaptureWorker->popOneFrame(channelIndex);
+    }
     return frame;
 }

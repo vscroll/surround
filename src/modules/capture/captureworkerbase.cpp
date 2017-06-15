@@ -17,7 +17,10 @@ CaptureWorkerBase::CaptureWorkerBase()
     
     mVideoChannelNum = 0;
 
-    pthread_mutex_init(&mMutexQueue, NULL);
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        pthread_mutex_init(&mMutexQueue[i], NULL);
+    }
 
     //focus source
     mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
@@ -124,15 +127,51 @@ int CaptureWorkerBase::getFPS(unsigned int* fps)
 
 surround_images_t* CaptureWorkerBase::popOneFrame()
 {
-
-    struct surround_images_t* surroundImage = NULL;
-    pthread_mutex_lock(&mMutexQueue);
-    if (mSurroundImagesQueue.size() > 0)
+    struct surround_image_t* image[VIDEO_CHANNEL_SIZE] = {NULL};
+    bool isFull = true;
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        surroundImage = mSurroundImagesQueue.front();
-        mSurroundImagesQueue.pop();
+        pthread_mutex_lock(&mMutexQueue[i]);
+        if (mSurroundImageQueue[i].size() > 0)
+        {
+            image[i] = mSurroundImageQueue[i].front();
+            mSurroundImageQueue[i].pop();
+        }
+        else
+        {
+            isFull = false;
+        }
+        pthread_mutex_unlock(&mMutexQueue[i]);
     }
-    pthread_mutex_unlock(&mMutexQueue);
+
+    if (!isFull)
+    {
+        for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+        {
+            if (NULL != image[i])
+            {
+                delete image[i];
+                image[i] = NULL;
+            }
+        }
+        return NULL;
+    }
+
+    struct surround_images_t* surroundImage = new surround_images_t();
+    surroundImage->timestamp = 0;
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        surroundImage->frame[i].timestamp = image[i]->timestamp;
+        surroundImage->frame[i].info.width = image[i]->info.width;
+        surroundImage->frame[i].info.height = image[i]->info.height;
+        surroundImage->frame[i].info.size = image[i]->info.size;
+        surroundImage->frame[i].info.pixfmt = image[i]->info.pixfmt;
+        surroundImage->frame[i].data = image[i]->data;
+        if (surroundImage->timestamp > image[i]->timestamp)
+        {
+            surroundImage->timestamp = image[i]->timestamp;
+        }
+    }    
 
     return surroundImage;
 }
@@ -169,26 +208,40 @@ surround_image_t* CaptureWorkerBase::captureOneFrame4FocusSource()
 surround_image_t* CaptureWorkerBase::popOneFrame(unsigned int channelIndex)
 {
     surround_image_t* frame = NULL;
+    if (channelIndex < VIDEO_CHANNEL_SIZE)
+    {
+        pthread_mutex_lock(&mMutexQueue[channelIndex]);
+        if (mSurroundImageQueue[channelIndex].size() > 0)
+        {
+            frame = mSurroundImageQueue[channelIndex].front();
+            mSurroundImageQueue[channelIndex].pop();
+        }
+        pthread_mutex_unlock(&mMutexQueue[channelIndex]);        
+    }
     return frame;
 }
 
 void CaptureWorkerBase::clearOverstock()
 {
-    pthread_mutex_lock(&mMutexQueue);
-    int size = mSurroundImagesQueue.size();
-    if (size > 5)
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        for (int i = 0; i < size; ++i)
+        pthread_mutex_lock(&mMutexQueue[i]);
+        int size = mSurroundImageQueue[i].size();
+        if (size > 5)
         {
-            struct surround_images_t* surroundImage = mSurroundImagesQueue.front();
-            mSurroundImagesQueue.pop();
-            if (NULL != surroundImage)
+            for (int j = 0; j < size; ++j)
             {
-                delete surroundImage;
+                struct surround_image_t* surroundImage = mSurroundImageQueue[i].front();
+                mSurroundImageQueue[i].pop();
+                if (NULL != surroundImage)
+                {
+                    delete surroundImage;
+                    surroundImage = NULL;
+                }
             }
         }
+        pthread_mutex_unlock(&mMutexQueue[i]);
     }
-    pthread_mutex_unlock(&mMutexQueue);
 }
 
 bool CaptureWorkerBase::isNeedConvert(struct cap_sink_t* sink, struct cap_src_t* source)
