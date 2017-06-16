@@ -2,12 +2,12 @@
 
 # needs to source /opt/poky/x.x.x/environmentsetup.sh
 
+TOPDIR                      = ../../../..
 
 TARGET                      = v4l2_main
-RM                          = rm -rf
 
-PROJECT_ROOT                = ../../../..
-SRC_ROOT                    = $(PROJECT_ROOT)/src
+LIBPATH                     = $(TOPDIR)/lib/
+EXEPATH                     = $(TOPDIR)/bin/
 
 #ROOTFS_DIR                 = $(SDKTARGETSYSROOT)
 ROOTFS_DIR                  = $(HOME)/my-imx6/05_rootfs/distro-fsl-image
@@ -19,26 +19,13 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I. -I$(TARGET_PATH_INCLUDE) \
                                 -I$(HOME)/my-imx6/02_source/linux-3.14.52/include/uapi \
                                 -I$(HOME)/my-imx6/02_source/linux-3.14.52/tools/include \
-			                    -I$(SRC_ROOT)/util
+			                    -I$(TOPDIR)/src/util
 
-LFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
+LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
 			                    -lpthread -lopencv_core -lopencv_highgui
 
 SRCS 			            = $(wildcard ./*.cpp )
-SRCS 		                += $(wildcard $(SRC_ROOT)/util/*.cpp)
+SRCS 		                += $(wildcard $(TOPDIR)/src/util/*.cpp)
 
-OBJS 			            = $(patsubst %.cpp, %.o, $(SRCS))
-
-first: all
-
-all: $(TARGET)
-
-$(TARGET) : $(OBJS)
-	$(CXX) $(LFLAGS) $^ -o $@  
-  
-$(OBJS):%.o : %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
-
-clean:
-	$(RM) $(TARGET) *.o
+include $(TOPDIR)/makefile.env
 

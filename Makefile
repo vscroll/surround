@@ -1,29 +1,30 @@
-# make debug="capture_main panoimage_main capture_pano_main render_main"
+TOPDIR          =.
 
-SUBDIRS = \
-        src/modules/apptest/capture_main \
-        src/modules/apptest/panoimage_main \
-        src/modules/apptest/capture_pano_main \
-        src/modules/apptest/render_main \
-        src/modules/apptest/calibrate_main \
-        src/modules/apptest/controller_main \
-        src/modules/apptest/v4l2_main \
-        src/modules/apptest/ipu_main \
-        src/modules/apptest/g2d_main \
-        src/modules/apptest/fb_main \
-        src/modules/apptest/colorconvert_main
+exclude_dirs    = include  bin  lib
 
-MAKECMD = make
-ifneq ($(debug),)
-MAKECMD = make debug="$(debug)"
-endif
+#dirs:=$(shell find . -maxdepth 1 -type d)
+dirs= \
+	src/tools/generate_cl_table \
+	src/modules/apptest/alpha_main \
+	src/modules/apptest/calibrate_main \
+	src/modules/apptest/capture_main \
+	src/modules/apptest/capture_pano_main \
+	src/modules/apptest/colorconvert_main \
+	src/modules/apptest/controller_main \
+	src/modules/apptest/fb_main \
+	src/modules/apptest/g2d_main \
+	src/modules/apptest/ipu_main \
+	src/modules/apptest/panoimage_main \
+	src/modules/apptest/render_main \
+	src/modules/apptest/v4l2_main
 
-define make_subdir
-	@for subdir in $1 ; do \
-		( cd $$subdir && $(MAKECMD)) \
-	done;
-endef
+dirs:=$(basename $(patsubst ./%,%,$(dirs)))
+dirs:=$(filter-out $(exclude_dirs),$(dirs))
+subdirs:=$(dirs)
 
-surroundpark:
-	$(call make_subdir, $(SUBDIRS))
+SUBDIRS:$(subdirs)
+	for dir in $(subdirs);\
+	do make debug="$(debug)" -C $$dir all||exit 1;\
+	done
 
+include $(TOPDIR)/makefile.env
