@@ -8,7 +8,7 @@
 #include <iostream>
 #include <opencv/cv.h>
 
-#define USE_IMX_IPU 0
+#define USE_IMX_IPU 1
 
 #if USE_IMX_IPU
 #include <linux/ipu.h>
@@ -171,7 +171,7 @@ void CaptureWorkerV4l2::run()
     {
         if (mVideoFd[i] == -1)
         {
-            return;
+            continue;
         }
 
         fd_set fds;
@@ -188,14 +188,14 @@ void CaptureWorkerV4l2::run()
                 std::cout << "CaptureWorkerV4l2::onCapture"
                         << ", EINTR"
                         << std::endl;
-                return;
+                continue;
         }
 
         if (0 == r) {
             std::cout << "CaptureWorkerV4l2::onCapture"
                     << ", select timeout"
                     << std::endl;
-            return;
+            continue;
         }
 
         struct v4l2_buffer buf;
@@ -203,46 +203,10 @@ void CaptureWorkerV4l2::run()
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
-                timestamp[i] = Util::get_system_milliseconds();
-                if (mFocusChannelIndex == i
-                    && !isNeedConvert(&mSink[i], &mFocusSource))
-                {
-                    surround_image_t* surround_image = new surround_image_t();
-                    surround_image->timestamp = timestamp[i];
-                    surround_image->info.pixfmt = mFocusSource.pixfmt;
-                    surround_image->info.width = mFocusSource.width;
-                    surround_image->info.height = mFocusSource.height;
-                    surround_image->info.size = mFocusSource.size;
-                    //surround_image->data = new unsigned char[mFocusSource.size];
-                    //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-                    surround_image->data = mV4l2Buf[i][buf.index].start;
-                    pthread_mutex_lock(&mMutexFocusSourceQueue);
-                    mFocusSourceQueue.push(surround_image);
-#if DEBUG_CAPTURE
-                    focus_size = mFocusSourceQueue.size();
-#endif
-                    pthread_mutex_unlock(&mMutexFocusSourceQueue);   
-
-                    if (mEnableCapture)                                  
-                    {
-                        mCaptureFrame4FocusSource.timestamp = surround_image->timestamp;
-                        mCaptureFrame4FocusSource.info.pixfmt = surround_image->info.pixfmt;
-                        mCaptureFrame4FocusSource.info.width = surround_image->info.width;
-                        mCaptureFrame4FocusSource.info.height = surround_image->info.height;
-                        mCaptureFrame4FocusSource.info.size = surround_image->info.size;
-                        mCaptureFrame4FocusSource.data = surround_image->data;
-                    }
-                }
-
-                // call IPU to convert
-                if (isNeedConvert(&mSink[i], &mSource[i]))
-                {
-#if 0
-#if DEBUG_CAPTURE
-                    clock_t convert_start = clock();
-#endif
-
 #if USE_IMX_IPU
+				//enhance, convert, crop, resize
+				//if (isNeedConvert(&mSink[i], &mSource[i]))
+				{
                     struct ipu_task task;
                     memset(&task, 0, sizeof(struct ipu_task));
                     task.input.width  = mSink[i].width;
@@ -261,8 +225,6 @@ void CaptureWorkerV4l2::run()
                     task.output.crop.pos.y = 0;
                     task.output.crop.w = mSource[i].width;
                     task.output.crop.h = mSource[i].height;
-                    //for colour cast
-                    //task.output.format = V4L2_PIX_FMT_RGB24;
                     task.output.format = mSource[i].pixfmt;
 
                     task.input.paddr = (int)mV4l2Buf[i][buf.index].offset;
@@ -273,40 +235,56 @@ void CaptureWorkerV4l2::run()
 			                    << std::endl;
                         continue;
                     }
-                
-#else
-                    unsigned char frame_buffer[mSource[i].size];
-                    Util::uyvy_to_rgb24(mSink[i].width, mSink[i].height, (unsigned char*)(mV4l2Buf[i][buf.index].start), frame_buffer);
+				}
 #endif
 
-#if DEBUG_CAPTURE
-/*
-                    convert_time = (clock() - convert_start)/CLOCKS_PER_SEC;
-                    std::cout << "CaptureWorkerV4l2::onCapture"
-                            << ", channel:" << i
-                            << ", yuv to rgb:" << convert_time
-			                << std::endl;
-*/
-#endif
-
-#if USE_IMX_IPU                
-                    cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, mOutIPUBuf[i].start);
-#else
-                    cv::Mat* matImage = new cv::Mat(mSource[i].height, mSource[i].width, CV_8UC3, frame_buffer);
-#endif
-                    if (NULL != matImage)
-                    {
-                        flag = flag << 1;
-                        image[i] = matImage;
-                    }
-#endif
-                }
-                else
+				//for focus channel
+                timestamp[i] = Util::get_system_milliseconds();
+                if (mFocusChannelIndex == i
+                    && !isNeedConvert(&mSink[i], &mFocusSource))
                 {
+                    surround_image_t* surround_image = new surround_image_t();
+                    surround_image->timestamp = timestamp[i];
+                    surround_image->info.pixfmt = mFocusSource.pixfmt;
+                    surround_image->info.width = mFocusSource.width;
+                    surround_image->info.height = mFocusSource.height;
+                    surround_image->info.size = mFocusSource.size;
+                    //surround_image->data = new unsigned char[mFocusSource.size];
+                    //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
+#if USE_IMX_IPU
+                    surround_image->data = mOutIPUBuf[i].start;
+#else
+                    surround_image->data = mV4l2Buf[i][buf.index].start;
+#endif
+                    pthread_mutex_lock(&mMutexFocusSourceQueue);
+                    mFocusSourceQueue.push(surround_image);
+#if DEBUG_CAPTURE
+                    focus_size = mFocusSourceQueue.size();
+#endif
+                    pthread_mutex_unlock(&mMutexFocusSourceQueue);   
+
+                    if (mEnableCapture)                                  
+                    {
+                        mCaptureFrame4FocusSource.timestamp = surround_image->timestamp;
+                        mCaptureFrame4FocusSource.info.pixfmt = surround_image->info.pixfmt;
+                        mCaptureFrame4FocusSource.info.width = surround_image->info.width;
+                        mCaptureFrame4FocusSource.info.height = surround_image->info.height;
+                        mCaptureFrame4FocusSource.info.size = surround_image->info.size;
+                        mCaptureFrame4FocusSource.data = surround_image->data;
+                    }
+                }
+
+				//for panorama
+                {
+
                     flag = flag << 1;
                     //image[i] = new unsigned char[mSource[i].size];
                     //memcpy(image[i], (unsigned char*)mV4l2Buf[i][buf.index].start, mSource[i].size);
-                    image[i] = mV4l2Buf[i][buf.index].start;
+#if USE_IMX_IPU
+                	image[i] = mOutIPUBuf[i].start;         
+#else
+                	image[i] = mV4l2Buf[i][buf.index].start;
+#endif
                 }
             }
         }
@@ -357,16 +335,13 @@ void CaptureWorkerV4l2::run()
     }
     else
     {
-#if 0
         for (unsigned int i = 0; i < mVideoChannelNum; ++i)
         {
-            if (NULL != image[i]
-                && isNeedConvert(mSink[i], mSource[i]))
+            if (NULL != image[i])
             {
-                delete (cv::Mat*)image[i];
+                delete image[i];
             }
         }
-#endif
     }
 #if DEBUG_CAPTURE
     std::cout << "CaptureWorkerV4l2::run"

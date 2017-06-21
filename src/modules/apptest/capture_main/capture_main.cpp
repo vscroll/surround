@@ -27,6 +27,8 @@ int main (int argc, char **argv)
     char cfgPath[1024] = {0};
     if (Util::getAbsolutePath(cfgPath, 1024) < 0)
     {
+        std::cout << "capture_main:: path error"
+                << std::endl;
         return -1;
     }
 
@@ -34,6 +36,8 @@ int main (int argc, char **argv)
     sprintf(cfgPathName, "%sconfig.ini", cfgPath);
     if (config->loadFile(cfgPathName) < 0)
     {
+        std::cout << "capture_main:: load config error"
+                << std::endl;
         return -1;
     }
 
@@ -43,6 +47,8 @@ int main (int argc, char **argv)
     int rightChn;
     if (config->getChannelNo(&frontChn, &rearChn, &leftChn, &rightChn) < 0)
     {
+        std::cout << "capture_main:: channel no error"
+                << std::endl;
         return -1;
     }
 
@@ -51,6 +57,30 @@ int main (int argc, char **argv)
     {
         fps = VIDEO_FPS_15;
     }
+
+	int sinkWidth = config->getSinkWidth();
+	int sinkHeight = config->getSinkHeight();
+	int cropX = config->getSinkCropX();
+	int cropY = config->getSinkCropY();
+	int cropWidth = config->getSinkCropWidth();
+	int cropHeight = config->getSinkCropHeight();
+	int srcWidth = config->getSrcWidth();
+	int srcHeight = config->getSrcHeight();
+	if (cropX < 0
+		|| cropY < 0
+		|| cropWidth < 0
+		|| cropHeight < 0
+		|| (cropX + cropWidth) > CAPTURE_VIDEO_RES_X
+		|| (cropY + cropHeight) > CAPTURE_VIDEO_RES_Y
+		|| srcWidth < 0
+		|| srcHeight < 0
+		|| srcWidth > CAPTURE_VIDEO_RES_X
+		|| srcHeight > CAPTURE_VIDEO_RES_Y)
+	{
+        std::cout << "capture_main:: capture config error"
+                << std::endl;
+		return -1;
+	}
 
 #if 0
     ICapture* capture = new CaptureImpl();
@@ -67,15 +97,15 @@ int main (int argc, char **argv)
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
-        sink[i].crop_x = 0;
-        sink[i].crop_y = 0;
-        sink[i].crop_w = CAPTURE_VIDEO_RES_X;
-        sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
+        sink[i].crop_x = cropX;
+        sink[i].crop_y = cropY;
+        sink[i].crop_w = cropWidth;
+        sink[i].crop_h = cropHeight;
 
-        // source is same as sink
+        // source's pixfmt is same as sink
         source[i].pixfmt = sink[i].pixfmt;
-        source[i].width = sink[i].width;
-        source[i].height = sink[i].height;
+        source[i].width = srcWidth;
+        source[i].height = srcHeight;
         source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
     }
     if (capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE))
@@ -85,13 +115,13 @@ int main (int argc, char **argv)
         return -1;        
     }
 
-    // focus source is same as sink
+    // focus source is same as source
     int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
-    focusSource.pixfmt = sink[0].pixfmt;
-    focusSource.width = sink[0].width;
-    focusSource.height = sink[0].height;
-    focusSource.size = sink[0].size;
+    focusSource.pixfmt = source[0].pixfmt;
+    focusSource.width = source[0].width;
+    focusSource.height = source[0].height;
+    focusSource.size = source[0].size;
     capture->setFocusSource(focusChannelIndex, &focusSource);
 
     if (capture->openDevice(channel, VIDEO_CHANNEL_SIZE) < 0)

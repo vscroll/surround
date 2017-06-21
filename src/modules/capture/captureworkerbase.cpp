@@ -47,10 +47,14 @@ int CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t
 {
     for (unsigned int i = 0; i < channelNum; ++i)
     {
-        if (isNeedConvert(&sink[i], &source[i]))
+        if (sink[i].pixfmt != source[i].pixfmt)
         {
             std::cout << "CaptureWorkerBase::setCapCapacity:"
                     << " not support convert sink to source"
+					<< ", sink width:" << sink[i].width
+					<< ", sink height:" << sink[i].height
+					<< ", source width:" << source[i].width
+					<< ", source height:" << source[i].height
                     << std::endl;
             return -1;
         }
@@ -77,6 +81,10 @@ int CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap
     {
         std::cout << "CaptureWorkerBase::setFocusSource:"
                 << " not support convert sink to source"
+				<< ", sink width:" << mSink[focusChannelIndex].width
+				<< ", sink height:" << mSink[focusChannelIndex].height
+				<< ", source width:" << focusSource->width
+				<< ", source height:" << focusSource->height
                 << std::endl;
         return -1;
     }

@@ -42,6 +42,10 @@ int Capture1WorkerBase::setCapCapacity(struct cap_sink_t* sink, struct cap_src_t
     {
         std::cout << "Capture1WorkerBase::setCapCapacity:"
                 << " not support convert sink to source"
+				<< ", sink width:" << sink->width
+				<< ", sink height:" << sink->height
+				<< ", source width:" << source->width
+				<< ", source height:" << source->height
                 << std::endl;
         return -1;
     }
@@ -57,6 +61,10 @@ int Capture1WorkerBase::setFocusSource(struct cap_src_t* focusSource)
     {
         std::cout << "Capture1WorkerBase::setFocusSource:"
                 << " not support convert sink to source"
+				<< ", sink width:" << mSink.width
+				<< ", sink height:" << mSink.height
+				<< ", source width:" << focusSource->width
+				<< ", source height:" << focusSource->height
                 << std::endl;
         return -1;
     }

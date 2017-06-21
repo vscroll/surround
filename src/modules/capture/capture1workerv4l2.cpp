@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 #include <ostream>
 
-#define USE_IMX_IPU 0
+#define USE_IMX_IPU 1
 
 #if USE_IMX_IPU
 #include <linux/ipu.h>
@@ -190,39 +190,10 @@ void Capture1WorkerV4l2::run()
     {
         if (buf.index < V4L2_BUF_COUNT)
         {
-            if (!isNeedConvert(&mSink, &mFocusSource))
-            {
-                surround_image_t* surround_image = new surround_image_t();
-                surround_image->timestamp = Util::get_system_milliseconds();
-                surround_image->info.pixfmt = mFocusSource.pixfmt;
-                surround_image->info.width = mFocusSource.width;
-                surround_image->info.height = mFocusSource.height;
-                surround_image->info.size = mFocusSource.size;
-                //surround_image->data = new unsigned char[mFocusSource.size];
-                //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-                surround_image->data = mV4l2Buf[buf.index].start;
-                pthread_mutex_lock(&mMutexFocusSourceQueue);
-                mFocusSourceQueue.push(surround_image);
-#if DEBUG_CAPTURE
-                focus_size = mFocusSourceQueue.size();
-#endif
-                pthread_mutex_unlock(&mMutexFocusSourceQueue);   
-
-                if (mEnableCapture)                                  
-                {
-                    mCaptureFrame4FocusSource.timestamp = surround_image->timestamp;
-                    mCaptureFrame4FocusSource.info.pixfmt = surround_image->info.pixfmt;
-                    mCaptureFrame4FocusSource.info.width = surround_image->info.width;
-                    mCaptureFrame4FocusSource.info.height = surround_image->info.height;
-                    mCaptureFrame4FocusSource.info.size = surround_image->info.size;
-                    mCaptureFrame4FocusSource.data = surround_image->data;
-                }
-            }
-
-            if (!isNeedConvert(&mSink, &mSource))
-            {
-             
 #if USE_IMX_IPU
+			//enhance, convert, crop, resize
+			//if (!isNeedConvert(&mSink, &mSource))
+            {            
                 // IPU can improve image quality, even though the source is same as the sink
                 struct ipu_task task;
                 memset(&task, 0, sizeof(struct ipu_task));
@@ -252,29 +223,64 @@ void Capture1WorkerV4l2::run()
                             << std::endl;
                     return;
                 }
+			}
 #endif
 
+			//for focus channel
+            if (!isNeedConvert(&mSink, &mFocusSource))
+            {
                 surround_image_t* surround_image = new surround_image_t();
                 surround_image->timestamp = Util::get_system_milliseconds();
-                surround_image->info.pixfmt = mSource.pixfmt;
-                surround_image->info.width = mSource.width;
-                surround_image->info.height = mSource.height;
-                surround_image->info.size = mSource.size;
+                surround_image->info.pixfmt = mFocusSource.pixfmt;
+                surround_image->info.width = mFocusSource.width;
+                surround_image->info.height = mFocusSource.height;
+                surround_image->info.size = mFocusSource.size;
                 //surround_image->data = new unsigned char[mFocusSource.size];
                 //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
 #if USE_IMX_IPU
-                surround_image->data = mOutIPUBuf.start;         
+                surround_image->data = mOutIPUBuf.start;
 #else
                 surround_image->data = mV4l2Buf[buf.index].start;
 #endif
-
-                pthread_mutex_lock(&mMutexQueue);
-                mSurroundImageQueue.push(surround_image);
+                pthread_mutex_lock(&mMutexFocusSourceQueue);
+                mFocusSourceQueue.push(surround_image);
 #if DEBUG_CAPTURE
-                size = mSurroundImageQueue.size();
+                focus_size = mFocusSourceQueue.size();
 #endif
-                pthread_mutex_unlock(&mMutexQueue);
+                pthread_mutex_unlock(&mMutexFocusSourceQueue);   
+
+                if (mEnableCapture)                                  
+                {
+                    mCaptureFrame4FocusSource.timestamp = surround_image->timestamp;
+                    mCaptureFrame4FocusSource.info.pixfmt = surround_image->info.pixfmt;
+                    mCaptureFrame4FocusSource.info.width = surround_image->info.width;
+                    mCaptureFrame4FocusSource.info.height = surround_image->info.height;
+                    mCaptureFrame4FocusSource.info.size = surround_image->info.size;
+                    mCaptureFrame4FocusSource.data = surround_image->data;
+                }
             }
+
+
+			//for panorama
+            surround_image_t* surround_image = new surround_image_t();
+            surround_image->timestamp = Util::get_system_milliseconds();
+            surround_image->info.pixfmt = mSource.pixfmt;
+            surround_image->info.width = mSource.width;
+            surround_image->info.height = mSource.height;
+            surround_image->info.size = mSource.size;
+            //surround_image->data = new unsigned char[mFocusSource.size];
+            //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
+#if USE_IMX_IPU
+            surround_image->data = mOutIPUBuf.start;         
+#else
+            surround_image->data = mV4l2Buf[buf.index].start;
+#endif
+            pthread_mutex_lock(&mMutexQueue);
+            mSurroundImageQueue.push(surround_image);
+#if DEBUG_CAPTURE
+            size = mSurroundImageQueue.size();
+#endif
+            pthread_mutex_unlock(&mMutexQueue);
         }
     }
 

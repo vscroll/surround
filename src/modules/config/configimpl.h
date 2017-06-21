@@ -16,6 +16,14 @@ public:
     //capture
     virtual int getChannelNo(int* front, int* rear, int* left, int* right);
     virtual int getCaptureFPS();
+    virtual int getSinkWidth();
+    virtual int getSinkHeight();
+    virtual int getSinkCropX();
+    virtual int getSinkCropY();
+    virtual int getSinkCropWidth();
+    virtual int getSinkCropHeight();
+    virtual int getSrcWidth();
+    virtual int getSrcHeight();
 
     //stitch
     virtual bool enableOpenCL();

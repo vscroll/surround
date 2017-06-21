@@ -7,6 +7,14 @@
 #define CAPTURE_KEY_LEFTCHN     "LeftCHN"
 #define CAPTURE_KEY_RIGHTCHN    "RightCHN"
 #define CAPTURE_KEY_FPS         "FPS"
+#define CAPTURE_KEY_SINKWIDTH   "SinkWidth"
+#define CAPTURE_KEY_SINKHEIGHT  "SinkHeight"
+#define CAPTURE_KEY_CROPX       "CropX"
+#define CAPTURE_KEY_CROPY       "CropY"
+#define CAPTURE_KEY_CROPWIDTH   "CropWidth"
+#define CAPTURE_KEY_CROPHEIGHT  "CropHeight"
+#define CAPTURE_KEY_SRCWIDTH    "SrcWidth"
+#define CAPTURE_KEY_SRCHEIGHT   "SrcHeight"
 
 #define SECTION_STITCH          "STITCH"
 #define STITCH_KEY_ENABLEOPENCL "EnableOpenCL"
@@ -80,6 +88,86 @@ int ConfigImpl::getCaptureFPS()
     }
 
     return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_FPS);
+}
+
+int ConfigImpl::getSinkWidth()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_SINKWIDTH);
+}
+
+int ConfigImpl::getSinkHeight()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_SINKHEIGHT);
+}
+
+int ConfigImpl::getSinkCropX()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_CROPX);
+}
+
+int ConfigImpl::getSinkCropY()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_CROPY);
+}
+
+int ConfigImpl::getSinkCropWidth()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_CROPWIDTH);
+}
+
+int ConfigImpl::getSinkCropHeight()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_CROPHEIGHT);
+}
+
+int ConfigImpl::getSrcWidth()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_SRCWIDTH);
+}
+
+int ConfigImpl::getSrcHeight()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    return mIniFile->getInt(SECTION_CAPTURE, CAPTURE_KEY_SRCHEIGHT);
 }
 
 //stitch
