@@ -347,7 +347,7 @@ void CaptureWorkerV4l2::run()
             mStatDuration = 1;
         }
 
-	    if (mStatDuration > 5*60)
+	    if (mStatDuration > STAT_PERIOD_SECONDS)
         {
 	        mRealFrameCount = 0;
         }

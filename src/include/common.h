@@ -39,6 +39,9 @@
 #define VIDEO_FPS_25		25
 #define VIDEO_FPS_30        30
 
+#define OVERSTOCK_SIZE 		3
+#define STAT_PERIOD_SECONDS	5*60	
+
 typedef struct cap_sink_t {
   unsigned int pixfmt;
   unsigned int width;

@@ -165,7 +165,7 @@ void Capture1WorkerBase::clearOverstock()
 {
     pthread_mutex_lock(&mMutexQueue);
     int size = mSurroundImageQueue.size();
-    if (size > 5)
+    if (size > OVERSTOCK_SIZE)
     {
         for (int i = 0; i < size; ++i)
         {
@@ -181,7 +181,7 @@ void Capture1WorkerBase::clearOverstock()
 
     pthread_mutex_lock(&mMutexFocusSourceQueue);
     int focusSize = mFocusSourceQueue.size();
-    if (focusSize > 5)
+    if (focusSize > OVERSTOCK_SIZE)
     {
         for (int i = 0; i < focusSize; ++i)
         {

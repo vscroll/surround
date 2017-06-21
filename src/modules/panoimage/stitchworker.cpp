@@ -446,7 +446,7 @@ void StitchWorker::clearOverstock()
 #if 0
     pthread_mutex_lock(&mInputImagesMutex);
     int size = mInputImagesQueue.size();
-    if (size > 5)
+    if (size > OVERSTOCK_SIZE)
     {
         for (int i = 0; i < size; ++i)
         {
@@ -467,7 +467,7 @@ void StitchWorker::clearOverstock()
 
     pthread_mutex_lock(&mOutputPanoImageMutex);
     int outSize = mOutputPanoImageQueue.size();
-    if (outSize > 100)
+    if (outSize > OVERSTOCK_SIZE)
     {
         for (int i = 0; i < outSize; ++i)
         {

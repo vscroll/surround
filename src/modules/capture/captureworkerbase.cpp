@@ -227,7 +227,7 @@ void CaptureWorkerBase::clearOverstock()
     {
         pthread_mutex_lock(&mMutexQueue[i]);
         int size = mSurroundImageQueue[i].size();
-        if (size > 5)
+        if (size > OVERSTOCK_SIZE)
         {
             for (int j = 0; j < size; ++j)
             {

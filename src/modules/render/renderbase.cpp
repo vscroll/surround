@@ -1,6 +1,7 @@
 #include "renderbase.h"
 #include <string.h>
 #include <iostream>
+#include "common.h"
 
 RenderBase::RenderBase()
 {
@@ -75,7 +76,7 @@ unsigned int RenderBase::statFPS()
         mStatDuration = 1;
     }
 
-    if (mStatDuration > 5*60)
+    if (mStatDuration > STAT_PERIOD_SECONDS)
     {
         mRealFrameCount = 0;
     }
