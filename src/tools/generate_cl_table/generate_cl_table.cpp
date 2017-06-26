@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        printf("\n usage: generate_cl_table calibrated_file count_per_line) \n");
+        printf("\n usage: generate_cl_table FishToPanoYUV.xml count_per_line) \n");
         return -1;
     }
 
