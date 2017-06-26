@@ -53,7 +53,7 @@ int main (int argc, char **argv)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = V4L2_PIX_FMT_YUYV;
+        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = sink[i].width*sink[i].height*2;
@@ -62,7 +62,7 @@ int main (int argc, char **argv)
         sink[i].crop_w = CAPTURE_VIDEO_RES_X;
         sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
 
-        source[i].pixfmt = V4L2_PIX_FMT_YUYV;
+        source[i].pixfmt = V4L2_PIX_FMT_UYVY;
         source[i].width = CAPTURE_VIDEO_RES_X;
         source[i].height = CAPTURE_VIDEO_RES_Y;
         source[i].size = source[i].width*source[i].height*2;
@@ -181,7 +181,7 @@ int main (int argc, char **argv)
                         task.input.crop.pos.y = 0;
                         task.input.crop.w = sideImage->info.width;
                         task.input.crop.h = sideImage->info.height;
-                        task.input.format = V4L2_PIX_FMT_YUYV;
+                        task.input.format = V4L2_PIX_FMT_UYVY;
                         task.input.deinterlace.enable = 1;
                         task.input.deinterlace.motion = 2;
 
