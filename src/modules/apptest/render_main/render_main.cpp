@@ -106,18 +106,35 @@ int main (int argc, char **argv)
     }
 
     RenderImpl* render = new RenderImpl();
-    render->setCaptureModule(NULL);
-	render->setSideImageCrop(sideCropLeft, sideCropTop, sideCropWidth, sideCropHeight);
-    render->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
+    if (sideLeft >= 0
+        && sideTop >= 0
+        && sideWidth > 0
+        && sideHeight > 0)
+    {
+        render->setCaptureModule(NULL);
+	    render->setSideImageCrop(sideCropLeft, sideCropTop, sideCropWidth, sideCropHeight);
+        render->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
+        render->startRenderSide(sideFPS);
+    }
 
-    render->setMarkRect(markLeft, markTop, markWidth, markHeight);
+    if (markLeft >= 0
+        && markTop >= 0
+        && markWidth > 0
+        && markHeight > 0)
+    {
+        render->setMarkRect(markLeft, markTop, markWidth, markHeight);
+        render->startRenderMark(markFPS);
+    }
 
-    render->setPanoImageModule(NULL);          
-    render->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);
-
-    render->startRenderSide(sideFPS);
-    render->startRenderMark(markFPS);
-    render->startRenderPano(panoFPS);
+    if (panoLeft >= 0
+        && panoTop >= 0
+        && panoWidth > 0
+        && panoHeight > 0)
+    {
+        render->setPanoImageModule(NULL);          
+        render->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);
+        render->startRenderPano(panoFPS);
+    }
 
     while (true)
     {

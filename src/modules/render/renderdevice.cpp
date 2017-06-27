@@ -133,7 +133,10 @@ void RenderDevice::closeFramebuffer()
 
 void RenderDevice::drawImage(struct render_surface_t* surface, bool alpha)
 {
-    if ((surface->dstLeft + surface->dstWidth) > (int)mScreenInfo.xres || (surface->dstTop + surface->dstHeight) > (int)mScreenInfo.yres)  {
+    if (0 == surface->dstWidth
+        || 0 == surface->dstHeight
+        || (surface->dstLeft + surface->dstWidth) > (int)mScreenInfo.xres 
+        || (surface->dstTop + surface->dstHeight) > (int)mScreenInfo.yres)  {
         std::cout << "Bad display image dimensions"
                 << ", dst left:" << surface->dstLeft
                 << ", dst top:" << surface->dstTop
