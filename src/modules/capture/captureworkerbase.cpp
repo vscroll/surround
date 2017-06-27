@@ -233,6 +233,20 @@ surround_image_t* CaptureWorkerBase::popOneFrame(unsigned int channelIndex)
 
 void CaptureWorkerBase::clearOverstock()
 {
+    pthread_mutex_lock(&mMutexFocusSourceQueue);
+    int focus_size = mFocusSourceQueue.size();
+    if (focus_size > OVERSTOCK_SIZE)
+    {
+        struct surround_image_t* surroundImage = mFocusSourceQueue.front();
+        mFocusSourceQueue.pop();
+        if (NULL != surroundImage)
+        {
+            delete surroundImage;
+            surroundImage = NULL;
+        }
+    }
+    pthread_mutex_unlock(&mMutexFocusSourceQueue); 
+
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         pthread_mutex_lock(&mMutexQueue[i]);

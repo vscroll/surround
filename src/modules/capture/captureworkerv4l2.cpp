@@ -7,23 +7,14 @@
 #include <sys/ioctl.h>
 #include <iostream>
 #include <opencv/cv.h>
-
-#define USE_IMX_IPU 1
-
-#if USE_IMX_IPU
 #include <linux/ipu.h>
-#endif
 
 CaptureWorkerV4l2::CaptureWorkerV4l2() :
     CaptureWorkerBase()
 {
     mIPUFd = -1;
 
-#if USE_IMX_IPU
     mMemType = V4L2_MEMORY_USERPTR;
-#else
-    mMemType = V4L2_MEMORY_MMAP;
-#endif
 }
 
 CaptureWorkerV4l2::~CaptureWorkerV4l2()
@@ -32,7 +23,6 @@ CaptureWorkerV4l2::~CaptureWorkerV4l2()
 
 int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNum)
 {
-#if USE_IMX_IPU
     mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
     if (mIPUFd < 0)
     {
@@ -44,8 +34,6 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
     std::cout << "CaptureWorkerV4l2::openDevice"
             << " ipu fd:" << mIPUFd
             << std::endl;
-
-#endif
 
     unsigned int pixfmt;
     unsigned int width;
@@ -101,21 +89,15 @@ int CaptureWorkerV4l2::openDevice(unsigned int channel[], unsigned int channelNu
             return -1;
         }
 
-#if USE_IMX_IPU
         if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &(mOutIPUBuf[i]), mSource[i].size))
         {
             return -1;
         }
-#endif
 
 #if DEBUG_CAPTURE
         std::cout << "CaptureWorkerV4l2::openDevice:" << devName
                 << " initV4l2Buf ok"
 		        << std::endl;
-#endif
-
-#if USE_IMX_IPU
-
 #endif
 
         if (-1 == V4l2::startCapture(mVideoFd[i], mV4l2Buf[i], V4L2_BUF_COUNT, mMemType))
@@ -203,8 +185,10 @@ void CaptureWorkerV4l2::run()
         {
             if (buf.index < V4L2_BUF_COUNT)
             {
-#if USE_IMX_IPU
 				//enhance, convert, crop, resize
+                // IPU can improve image quality, even though the source is same as the sink
+                //YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
+                //width*height*2 % 16 = 0
 				//if (isNeedConvert(&mSink[i], &mSource[i]))
 				{
                     struct ipu_task task;
@@ -236,7 +220,6 @@ void CaptureWorkerV4l2::run()
                         continue;
                     }
 				}
-#endif
 
 				//for focus channel
                 timestamp[i] = Util::get_system_milliseconds();
@@ -251,11 +234,9 @@ void CaptureWorkerV4l2::run()
                     surround_image->info.size = mFocusSource.size;
                     //surround_image->data = new unsigned char[mFocusSource.size];
                     //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-#if USE_IMX_IPU
-                    surround_image->data = mOutIPUBuf[i].start;
-#else
                     surround_image->data = mV4l2Buf[i][buf.index].start;
-#endif
+                    //surround_image->data = mOutIPUBuf[i].start;
+
                     pthread_mutex_lock(&mMutexFocusSourceQueue);
                     mFocusSourceQueue.push(surround_image);
 #if DEBUG_CAPTURE
@@ -280,11 +261,8 @@ void CaptureWorkerV4l2::run()
                     flag = flag << 1;
                     //image[i] = new unsigned char[mSource[i].size];
                     //memcpy(image[i], (unsigned char*)mV4l2Buf[i][buf.index].start, mSource[i].size);
-#if USE_IMX_IPU
-                	image[i] = mOutIPUBuf[i].start;         
-#else
-                	image[i] = mV4l2Buf[i][buf.index].start;
-#endif
+                    //image[i] = mV4l2Buf[i][buf.index].start;
+                	image[i] = mOutIPUBuf[i].start;
                 }
             }
         }
