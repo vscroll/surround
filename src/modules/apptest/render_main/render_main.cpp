@@ -80,7 +80,7 @@ int main (int argc, char **argv)
     {
         return -1;
     }
-    std::cout << "render_main mark"
+    std::cout << "render_main pano"
             << ", left:" << panoLeft
             << ", top:" << panoTop
             << ", width:" << panoWidth
