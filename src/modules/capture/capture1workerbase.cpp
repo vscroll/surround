@@ -38,6 +38,7 @@ Capture1WorkerBase::~Capture1WorkerBase()
 
 int Capture1WorkerBase::setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source)
 {
+#if 0
     if (isNeedConvert(sink, source))
     {
         std::cout << "Capture1WorkerBase::setCapCapacity:"
@@ -49,6 +50,7 @@ int Capture1WorkerBase::setCapCapacity(struct cap_sink_t* sink, struct cap_src_t
                 << std::endl;
         return -1;
     }
+#endif
 
     memcpy(&mSink, sink, sizeof(mSink));
     memcpy(&mSource, source, sizeof(mSource));

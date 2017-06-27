@@ -33,7 +33,7 @@ int main (int argc, char **argv)
 
     char cfgPathName[1024] = {0};
     sprintf(cfgPathName, "%sconfig.ini", procPath);
-    if (config->loadFile(cfgPathName) < 0)
+    if (config->loadFromFile(cfgPathName) < 0)
     {
         return -1;
     }
@@ -68,6 +68,9 @@ int main (int argc, char **argv)
     panoImage->stop();
     delete panoImage;
     panoImage = NULL;
+
+    delete config;
+    config = NULL;
 
     return 0;
 }

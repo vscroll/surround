@@ -7,23 +7,15 @@
 #include "util.h"
 #include <sys/ioctl.h>
 #include <ostream>
-
-#define USE_IMX_IPU 1
-
-#if USE_IMX_IPU
 #include <linux/ipu.h>
-#endif
+
 
 Capture1WorkerV4l2::Capture1WorkerV4l2() :
     Capture1WorkerBase()
 {
     mIPUFd = -1;
 
-#if USE_IMX_IPU
     mMemType = V4L2_MEMORY_USERPTR;
-#else
-    mMemType = V4L2_MEMORY_MMAP;
-#endif
 
     pthread_mutex_init(&mMutexV4l2, NULL);
     pthread_mutex_init(&mMutexIpu, NULL);
@@ -37,7 +29,7 @@ Capture1WorkerV4l2::~Capture1WorkerV4l2()
 int Capture1WorkerV4l2::openDevice(unsigned int channel)
 {
     mVideoChannel = channel;
-#if USE_IMX_IPU
+
     mIPUFd = open("/dev/mxc_ipu", O_RDWR, 0);
     if (mIPUFd < 0)
     {
@@ -49,7 +41,6 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
     std::cout << "Capture1WorkerV4l2::openDevice"
             << ", ipu fd:" << mIPUFd
             << std::endl;
-#endif
 
     char devName[16] = {0};
     sprintf(devName, "/dev/video%d", mVideoChannel);
@@ -98,12 +89,10 @@ int Capture1WorkerV4l2::openDevice(unsigned int channel)
         return -1;
     }
 
-#if USE_IMX_IPU
     if (-1 == IMXIPU::allocIPUBuf(mIPUFd, &mOutIPUBuf, mSource.size))
     {
         return -1;
     }
-#endif
 
 #if DEBUG_CAPTURE
     std::cout << "Capture1WorkerV4l2::openDevice:" << devName
@@ -190,11 +179,11 @@ void Capture1WorkerV4l2::run()
     {
         if (buf.index < V4L2_BUF_COUNT)
         {
-#if USE_IMX_IPU
 			//enhance, convert, crop, resize
-			//if (!isNeedConvert(&mSink, &mSource))
             {            
                 // IPU can improve image quality, even though the source is same as the sink
+                //YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
+                //width*height*2 % 16 = 0
                 struct ipu_task task;
                 memset(&task, 0, sizeof(struct ipu_task));
                 task.input.width  = mSink.width;
@@ -224,7 +213,6 @@ void Capture1WorkerV4l2::run()
                     return;
                 }
 			}
-#endif
 
 			//for focus channel
             if (!isNeedConvert(&mSink, &mFocusSource))
@@ -237,11 +225,9 @@ void Capture1WorkerV4l2::run()
                 surround_image->info.size = mFocusSource.size;
                 //surround_image->data = new unsigned char[mFocusSource.size];
                 //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-#if USE_IMX_IPU
-                surround_image->data = mOutIPUBuf.start;
-#else
-                surround_image->data = mV4l2Buf[buf.index].start;
-#endif
+				surround_image->data = mV4l2Buf[buf.index].start;
+                //surround_image->data = mOutIPUBuf.start;
+
                 pthread_mutex_lock(&mMutexFocusSourceQueue);
                 mFocusSourceQueue.push(surround_image);
 #if DEBUG_CAPTURE
@@ -270,11 +256,9 @@ void Capture1WorkerV4l2::run()
             surround_image->info.size = mSource.size;
             //surround_image->data = new unsigned char[mFocusSource.size];
             //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-#if USE_IMX_IPU
+            //surround_image->data = mV4l2Buf[buf.index].start;
             surround_image->data = mOutIPUBuf.start;         
-#else
-            surround_image->data = mV4l2Buf[buf.index].start;
-#endif
+
             pthread_mutex_lock(&mMutexQueue);
             mSurroundImageQueue.push(surround_image);
 #if DEBUG_CAPTURE

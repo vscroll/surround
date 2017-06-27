@@ -113,6 +113,9 @@ void RenderPanoWorker::run()
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)panoImage->data;
     surface.srcPixfmt = panoImage->info.pixfmt;
+	surface.srcLeft = 0;
+	surface.srcTop = 0;
+	surface.srcStride = panoImage->info.width;
     surface.srcWidth = panoImage->info.width;
     surface.srcHeight = panoImage->info.height;
     surface.srcSize = panoImage->info.size;

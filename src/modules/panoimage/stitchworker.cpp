@@ -8,9 +8,11 @@
 
 using namespace cv;
 
-StitchWorker::SourceSHMReadWorker::SourceSHMReadWorker(ImageSHM* imageSHM)
+StitchWorker::SourceSHMReadWorker::SourceSHMReadWorker(unsigned int channelIndex, ImageSHM* imageSHM)
 {
+	mChannelIndex = channelIndex;
     mImageSHM = imageSHM;
+	mImage.data = NULL;
 }
 
 
@@ -22,6 +24,9 @@ void StitchWorker::SourceSHMReadWorker::run()
 {
     if (NULL != mImageSHM)
     {
+#if DEBUG_STITCH
+        clock_t start = clock();
+#endif
         if (mImageSHM->readSource(mImageBuf, sizeof(mImageBuf)) < 0)
         {
             return;
@@ -34,6 +39,17 @@ void StitchWorker::SourceSHMReadWorker::run()
         mImage.info.size = header->size;
         mImage.timestamp = header->timestamp;
         mImage.data = mImageBuf + sizeof(image_shm_header_t);
+
+#if DEBUG_STITCH
+        std::cout << "SourceSHMReadWorker run: " 
+                << " thread id:" << getTID()
+                << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
+                << ", channel:" << mChannelIndex
+				<< ", width:" << mImage.info.width
+				<< ", height:" << mImage.info.height
+				<< ", size:" << mImage.info.size
+                << std::endl;
+#endif
     }
 }
 
@@ -113,7 +129,7 @@ int StitchWorker::init(
         {
             mImageSHM[i] = new ImageSHM();
             mImageSHM[i]->create((key_t)(SHM_FRONT_SOURCE_ID + i), SHM_FRONT_SOURCE_SIZE);
-            mSourceSHMReadWorker[i] = new SourceSHMReadWorker(mImageSHM[i]);
+            mSourceSHMReadWorker[i] = new SourceSHMReadWorker(i, mImageSHM[i]);
             mSourceSHMReadWorker[i]->start(VIDEO_FPS_30);
         }
     }
@@ -301,7 +317,7 @@ void StitchWorker::run()
         for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
         {
             if (NULL != mSourceSHMReadWorker[i]
-                && NULL != mSourceSHMReadWorker[i])
+				&& NULL != mSourceSHMReadWorker[i]->mImage.data)
             {
                 surroundImage->frame[i].info.width = mSourceSHMReadWorker[i]->mImage.info.width;
                 surroundImage->frame[i].info.height = mSourceSHMReadWorker[i]->mImage.info.height;
@@ -534,7 +550,27 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
     cv::Mat* lutRear = lookupTab[VIDEO_CHANNEL_REAR];
     cv::Mat* lutLeft = lookupTab[VIDEO_CHANNEL_LEFT];
     cv::Mat* lutRight = lookupTab[VIDEO_CHANNEL_RIGHT];
+#if 0
+	int width = sideImage[VIDEO_CHANNEL_REAR]->info.width;
+	int height = sideImage[VIDEO_CHANNEL_REAR]->info.height;
+	for (int j = 0; j < panoHeight; j++)
+	{
+		if (j >= height)
+		{
+			break;
+		}
 
+		for (int i = 0; i < panoWidth; i++)
+		{
+			if (i >= width)
+			{
+				break;
+			}
+			panoImage[j*panoWidth*2+i*2] = rear[j*width*2+i*2];
+			panoImage[j*panoWidth*2+i*2+1] = rear[j*width*2+i*2+1];
+		}
+	}
+#else
 	for (int i = 0; i < panoSize; i++)
 	{
 		//424x600x2 value:0~8
@@ -614,6 +650,7 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 				break;
 		}
 	}
+#endif
 }
 
 void StitchWorker::stitching_cl(surround_image_t* sideImage[],

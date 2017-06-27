@@ -63,13 +63,14 @@ private:
     class SourceSHMReadWorker : public WrapThread
     {
     public:
-        SourceSHMReadWorker(ImageSHM* imageSHM);
+        SourceSHMReadWorker(unsigned int channelIndex, ImageSHM* imageSHM);
         virtual ~SourceSHMReadWorker();
 
     public:
         virtual void run();
 
     private:
+		unsigned int mChannelIndex;
         ImageSHM* mImageSHM;
 
     protected:

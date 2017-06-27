@@ -59,6 +59,9 @@ void SourceSHMWriteWorker::run()
                 << ", elapsed to capture:" << (double)(Util::get_system_milliseconds() - source->timestamp)/1000
                 << ", runtime:" << (double)(clock()-start)/CLOCKS_PER_SEC
                 << ", channel:" << mChannelIndex
+				<< ", width:" << source->info.width
+				<< ", height:" << source->info.height
+				<< ", size:" << source->info.size
                 << ", addr:" << source->data
                 << std::endl;
 #endif

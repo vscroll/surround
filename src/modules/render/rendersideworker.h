@@ -13,6 +13,10 @@ public:
     virtual ~RenderSideWorker();
 
     void setCaptureModule(ICapture* capture);
+    void setSideImageCrop(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height);
     void setSideImageRect(unsigned int left,
 		    unsigned int top,
 		    unsigned int width,
@@ -28,6 +32,11 @@ public:
 private:
     ICapture* mCapture;
     ImageSHM* mImageSHM;
+
+    unsigned int mSideImageCropLeft;
+    unsigned int mSideImageCropTop;
+    unsigned int mSideImageCropWidth;
+    unsigned int mSideImageCropHeight;
 
     unsigned int mSideImageLeft;
     unsigned int mSideImageTop;

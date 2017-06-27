@@ -23,7 +23,8 @@ int CIniFile::open(const char* path)
     int  indexPos = -1;
     int  leftPos = -1;
     int  rightPos = -1;
-    mFp = fopen(path, "r");
+
+	mFp = fopen(path, "r");
     if (mFp == NULL)
     {
         printf("open inifile %s error!\n", path);
@@ -53,7 +54,7 @@ int CIniFile::open(const char* path)
 
         leftPos = lineTmp.find("\r");
         if (string::npos != leftPos)
-        {  
+        {
             lineTmp.erase(leftPos, 1);
         }
 
@@ -85,15 +86,15 @@ int CIniFile::open(const char* path)
             }
             else
             {
-                //TODO:不符合ini键值模板的内容 如注释等  
-            }  
+                //TODO:不符合ini键值模板的内容 如注释等
+            }
         }
     }
 
-    //插入最后一次主键  
+    //插入最后一次主键
     mMap[lastSection] = lastMap;
 
-    return 0;  
+    return 0;
 }  
 
 void CIniFile::close()
@@ -103,36 +104,100 @@ void CIniFile::close()
         fclose(mFp);
         mFp = NULL;
     }
-}  
+}
+
+int CIniFile::saveAsFile(const char* path)
+{
+	FILE* fp = NULL;
+	fp = fopen(path, "w+");
+    if (fp == NULL)
+    {
+		return -1;
+	}
+
+	SECTIONMAP::iterator it = mMap.begin();
+	for (; it != mMap.end(); ++it)
+	{
+		std::string section = it->first;
+		char tmpSection[256] = {0};
+		sprintf(tmpSection, "[%s]", section.c_str());
+		fwrite(tmpSection, 1, strlen(tmpSection), fp);
+		KEYMAP keyMap = it->second;
+		KEYMAP::iterator keyIt = keyMap.begin();
+		printf("222 %s \n", tmpSection);
+		for (; keyIt != keyMap.end(); ++keyIt)
+		{
+			std::string key = keyIt->first;
+			std::string value = keyIt->second;
+			char tmpKey[256] = {0};
+			sprintf(tmpKey, "%s=%s", key.c_str(), value.c_str());
+			fwrite(tmpKey, 1, strlen(tmpKey), fp);
+
+			printf("333 %s \n", tmpKey);
+		}		
+	}
+
+	fclose(fp);
+}
 
 int CIniFile::getKey(const char* section, const char* key, char* value)
 {
-    KEYMAP keyMap = mMap[section];  
+    KEYMAP keyMap = mMap[section];
 
     string tmp = keyMap[key];
 
     strcpy(value, tmp.c_str());
 
-    return 0;  
-}  
+    return 0;
+}
+
+int CIniFile::setKey(const char* section, const char* key, char* value)
+{
+	if (mMap.find(section) == mMap.end())
+	{
+		printf("000 %s %s %s\n", section, key, value);
+		KEYMAP keyMap;
+		keyMap[key]	= value;
+		mMap[section] = keyMap;
+	}
+	else
+	{
+		printf("111 %s %s %s\n", section, key, value);
+    	KEYMAP keyMap = mMap[section];
+		keyMap[key] = value;
+	}
+
+	return 0;
+}
 
 int CIniFile::getInt(const char* section, const char* key)  
-{  
-    int result = 0;  
+{
+    int result = 0;
 
     char value[LINE_LEN_MAX] = {0};
     if (0 == getKey(section, key, value))
-    {  
-        result = atoi(value);  
-    }  
-    return result;  
+    {
+        result = atoi(value);
+    }
+    return result;
 }  
 
-char* CIniFile::getStr(const char* section, const char* key)  
-{  
-    memset(mValue, 0, sizeof(mValue) );  
+char* CIniFile::getStr(const char* section, const char* key)
+{
+    memset(mValue, 0, sizeof(mValue));
     getKey(section, key, mValue);
 
-    return mValue;  
+    return mValue;
+}
 
-}  
+int CIniFile::setInt(const char* section, const char* key, int value)
+{
+	char tmp[256] = {0};
+	sprintf(tmp, "%d", value);
+	return setKey(section, key, tmp);
+}
+
+int CIniFile::setStr(const char* section, const char* key, const char* value)
+{
+	return setKey(section, key, (char*)value);
+}

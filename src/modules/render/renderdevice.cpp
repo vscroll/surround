@@ -211,11 +211,11 @@ YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
             return;
     }
 
-    src.left = 0;
-    src.top = 0;
-    src.right = surface->srcWidth;
-    src.bottom = surface->srcHeight;
-    src.stride = surface->srcWidth;
+    src.left = surface->srcLeft;
+    src.top = surface->srcTop;
+    src.right = surface->srcLeft + surface->srcWidth;
+    src.bottom = surface->srcTop + surface->srcHeight;
+    src.stride = surface->srcStride;
     src.width  = surface->srcWidth;
     src.height = surface->srcHeight;
     src.rot  = G2D_ROTATION_0;

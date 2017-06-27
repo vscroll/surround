@@ -11,6 +11,12 @@ public:
     virtual ~IRender() {}
 
     virtual void setCaptureModule(ICapture* capture = NULL) = 0;
+    virtual void setSideImageCrop(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height) = 0;
+
     virtual void setSideImageRect(
         unsigned int left,
 		unsigned int top,

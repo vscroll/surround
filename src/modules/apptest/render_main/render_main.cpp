@@ -22,7 +22,7 @@ int main (int argc, char **argv)
 
     char cfgPathName[1024] = {0};
     sprintf(cfgPathName, "%sconfig.ini", cfgPath);
-    if (config->loadFile(cfgPathName) < 0)
+    if (config->loadFromFile(cfgPathName) < 0)
     {
         return -1;
     }
@@ -40,6 +40,21 @@ int main (int argc, char **argv)
             << ", top:" << sideTop
             << ", width:" << sideWidth
             << ", height:" << sideHeight
+            << std::endl;
+
+    int sideCropLeft;
+    int sideCropTop;
+    int sideCropWidth;
+    int sideCropHeight;
+    if (config->getSideCrop(&sideCropLeft, &sideCropTop, &sideCropWidth, &sideCropHeight) < 0)
+    {
+        return -1;
+    }
+    std::cout << "render_main side crop"
+            << ", left:" << sideCropLeft
+            << ", top:" << sideCropTop
+            << ", width:" << sideCropWidth
+            << ", height:" << sideCropHeight
             << std::endl;
 
     int markLeft;
@@ -92,6 +107,7 @@ int main (int argc, char **argv)
 
     RenderImpl* render = new RenderImpl();
     render->setCaptureModule(NULL);
+	render->setSideImageCrop(sideCropLeft, sideCropTop, sideCropWidth, sideCropHeight);
     render->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
 
     render->setMarkRect(markLeft, markTop, markWidth, markHeight);
@@ -108,7 +124,6 @@ int main (int argc, char **argv)
          sleep(10000);
     }
 
-    config->unloadFile();
     delete config;
     config = NULL;
 

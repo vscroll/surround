@@ -26,12 +26,17 @@ public:
     int  getInt(const char* section, const char* key);
     char *getStr(const char* section, const char* key);
 
+    int setInt(const char* section, const char* key, int value);
+    int setStr(const char* section, const char* key, const char* value);
+
+	int saveAsFile(const char* path);
 private:
     int getKey(const char* section, const char* key, char* value);
+    int setKey(const char* section, const char* key, char* value);
 
     char mValue[LINE_LEN_MAX];
     FILE* mFp;
-    SECTIONMAP mMap;  
+    SECTIONMAP mMap;
 };
 
 #endif //  INIFILE_20170605_H 

@@ -13,6 +13,13 @@ public:
     virtual ~RenderImpl();
 
     virtual void setCaptureModule(ICapture* capture = NULL);
+
+    virtual void setSideImageCrop(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height);
+
     virtual void setSideImageRect(
         unsigned int left,
 		unsigned int top,

@@ -22,6 +22,18 @@ void RenderImpl::setCaptureModule(ICapture* capture)
     }
 }
 
+void RenderImpl::setSideImageCrop(
+        unsigned int left,
+		unsigned int top,
+		unsigned int width,
+		unsigned int height)
+{
+    if (NULL != mSideWorker)
+    {
+        mSideWorker->setSideImageCrop(left, top, width, height);
+    }
+}
+
 void RenderImpl::setSideImageRect(
         unsigned int left,
 		unsigned int top,

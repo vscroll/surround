@@ -12,6 +12,11 @@ RenderSideWorker::RenderSideWorker()
     mCapture = NULL;
     mImageSHM = NULL;
 
+    mSideImageCropLeft = 0;
+    mSideImageCropTop = 0;
+    mSideImageCropWidth = 0;
+    mSideImageCropHeight = 0;
+
     mSideImageLeft = 0;
     mSideImageTop = 0;
     mSideImageWidth = 0;
@@ -40,6 +45,17 @@ void RenderSideWorker::setCaptureModule(ICapture* capture)
         mImageSHM = new ImageSHM();
         mImageSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
     }
+}
+
+void RenderSideWorker::setSideImageCrop(unsigned int left,
+		    unsigned int top,
+		    unsigned int width,
+		    unsigned int height)
+{
+    mSideImageCropLeft = left;
+    mSideImageCropTop = top;
+    mSideImageCropWidth = width;
+    mSideImageCropHeight = height;
 }
 
 void RenderSideWorker::setSideImageRect(unsigned int left,
@@ -126,8 +142,25 @@ void RenderSideWorker::run()
     struct render_surface_t surface;
     surface.srcBuf = (unsigned char*)sideImage->data;
     surface.srcPixfmt = sideImage->info.pixfmt;
-    surface.srcWidth = sideImage->info.width;
-    surface.srcHeight = sideImage->info.height;
+    if (0 == mSideImageCropWidth
+        || 0 == mSideImageCropHeight
+        || (mSideImageCropLeft + mSideImageCropWidth) >= sideImage->info.width
+        || (mSideImageCropTop + mSideImageCropHeight) >= sideImage->info.height)
+    {
+        surface.srcLeft = 0;
+        surface.srcTop = 0;
+        surface.srcWidth = sideImage->info.width;
+        surface.srcHeight = sideImage->info.height;
+    }
+    else
+    {
+        surface.srcLeft = mSideImageCropLeft;
+        surface.srcTop = mSideImageCropTop;
+        surface.srcWidth = mSideImageCropWidth;
+        surface.srcHeight = mSideImageCropHeight;
+    }
+
+	surface.srcStride = sideImage->info.width;
     surface.srcSize = sideImage->info.size;
     surface.dstLeft = mSideImageLeft;
     surface.dstTop = mSideImageTop;

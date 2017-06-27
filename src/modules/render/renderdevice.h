@@ -6,6 +6,9 @@
 typedef struct render_surface_t {
     unsigned char* srcBuf;
     unsigned int srcPixfmt;
+    unsigned int srcLeft;
+    unsigned int srcTop;
+	unsigned int srcStride;
     unsigned int srcWidth;
     unsigned int srcHeight;
     unsigned int srcSize;

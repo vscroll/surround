@@ -86,6 +86,9 @@ void RenderMarkWorker::run()
         struct render_surface_t surface;
         surface.srcBuf = (unsigned char*)gMarkData;
         surface.srcPixfmt = V4L2_PIX_FMT_YUYV;
+        surface.srcLeft = 0;
+        surface.srcTop = 0;
+		surface.srcStride = 100;
         surface.srcWidth = 100;
         surface.srcHeight = 100;
         surface.srcSize = surface.srcWidth*surface.srcHeight*2;

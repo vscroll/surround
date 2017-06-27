@@ -45,6 +45,7 @@ CaptureWorkerBase::~CaptureWorkerBase()
 
 int CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t source[], unsigned int channelNum)
 {
+#if 0
     for (unsigned int i = 0; i < channelNum; ++i)
     {
         if (sink[i].pixfmt != source[i].pixfmt)
@@ -59,6 +60,7 @@ int CaptureWorkerBase::setCapCapacity(struct cap_sink_t sink[], struct cap_src_t
             return -1;
         }
     }
+#endif
 
     mVideoChannelNum = channelNum <= VIDEO_CHANNEL_SIZE ? channelNum: VIDEO_CHANNEL_SIZE;
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
