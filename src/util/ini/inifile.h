@@ -7,7 +7,7 @@
 class CIniFile
 {
 
-#define LINE_LEN_MAX    256   
+#define LINE_LEN_MAX    256
 
 // Parameter: <key, value> 
 typedef std::map<std::string, std::string> KEYMAP; 

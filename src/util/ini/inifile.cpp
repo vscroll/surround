@@ -119,25 +119,27 @@ int CIniFile::saveAsFile(const char* path)
 	for (; it != mMap.end(); ++it)
 	{
 		std::string section = it->first;
-		char tmpSection[256] = {0};
-		sprintf(tmpSection, "[%s]", section.c_str());
+		char tmpSection[LINE_LEN_MAX] = {0};
+		sprintf(tmpSection, "[%s]\n", section.c_str());
 		fwrite(tmpSection, 1, strlen(tmpSection), fp);
 		KEYMAP keyMap = it->second;
 		KEYMAP::iterator keyIt = keyMap.begin();
-		printf("222 %s \n", tmpSection);
+		//printf("222 %s \n", tmpSection);
 		for (; keyIt != keyMap.end(); ++keyIt)
 		{
 			std::string key = keyIt->first;
 			std::string value = keyIt->second;
-			char tmpKey[256] = {0};
-			sprintf(tmpKey, "%s=%s", key.c_str(), value.c_str());
+			char tmpKey[LINE_LEN_MAX] = {0};
+			sprintf(tmpKey, "%s=%s\n", key.c_str(), value.c_str());
 			fwrite(tmpKey, 1, strlen(tmpKey), fp);
 
-			printf("333 %s \n", tmpKey);
-		}		
+			//printf("333 %s \n", tmpKey);
+		}
+        fwrite("\n", 1, 1, fp);	
 	}
 
 	fclose(fp);
+    fp = NULL;
 }
 
 int CIniFile::getKey(const char* section, const char* key, char* value)
@@ -155,14 +157,12 @@ int CIniFile::setKey(const char* section, const char* key, char* value)
 {
 	if (mMap.find(section) == mMap.end())
 	{
-		printf("000 %s %s %s\n", section, key, value);
 		KEYMAP keyMap;
 		keyMap[key]	= value;
 		mMap[section] = keyMap;
 	}
 	else
 	{
-		printf("111 %s %s %s\n", section, key, value);
     	KEYMAP keyMap = mMap[section];
 		keyMap[key] = value;
 	}
@@ -192,7 +192,7 @@ char* CIniFile::getStr(const char* section, const char* key)
 
 int CIniFile::setInt(const char* section, const char* key, int value)
 {
-	char tmp[256] = {0};
+	char tmp[LINE_LEN_MAX] = {0};
 	sprintf(tmp, "%d", value);
 	return setKey(section, key, tmp);
 }
