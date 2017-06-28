@@ -5,6 +5,7 @@ exclude_dirs    = include  bin  lib
 #dirs:=$(shell find . -maxdepth 1 -type d)
 dirs= \
 	src/tools/generate_cl_table \
+	src/tools/update_crop_info \
 	src/modules/apptest/alpha_main \
 	src/modules/apptest/calibrate_main \
 	src/modules/apptest/capture_main \
