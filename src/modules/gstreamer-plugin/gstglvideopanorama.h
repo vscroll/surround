@@ -29,6 +29,14 @@ struct _GstGLVideoPanorama
 
     GstPad *sinkpad[VIDEO_CHN_NUM];
     GstPad *srcpad;
+
+    GQueue *queue[VIDEO_CHN_NUM];
+
+    GQueue *panorama_queue;
+    GMutex panorama_queue_mutex;
+
+    GstTask *task;
+    GRecMutex task_mutex;
 };
 
 struct _GstGLVideoPanoramaClass
