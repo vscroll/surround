@@ -37,6 +37,7 @@ struct _GstGLVideoPanorama
 
     GstTask *task;
     GRecMutex task_mutex;
+    gboolean running;
 };
 
 struct _GstGLVideoPanoramaClass

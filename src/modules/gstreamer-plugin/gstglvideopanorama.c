@@ -32,23 +32,23 @@ G_DEFINE_TYPE_WITH_CODE (GstGLVideoPanorama, gst_gl_video_panorama, GST_TYPE_ELE
 #define VIDEOPANORAMA_QUEUE(self, i) (((GstGLVideoPanorama*)self)->queue[i])
 
 #define QUEUE_PUSH(self, i, buf) G_STMT_START {                                         \
-  GST_DEBUG ("=> Pushing to QUEUE[%d] in thread %p, length:%d",                         \
+  GST_LOG ("=> Pushing to QUEUE[%d] in thread %p, length:%d",                         \
       i, g_thread_self(), g_queue_get_length (VIDEOPANORAMA_QUEUE (self, i)));        \
   g_queue_push_tail (VIDEOPANORAMA_QUEUE (self, i), buf);                              \
 } G_STMT_END
 
 #define QUEUE_POP(self, i, pointer) G_STMT_START {                                      \
-  GST_DEBUG ("=> Waiting on QUEUE[%d] in thread %p, length:%d",                         \
+  GST_LOG ("=> Waiting on QUEUE[%d] in thread %p, length:%d",                         \
         i, g_thread_self(), g_queue_get_length (VIDEOPANORAMA_QUEUE (self, i)));      \
   pointer = g_queue_pop_tail (VIDEOPANORAMA_QUEUE (self, i));                          \
-  GST_DEBUG ("=> Waited on QUEUE[%d] in thread %p",                                     \
+  GST_LOG ("=> Waited on QUEUE[%d] in thread %p",                                     \
          i, g_thread_self());                                                           \
  } G_STMT_END
 
 #define VIDEOPANORAMA_PANORAMA_QUEUE(self) (((GstGLVideoPanorama*)self)->panorama_queue)
 
 #define PANORAMA_QUEUE_PUSH(self, buf) G_STMT_START {                                   \
-  GST_DEBUG ("=> Pushing to PANORAMA_QUEUE in thread %p, length:%d",                    \
+  GST_LOG ("=> Pushing to PANORAMA_QUEUE in thread %p, length:%d",                    \
       g_thread_self(), g_queue_get_length (VIDEOPANORAMA_PANORAMA_QUEUE (self)));     \
   g_mutex_lock(&(((GstGLVideoPanorama*)self)->panorama_queue_mutex));                   \
   g_queue_push_tail (VIDEOPANORAMA_PANORAMA_QUEUE (self), buf);                        \
@@ -56,12 +56,12 @@ G_DEFINE_TYPE_WITH_CODE (GstGLVideoPanorama, gst_gl_video_panorama, GST_TYPE_ELE
 } G_STMT_END
 
 #define PANORAMA_QUEUE_POP(self, pointer) G_STMT_START {                                \
-  GST_DEBUG ("=> Waiting on PANORAMA_QUEUE in thread %p, length:%d",                    \
+  GST_LOG ("=> Waiting on PANORAMA_QUEUE in thread %p, length:%d",                    \
         g_thread_self(), g_queue_get_length (VIDEOPANORAMA_PANORAMA_QUEUE (self)));   \
   g_mutex_lock(&(((GstGLVideoPanorama*)self)->panorama_queue_mutex));                   \
   pointer = g_queue_pop_tail (VIDEOPANORAMA_PANORAMA_QUEUE (self));                    \
   g_mutex_unlock(&(((GstGLVideoPanorama*)self)->panorama_queue_mutex));                 \
-  GST_DEBUG ("=> Waited on PANORAMA_QUEUE in thread %p",                                \
+  GST_LOG ("=> Waited on PANORAMA_QUEUE in thread %p",                                \
          g_thread_self());                                                              \
  } G_STMT_END
 
@@ -493,6 +493,7 @@ start_render_task (GstGLVideoPanorama * panorama)
         gst_task_set_lock (panorama->task, &panorama->task_mutex);
     }
 
+    panorama->running = TRUE;
     gst_task_start (panorama->task);
     return TRUE;
 /* ERRORS */
@@ -510,6 +511,8 @@ stop_render_task (GstGLVideoPanorama * panorama)
 
     GstTask *task;
     if (NULL != (task = panorama->task)) {
+
+        panorama->running = FALSE;
         panorama->task = NULL;
 
         gst_task_stop (task);
@@ -525,19 +528,20 @@ stop_render_task (GstGLVideoPanorama * panorama)
 static void
 render_task (GstGLVideoPanorama * panorama)
 {
-    GST_DEBUG("=> render_task\n");
+    GST_DEBUG("=> render_task start\n");
 
     int i = 0;
-    while (TRUE) {
+    while (panorama->running) {
         for (i = 0; i < VIDEO_CHN_NUM; ++i) {
             GstBuffer *buf = NULL;
             QUEUE_POP(panorama, i, buf);
-            GST_DEBUG("=> render_task i=%d buf=%x\n", i, buf);
-            if (buf != NULL) {
+            if (buf != NULL && i == VIDEO_CHN_FRONT) {
                 PANORAMA_QUEUE_PUSH(panorama, buf);
             }
         }
 
         usleep(10);
     }
+
+    GST_DEBUG("=> render_task end\n");
 }
