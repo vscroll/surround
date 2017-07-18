@@ -1,4 +1,5 @@
 #include "gstglvideopanorama.h"
+#include "gstglvideopanoramasink.h"
 
 /* GStreamer license */
 #define GST_LICENSE "LGPL"
@@ -23,14 +24,19 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  GST_DEBUG_CATEGORY_INIT (gst_gl_gstgladas_debug, "gstgladas", 0, "gstgladas");
+    GST_DEBUG_CATEGORY_INIT (gst_gl_gstgladas_debug, "gstgladas", 0, "gstgladas");
 
-  if (!gst_element_register (plugin, "glvideopanorama",
-          GST_RANK_NONE, GST_TYPE_GL_VIDEO_PANORAMA)) {
-    return FALSE;/* GStreamer license */
-  }
+    if (!gst_element_register (plugin, "glvideopanorama",
+        GST_RANK_NONE, GST_TYPE_GL_VIDEO_PANORAMA)) {
+        return FALSE;
+    }
 
-  return TRUE;
+    if (!gst_element_register (plugin, "glvideopanoramasink",
+        GST_RANK_NONE, GST_TYPE_GL_VIDEO_PANORAMA_SINK)) {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
