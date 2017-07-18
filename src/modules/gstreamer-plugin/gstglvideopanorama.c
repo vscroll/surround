@@ -193,7 +193,6 @@ static void
 gst_gl_video_panorama_init (GstGLVideoPanorama * panorama)
 {
     int i;
-    int video_chn_num;
     GST_DEBUG("=> gst_gl_video_panorama_init\n");
 
     //sink
@@ -234,7 +233,7 @@ gst_gl_video_panorama_init (GstGLVideoPanorama * panorama)
 #endif
 
     for (i = 0; i < VIDEO_CHN_NUM; ++i) {
-        VIDEOPANORAMA_QUEUE (panorama, i) = g_queue_new ();
+        panorama->queue[i] = g_queue_new ();
     }
 
     panorama->panorama_queue = g_queue_new ();
@@ -254,14 +253,14 @@ gst_gl_video_panorama_dispose (GObject * object)
 {
     GST_DEBUG("=> gst_gl_video_panorama_dispose\n");
 
-    G_OBJECT_CLASS(object)->dispose (object);
+    G_OBJECT_CLASS(parent_class)->dispose (object);
 }
 
 static void
 gst_gl_video_panorama_finalize (GObject * object)
 {
     GST_DEBUG("=> gst_gl_video_panorama_finalize\n");
-    G_OBJECT_CLASS(object)->finalize (object);
+    G_OBJECT_CLASS(parent_class)->finalize (object);
 }
 
 static void
@@ -391,7 +390,6 @@ gst_gl_video_panorama_set_caps (GstPad * pad, GstCaps * caps)
 {
     GST_DEBUG("=> gst_gl_video_panorama_set_caps\n");
     GstGLVideoPanorama *panorama;
-    GstPad *otherpad;
 
     panorama = GST_GL_VIDEO_PANORAMA(gst_pad_get_parent (pad));
     if (pad == panorama->srcpad) {
@@ -411,8 +409,7 @@ static gboolean
 gst_gl_video_panorama_sink_event (GstPad *pad, GstObject *parent, GstEvent *event)
 {
     GST_DEBUG("=> gst_gl_video_panorama_sink_event\n");
-    GstGLVideoPanorama *panorama = GST_GL_VIDEO_PANORAMA(parent);
-    gboolean ret = TRUE;
+    //GstGLVideoPanorama *panorama = GST_GL_VIDEO_PANORAMA(parent);
 
     switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_CAPS:
@@ -424,7 +421,7 @@ gst_gl_video_panorama_sink_event (GstPad *pad, GstObject *parent, GstEvent *even
         /* do something with the caps */
 
         /* and forward */
-        ret = gst_pad_event_default (pad, parent, event);
+        gst_pad_event_default (pad, parent, event);
         break;
     }
     case GST_EVENT_EOS:
@@ -523,6 +520,8 @@ stop_render_task (GstGLVideoPanorama * panorama)
 
         g_rec_mutex_clear (&panorama->task_mutex);
     }
+
+    return TRUE;
 }
 
 static void
