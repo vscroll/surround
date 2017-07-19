@@ -1,6 +1,7 @@
 #include <gst/gst.h>
 #include <gst/base/gstcollectpads.h>
 #include <gst/video/video.h>
+#include <sys/time.h>
 
 #include "gstglvideopanoramasink.h"
 
@@ -34,13 +35,17 @@ G_DEFINE_TYPE_WITH_CODE (GstGLVideoPanoramaSink, gst_gl_video_panorama_sink, GST
 #define QUEUE_PUSH(self, i, buf) G_STMT_START {                                         \
   GST_LOG ("=> Pushing to QUEUE[%d] in thread %p, length:%d",                         \
       i, g_thread_self(), g_queue_get_length (VIDEOPANORAMASINK_QUEUE (self, i)));        \
+  g_mutex_lock(&(((GstGLVideoPanoramaSink*)self)->queue_mutex));                   \
   g_queue_push_tail (VIDEOPANORAMASINK_QUEUE (self, i), buf);                              \
+  g_mutex_unlock(&(((GstGLVideoPanoramaSink*)self)->queue_mutex));                 \
 } G_STMT_END
 
 #define QUEUE_POP(self, i, pointer) G_STMT_START {                                      \
   GST_LOG ("=> Waiting on QUEUE[%d] in thread %p, length:%d",                         \
         i, g_thread_self(), g_queue_get_length (VIDEOPANORAMASINK_QUEUE (self, i)));      \
+  g_mutex_lock(&(((GstGLVideoPanoramaSink*)self)->queue_mutex));                   \
   pointer = g_queue_pop_tail (VIDEOPANORAMASINK_QUEUE (self, i));                          \
+  g_mutex_unlock(&(((GstGLVideoPanoramaSink*)self)->queue_mutex));                 \
   GST_LOG ("=> Waited on QUEUE[%d] in thread %p",                                     \
          i, g_thread_self());                                                           \
  } G_STMT_END
@@ -127,6 +132,12 @@ gst_gl_video_panorama_sink_activate_mode (GstPad * pad,
 
 //priv
 static gboolean
+create_gles_env (GstGLVideoPanoramaSink * panorama);
+
+static void
+destroy_gles_env (GstGLVideoPanoramaSink * panorama);
+
+static gboolean
 start_render_task (GstGLVideoPanoramaSink * panorama);
 
 static gboolean
@@ -207,6 +218,7 @@ gst_gl_video_panorama_sink_init (GstGLVideoPanoramaSink * panorama)
     for (i = 0; i < VIDEO_CHN_NUM; ++i) {
         panorama->queue[i] = g_queue_new ();
     }
+    g_mutex_init (&panorama->queue_mutex);
 
     panorama->panorama_queue = g_queue_new ();
     g_mutex_init (&panorama->panorama_queue_mutex);
@@ -326,6 +338,7 @@ gst_gl_video_panorama_chain (GstPad * pad, GstObject * parent, GstBuffer * buffe
 {
     gchar *name = gst_pad_get_name (pad);
     GST_DEBUG("=> gst_gl_video_panorama_chain:%s\n", name);
+    g_free (name);
     GstGLVideoPanoramaSink *panorama = GST_GL_VIDEO_PANORAMA_SINK(parent);
     if (GST_PAD_IS_SINK(pad)) {
         
@@ -342,8 +355,12 @@ gst_gl_video_panorama_chain (GstPad * pad, GstObject * parent, GstBuffer * buffe
         }
     
         if (chn >= 0) {
-            QUEUE_PUSH (panorama, chn, buffer);
+            //QUEUE_PUSH (panorama, chn, buffer);
         }
+    }
+
+    if (buffer != NULL) {
+        gst_buffer_unref (buffer);
     }
 
     return GST_FLOW_OK;
@@ -416,6 +433,151 @@ gst_gl_video_panorama_sink_activate_mode (GstPad * pad,
     return TRUE;
 }
 
+static GLuint
+LoadShader ( GLenum type, const char *shaderSrc )
+{
+    GLuint shader;
+    GLint compiled;
+
+    // Create the shader object
+    shader = glCreateShader ( type );
+    if ( shader == 0 ) {
+   	    return 0;
+    }
+
+    // Load the shader source
+    glShaderSource ( shader, 1, &shaderSrc, NULL );
+
+    // Compile the shader
+    glCompileShader ( shader );
+
+    // Check the compile status
+    glGetShaderiv ( shader, GL_COMPILE_STATUS, &compiled );
+    if ( !compiled ) 
+    {
+        GLint infoLen = 0;
+
+        glGetShaderiv ( shader, GL_INFO_LOG_LENGTH, &infoLen );
+
+        glDeleteShader ( shader );
+        return 0;
+    }
+
+    return shader;
+}
+
+// Draw a triangle using the shader pair created in Init()
+//
+static void Draw ( ESContext *esContext )
+{
+   UserData *userData = (UserData *)esContext->userData;
+   GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f, 
+                           -0.5f, -0.5f, 0.0f,
+                            0.5f, -0.5f, 0.0f };
+      
+   // Set the viewport
+   glViewport ( 0, 0, esContext->width, esContext->height );
+   
+   // Clear the color buffer
+   glClear ( GL_COLOR_BUFFER_BIT );
+
+   // Use the program object
+   glUseProgram ( userData->programObject );
+
+   // Load the vertex data
+   glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, vVertices );
+   glEnableVertexAttribArray ( 0 );
+
+   glDrawArrays ( GL_TRIANGLES, 0, 3 );
+}
+
+static gboolean
+create_gles_env (GstGLVideoPanoramaSink * panorama)
+{
+    esInitContext ( &panorama->esContext );
+    if (GL_FALSE == esCreateWindow ( &panorama->esContext, "GstGLVideoPanoramaSink", 320, 240, ES_WINDOW_RGB )) {
+        GST_ERROR("=> esCreateWindow error\n");
+        return FALSE;
+    }
+
+    GST_ERROR("=> esCreateWindow ok\n");
+
+    panorama->esContext.userData = malloc(sizeof(panorama->userData));
+
+    UserData *userData = (UserData *)(panorama->esContext.userData);
+    char vShaderStr[] =  
+      "attribute vec4 vPosition;    \n"
+      "void main()                  \n"
+      "{                            \n"
+      "   gl_Position = vPosition;  \n"
+      "}                            \n";
+   
+    char fShaderStr[] =  
+      "precision mediump float;\n"\
+      "void main()                                  \n"
+      "{                                            \n"
+      "  gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );\n"
+      "}                                            \n";
+
+    GLuint vertexShader;
+    GLuint fragmentShader;
+    GLuint programObject;
+    GLint linked;
+
+    // Load the vertex/fragment shaders
+    vertexShader = LoadShader ( GL_VERTEX_SHADER, vShaderStr );
+    fragmentShader = LoadShader ( GL_FRAGMENT_SHADER, fShaderStr );
+
+    // Create the program object
+    programObject = glCreateProgram ( );
+   
+    if ( programObject == 0 ) {
+        GST_ERROR("=> glCreateProgram error\n");
+        return FALSE;
+    }
+
+    GST_ERROR("=> glCreateProgram ok\n");
+
+    glAttachShader ( programObject, vertexShader );
+    glAttachShader ( programObject, fragmentShader );
+
+    // Bind vPosition to attributDrawe 0   
+    glBindAttribLocation ( programObject, 0, "vPosition" );
+
+    // Link the program
+    glLinkProgram ( programObject );
+
+    // Check the link status
+    glGetProgramiv ( programObject, GL_LINK_STATUS, &linked );
+
+    if ( !linked ) 
+    {
+        GLint infoLen = 0;
+
+        glGetProgramiv ( programObject, GL_INFO_LOG_LENGTH, &infoLen );
+      
+        glDeleteProgram ( programObject );
+
+        GST_ERROR("=> glGetProgramiv error\n");
+        return FALSE;
+    }
+    GST_ERROR("=> glLinkProgram ok\n");
+
+    // Store the program object
+    userData->programObject = programObject;
+
+    glClearColor ( 0.0f, 0.0f, 0.0f, 0.0f );
+
+    return TRUE;
+}
+
+static void
+destroy_gles_env (GstGLVideoPanoramaSink * panorama)
+{
+
+
+}
+
 static gboolean
 start_render_task (GstGLVideoPanoramaSink * panorama)
 {
@@ -471,18 +633,33 @@ render_task (GstGLVideoPanoramaSink * panorama)
 {
     GST_DEBUG("=> render_task start\n");
 
+    create_gles_env(panorama);
+
     int i = 0;
     while (panorama->running) {
         for (i = 0; i < VIDEO_CHN_NUM; ++i) {
             GstBuffer *buf = NULL;
             QUEUE_POP(panorama, i, buf);
+            if (buf != NULL) {
+                gst_buffer_unref (buf);
+            }
+#if 0
             if (buf != NULL && i == VIDEO_CHN_FRONT) {
                 PANORAMA_QUEUE_PUSH(panorama, buf);
             }
+#endif
         }
 
+#if 1
+        //GST_ERROR("=> draw\n");
+        Draw(&panorama->esContext);
+
+        eglSwapBuffers(panorama->esContext.eglDisplay, panorama->esContext.eglSurface);
+#endif
         usleep(10);
     }
+
+    destroy_gles_env(panorama);
 
     GST_DEBUG("=> render_task end\n");
 }

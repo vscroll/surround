@@ -5,6 +5,7 @@
 #include <gst/video/video.h>
 #include <gst/gl/gl.h>
 #include "gstglvideodef.h"
+#include "esUtil.h"
 
 G_BEGIN_DECLS
 
@@ -23,6 +24,12 @@ G_BEGIN_DECLS
 typedef struct _GstGLVideoPanoramaSink GstGLVideoPanoramaSink;
 typedef struct _GstGLVideoPanoramaSinkClass GstGLVideoPanoramaSinkClass;
 
+typedef struct
+{
+    // Handle to a program object
+    GLuint programObject;
+} UserData;
+
 struct _GstGLVideoPanoramaSink
 {
     GstElement parent;
@@ -31,6 +38,7 @@ struct _GstGLVideoPanoramaSink
     GstPad *srcpad;
 
     GQueue *queue[VIDEO_CHN_NUM];
+    GMutex queue_mutex;
 
     GQueue *panorama_queue;
     GMutex panorama_queue_mutex;
@@ -38,6 +46,10 @@ struct _GstGLVideoPanoramaSink
     GstTask *task;
     GRecMutex task_mutex;
     gboolean running;
+
+    ESContext esContext;
+
+    UserData userData;
 };
 
 struct _GstGLVideoPanoramaSinkClass
