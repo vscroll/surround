@@ -24,12 +24,6 @@ G_BEGIN_DECLS
 typedef struct _GstGLVideoPanoramaSink GstGLVideoPanoramaSink;
 typedef struct _GstGLVideoPanoramaSinkClass GstGLVideoPanoramaSinkClass;
 
-typedef struct
-{
-    // Handle to a program object
-    GLuint programObject;
-} UserData;
-
 struct _GstGLVideoPanoramaSink
 {
     GstElement parent;
@@ -48,8 +42,6 @@ struct _GstGLVideoPanoramaSink
     gboolean running;
 
     ESContext esContext;
-
-    UserData userData;
 };
 
 struct _GstGLVideoPanoramaSinkClass

@@ -131,6 +131,12 @@ gst_gl_video_panorama_sink_activate_mode (GstPad * pad,
     GstObject * parent, GstPadMode mode, gboolean active);
 
 //priv
+typedef struct _GstGLVideoPanoramaUserData
+{
+    // Handle to a program object
+    GLuint programObject;
+} GstGLVideoPanoramaUserData;
+
 static gboolean
 create_gles_env (GstGLVideoPanoramaSink * panorama);
 
@@ -470,7 +476,7 @@ LoadShader ( GLenum type, const char *shaderSrc )
 //
 static void Draw ( ESContext *esContext )
 {
-   UserData *userData = (UserData *)esContext->userData;
+   GstGLVideoPanoramaUserData *userData = (GstGLVideoPanoramaUserData *)esContext->userData;
    GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f, 
                            -0.5f, -0.5f, 0.0f,
                             0.5f, -0.5f, 0.0f };
@@ -502,9 +508,9 @@ create_gles_env (GstGLVideoPanoramaSink * panorama)
 
     GST_ERROR("=> esCreateWindow ok\n");
 
-    panorama->esContext.userData = malloc(sizeof(panorama->userData));
+    panorama->esContext.userData = malloc(sizeof(GstGLVideoPanoramaUserData));
 
-    UserData *userData = (UserData *)(panorama->esContext.userData);
+    GstGLVideoPanoramaUserData *userData = (GstGLVideoPanoramaUserData *)(panorama->esContext.userData);
     char vShaderStr[] =  
       "attribute vec4 vPosition;    \n"
       "void main()                  \n"
@@ -574,8 +580,11 @@ create_gles_env (GstGLVideoPanoramaSink * panorama)
 static void
 destroy_gles_env (GstGLVideoPanoramaSink * panorama)
 {
+    GstGLVideoPanoramaUserData *userData = (GstGLVideoPanoramaUserData *)(panorama->esContext.userData);
+    glDeleteProgram ( userData->programObject );
 
-
+    free(panorama->esContext.userData);
+    panorama->esContext.userData = NULL;
 }
 
 static gboolean
