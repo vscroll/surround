@@ -360,24 +360,24 @@ gst_gl_video_panorama_chain (GstPad * pad, GstObject * parent, GstBuffer * buffe
     gchar *name = gst_pad_get_name (pad);
     GST_DEBUG("=> gst_gl_video_panorama_chain:%s\n", name);
     GstGLVideoPanorama *panorama = GST_GL_VIDEO_PANORAMA(parent);
-    if (GST_PAD_IS_SINK(pad)) {
-        
-        int chn = -1;
-        if (g_strcmp0(name, "sink_0") == 0) {
-            chn = VIDEO_CHN_FRONT;            
-        } else if (g_strcmp0(name, "sink_1") == 0) {
-            chn = VIDEO_CHN_REAR;
-        } else if (g_strcmp0(name, "sink_2") == 0) {
-            chn = VIDEO_CHN_LEFT;
-        } else if (g_strcmp0(name, "sink_3") == 0) {
-            chn = VIDEO_CHN_RIGHT;
-        } else {
-        }
-
-        if (chn >= 0) {
-            QUEUE_PUSH (panorama, chn, buffer);
-        }
+    int chn = -1;
+    if (g_strcmp0(name, "sink_0") == 0) {
+        chn = VIDEO_CHN_FRONT;            
+    } else if (g_strcmp0(name, "sink_1") == 0) {
+        chn = VIDEO_CHN_REAR;
+    } else if (g_strcmp0(name, "sink_2") == 0) {
+        chn = VIDEO_CHN_LEFT;
+    } else if (g_strcmp0(name, "sink_3") == 0) {
+        chn = VIDEO_CHN_RIGHT;
+    } else {
     }
+
+    if (chn >= 0) {
+        QUEUE_PUSH (panorama, chn, buffer);
+    } else {
+        gst_buffer_unref(buffer);
+    }
+
     g_free (name);
 
 
