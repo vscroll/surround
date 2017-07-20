@@ -34,13 +34,17 @@ G_DEFINE_TYPE_WITH_CODE (GstGLVideoPanorama, gst_gl_video_panorama, GST_TYPE_ELE
 #define QUEUE_PUSH(self, i, buf) G_STMT_START {                                         \
   GST_LOG ("=> Pushing to QUEUE[%d] in thread %p, length:%d",                         \
       i, g_thread_self(), g_queue_get_length (VIDEOPANORAMA_QUEUE (self, i)));        \
+  g_mutex_lock(&(((GstGLVideoPanorama*)self)->queue_mutex));                   \
   g_queue_push_tail (VIDEOPANORAMA_QUEUE (self, i), buf);                              \
+  g_mutex_unlock(&(((GstGLVideoPanorama*)self)->queue_mutex));                 \
 } G_STMT_END
 
 #define QUEUE_POP(self, i, pointer) G_STMT_START {                                      \
   GST_LOG ("=> Waiting on QUEUE[%d] in thread %p, length:%d",                         \
         i, g_thread_self(), g_queue_get_length (VIDEOPANORAMA_QUEUE (self, i)));      \
+  g_mutex_lock(&(((GstGLVideoPanorama*)self)->queue_mutex));                   \
   pointer = g_queue_pop_tail (VIDEOPANORAMA_QUEUE (self, i));                          \
+  g_mutex_unlock(&(((GstGLVideoPanorama*)self)->queue_mutex));                 \
   GST_LOG ("=> Waited on QUEUE[%d] in thread %p",                                     \
          i, g_thread_self());                                                           \
  } G_STMT_END
@@ -235,6 +239,7 @@ gst_gl_video_panorama_init (GstGLVideoPanorama * panorama)
     for (i = 0; i < VIDEO_CHN_NUM; ++i) {
         panorama->queue[i] = g_queue_new ();
     }
+    g_mutex_init (&panorama->queue_mutex);
 
     panorama->panorama_queue = g_queue_new ();
     g_mutex_init (&panorama->panorama_queue_mutex);
@@ -358,21 +363,22 @@ gst_gl_video_panorama_chain (GstPad * pad, GstObject * parent, GstBuffer * buffe
     if (GST_PAD_IS_SINK(pad)) {
         
         int chn = -1;
-        if (strcmp(name, "sink_0") == 0) {
+        if (g_strcmp0(name, "sink_0") == 0) {
             chn = VIDEO_CHN_FRONT;            
-        } else if (strcmp(name, "sink_1") == 0) {
+        } else if (g_strcmp0(name, "sink_1") == 0) {
             chn = VIDEO_CHN_REAR;
-        } else if (strcmp(name, "sink_2") == 0) {
+        } else if (g_strcmp0(name, "sink_2") == 0) {
             chn = VIDEO_CHN_LEFT;
-        } else if (strcmp(name, "sink_3") == 0) {
+        } else if (g_strcmp0(name, "sink_3") == 0) {
             chn = VIDEO_CHN_RIGHT;
         } else {
         }
-    
+
         if (chn >= 0) {
             QUEUE_PUSH (panorama, chn, buffer);
         }
     }
+    g_free (name);
 
 
     GstBuffer* buf = NULL;
@@ -534,7 +540,7 @@ render_task (GstGLVideoPanorama * panorama)
         for (i = 0; i < VIDEO_CHN_NUM; ++i) {
             GstBuffer *buf = NULL;
             QUEUE_POP(panorama, i, buf);
-            if (buf != NULL && i == VIDEO_CHN_FRONT) {
+            if (buf != NULL/* && i == VIDEO_CHN_FRONT*/) {
                 PANORAMA_QUEUE_PUSH(panorama, buf);
             }
         }
