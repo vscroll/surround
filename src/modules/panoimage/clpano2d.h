@@ -31,22 +31,16 @@ private:
     	cv::Mat& weight,
         unsigned int panoWidth,
         unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage);
+        unsigned int panoSize);
     int writeAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
-        unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage);
+    	cv::Mat& weight);
     void freeAllBuffer();
 
     int allocAndWritePanoBuffer(unsigned int panoWidth,
         unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage);
+        unsigned int panoSize);
     void freePanoBuffer();
 
     int allocAndWriteLookupTabBuffer(cv::Mat* lookupTab[],

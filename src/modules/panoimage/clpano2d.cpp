@@ -60,7 +60,7 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
 #if USE_MEM_VERSION_0
     if (!mAllBufReady)
     {
-        if (allocAllBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+        if (allocAllBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize) < 0)
         {
             freeAllBuffer();
             return -1;
@@ -69,7 +69,7 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
         mAllBufReady = true;
     }
 
-    if (writeAllBuffer(sideImage, lookupTab, mask, weight, panoWidth, panoHeight, panoSize, panoImage) < 0)
+    if (writeAllBuffer(sideImage, lookupTab, mask, weight) < 0)
     {
         return -1;
     }
@@ -103,7 +103,7 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
 #endif
     if (!mPanoBufReady)
     {
-        if (allocAndWritePanoBuffer(panoWidth, panoHeight, panoSize, panoImage) < 0)
+        if (allocAndWritePanoBuffer(panoWidth, panoHeight, panoSize) < 0)
         {
             freePanoBuffer();
             return -1;
@@ -174,8 +174,7 @@ int CLPano2D::allocAllBuffer(surround_image_t* sideImage[],
     	cv::Mat& weight,
         unsigned int panoWidth,
         unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage)
+        unsigned int panoSize)
 {
     printf ("\nAllocation buffer all start\n");
 
@@ -273,11 +272,7 @@ int CLPano2D::allocAllBuffer(surround_image_t* sideImage[],
 int CLPano2D::writeAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
-    	cv::Mat& weight,
-        unsigned int panoWidth,
-        unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage)
+    	cv::Mat& weight)
 {
     cl_int ret;
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -471,8 +466,7 @@ void CLPano2D::freeLookupTabBuffer()
 
 int CLPano2D::allocAndWritePanoBuffer(unsigned int panoWidth,
         unsigned int panoHeight,
-        unsigned int panoSize,
-        unsigned char* panoImage)
+        unsigned int panoSize)
 {
     cl_int ret;
 
