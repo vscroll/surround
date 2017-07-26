@@ -54,7 +54,91 @@ int main (int argc, char **argv)
     {
         captureFPS = VIDEO_FPS_15;
     }
-  
+
+	//sink
+	int sinkWidth = config->getSinkWidth();
+	int sinkHeight = config->getSinkHeight();
+	if (sinkWidth < 0
+		|| sinkHeight < 0
+		|| sinkWidth > CAPTURE_VIDEO_RES_X
+		|| sinkHeight > CAPTURE_VIDEO_RES_Y)
+	{
+	    std::cout << "capture_main:: sink config error"
+	            << std::endl;
+		return -1;
+	}
+
+	//crop
+	int cropX[VIDEO_CHANNEL_SIZE];
+	int cropY[VIDEO_CHANNEL_SIZE];
+	int cropWidth[VIDEO_CHANNEL_SIZE];
+	int cropHeight[VIDEO_CHANNEL_SIZE];
+	for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+	{
+		cropX[i] = config->getSinkCropX(i);
+		cropY[i] = config->getSinkCropY(i);
+		cropWidth[i] = config->getSinkCropWidth(i);
+		cropHeight[i] = config->getSinkCropHeight(i);
+		if (cropX[i] < 0
+			|| cropY[i] < 0
+			|| cropWidth[i] < 0
+			|| cropHeight[i] < 0
+			|| (cropX[i] + cropWidth[i]) > CAPTURE_VIDEO_RES_X
+			|| (cropY[i] + cropHeight[i]) > CAPTURE_VIDEO_RES_Y)
+		{
+		    std::cout << "capture_main:: sink crop config error"
+		            << std::endl;
+			return -1;
+		}
+	}
+
+	int focusSinkCropX = config->getFocusSinkCropX();
+	int focusSinkCropY = config->getFocusSinkCropY();
+	int focusSinkCropWidth = config->getFocusSinkCropWidth();
+	int focusSinkCropHeight = config->getFocusSinkCropHeight();
+	if (focusSinkCropX < 0
+		|| focusSinkCropY < 0
+		|| focusSinkCropX > CAPTURE_VIDEO_RES_X
+		|| focusSinkCropY > CAPTURE_VIDEO_RES_Y
+		|| focusSinkCropWidth < 0
+		|| focusSinkCropHeight < 0
+		|| focusSinkCropWidth > CAPTURE_VIDEO_RES_X
+		|| focusSinkCropHeight > CAPTURE_VIDEO_RES_Y)
+	{
+		std::cout << "capture_main:: focus sink crop config error"
+				<< std::endl;
+		return -1;
+	}
+
+	//source
+	int srcWidth[VIDEO_CHANNEL_SIZE];
+	int srcHeight[VIDEO_CHANNEL_SIZE];
+	for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+	{
+		srcWidth[i] = config->getSourceWidth(i);
+		srcHeight[i] = config->getSourceHeight(i);
+		if (srcWidth[i] < 0
+			|| srcHeight[i] < 0
+			|| srcWidth[i] > CAPTURE_VIDEO_RES_X
+			|| srcHeight[i] > CAPTURE_VIDEO_RES_Y)
+		{
+		    std::cout << "capture_main:: source config error"
+		            << std::endl;
+			return -1;
+		}
+	}
+
+	int focusSrcWidth = config->getFocusSourceWidth();
+	int focusSrcHeight = config->getFocusSourceHeight();
+	if (focusSrcWidth < 0
+		|| focusSrcHeight < 0
+		|| focusSrcWidth > CAPTURE_VIDEO_RES_X
+		|| focusSrcHeight > CAPTURE_VIDEO_RES_Y)
+	{
+		std::cout << "capture_main:: focus source config error"
+				<< std::endl;
+		return -1;
+	}
 #if 0
     ICapture* capture = new CaptureImpl();
 #else
@@ -70,15 +154,15 @@ int main (int argc, char **argv)
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
-        sink[i].crop_x = 0;
-        sink[i].crop_y = 0;
-        sink[i].crop_w = CAPTURE_VIDEO_RES_X;
-        sink[i].crop_h = CAPTURE_VIDEO_RES_Y;
+        sink[i].crop_x = cropX[i];
+        sink[i].crop_y = cropY[i];
+        sink[i].crop_w = cropWidth[i];
+        sink[i].crop_h = cropHeight[i];
 
-        // source is same as sink
+        // source's pixfmt is same as sink
         source[i].pixfmt = sink[i].pixfmt;
-        source[i].width = sink[i].width;
-        source[i].height = sink[i].height;
+        source[i].width = srcWidth[i];
+        source[i].height = srcHeight[i];
         source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
     }
     if (capture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE))
@@ -88,13 +172,13 @@ int main (int argc, char **argv)
         return -1;        
     }
 
-    // focus source is same as sink
+    // focus source's pixfmt is same as source
     int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
-    focusSource.pixfmt = sink[0].pixfmt;
-    focusSource.width = sink[0].width;
-    focusSource.height = sink[0].height;
-    focusSource.size = sink[0].size;
+    focusSource.pixfmt = source[0].pixfmt;
+    focusSource.width = focusSrcWidth;
+    focusSource.height = focusSrcHeight;
+    focusSource.size = V4l2::getVideoSize(focusSource.pixfmt, focusSource.width, focusSource.height);
     capture->setFocusSource(focusChannelIndex, &focusSource);
 
     if (capture->openDevice(channel, VIDEO_CHANNEL_SIZE) < 0)
@@ -115,7 +199,7 @@ int main (int argc, char **argv)
     char algoCfgPathName[1024] = {0};
     sprintf(algoCfgPathName, "%sFishToPanoYUV.xml", procPath);
 
-    bool enableOpenCL = config->enableOpenCL();
+    int accelPolicy = config->getAccelPolicy();
 
     int stitchFPS = config->getStitchFPS();
     if (stitchFPS <= 0)
@@ -127,7 +211,7 @@ int main (int argc, char **argv)
     panoImage->init(capture,
             CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_UYVY,
             RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_UYVY,
-            algoCfgPathName, enableOpenCL);
+            algoCfgPathName, accelPolicy);
     panoImage->start(stitchFPS);
 
     PanoSourceSHMWriteWorker* panoSourceSHMWriteWorker = new PanoSourceSHMWriteWorker(panoImage);

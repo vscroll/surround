@@ -5,6 +5,7 @@
 #include "wrap_thread.h"
 #include <opencv/cv.h>
 #include <queue>
+#include <linux/mxcfb.h>
 #include "imageshm.h"
 
 class ICapture;
@@ -24,7 +25,7 @@ public:
 		    unsigned int panoHeight,
 		    unsigned int panoPixfmt,
 		    char* algoCfgFilePath,
-		    bool enableOpenCL);
+		    int accelPolicy);
 
     void queueImages(surround_images_t* surroundImages);
     surround_image_t* dequeuePanoImage();
@@ -39,7 +40,7 @@ private:
         cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
-        bool enableOpenCL);
+        int accelPolicy);
 
     void stitching(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
@@ -58,6 +59,11 @@ private:
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
+
+    unsigned char* new_pano_buffer(int accelPolicy);
+
+    int openFramebuffer(int devIndex);
+    void closeFramebuffer();
 
 private:
     class SourceSHMReadWorker : public WrapThread
@@ -104,8 +110,13 @@ private:
     cv::Mat mStitchMapAlignY;
     cv::Mat mStitchMaskAlign;
 
-    bool mEnableOpenCL;
+    int mAccelPolicy;
     CLPano2D* mCLPano2D;
+
+    int mFBFd;
+    int mFBSize;
+    unsigned short *mFBMem;
+    struct fb_var_screeninfo mScreenInfo;
 
     clock_t mLastCallTime;
 };

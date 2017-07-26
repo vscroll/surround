@@ -16,7 +16,7 @@ public:
     int init(char* clFileName, char* clKernelName);
     int uninit();
 
-    int stitch(surround_image_t* sideImage[],
+    virtual int stitch(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
@@ -24,7 +24,7 @@ public:
         unsigned int panoHeight,
         unsigned int panoSize,
         unsigned char* panoImage);
-private:
+protected:
     int allocAllBuffer(surround_image_t* sideImage[],
     	cv::Mat* lookupTab[],
     	cv::Mat& mask,
@@ -52,7 +52,7 @@ private:
     void freeSideBuffer();
 
 
-private:
+protected:
     cl_kernel mKernel;
 
     cl_mem mMemSideImage[VIDEO_CHANNEL_SIZE];

@@ -1,10 +1,20 @@
 #include "stitchworker.h"
 #include <opencv/cv.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <linux/ipu.h>
 #include "clpano2d.h"
+#include "clpanorender.h"
 #include "util.h"
 #include "ICapture.h"
 #include "imageshm.h"
+
+#define ACCEL_POLICY_CPU                0
+#define ACCEL_POLICY_OPENCL             1
+#define ACCEL_POLICY_OPENCL_RENDER      2
 
 using namespace cv;
 
@@ -71,13 +81,17 @@ StitchWorker::StitchWorker()
     mPanoPixfmt = 0;
     mPanoSize = 0;
 
-    mEnableOpenCL = false;
-    mCLPano2D = new CLPano2D();
+    mAccelPolicy = false;
 
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
         mLookupTab[i] = new cv::Mat();
     }
+
+    mFBFd = -1;
+    mFBMem = NULL;
+    mFBSize = 0;
+    memset(&mScreenInfo, 0, sizeof(mScreenInfo));
 
     mLastCallTime = 0;
 }
@@ -120,7 +134,7 @@ int StitchWorker::init(
 		    unsigned int panoHeight,
 		    unsigned int panoPixfmt,
 		    char* algoCfgFilePath,
-		    bool enableOpenCL)
+		    int accelPolicy)
 {
     mCapture = capture;
     if (NULL == capture)
@@ -158,13 +172,24 @@ int StitchWorker::init(
         return -1;
     }
 
-    mEnableOpenCL = enableOpenCL;
+    mAccelPolicy = accelPolicy;
+    if (mAccelPolicy == ACCEL_POLICY_OPENCL)
+    {
+        mCLPano2D = new CLPano2D();
+    }
+    else if (mAccelPolicy == ACCEL_POLICY_OPENCL_RENDER)
+    {
+        mCLPano2D = new CLPanoRender();
+    }
+    else
+    {
+    }
 
     stitching_init(algoCfgFilePath,
         mLookupTab,
     	mMask,
     	mWeight,
-        mEnableOpenCL);
+        accelPolicy);
 
 #if 0
     if (mEnableOpenCL)
@@ -361,7 +386,7 @@ void StitchWorker::run()
 #if DEBUG_STITCH
     clock_t start1 = clock();
 #endif
-    unsigned char* outPano = new unsigned char[mPanoSize*sizeof(unsigned char)];
+    unsigned char* outPano = NULL;
 
     long timestamp = surroundImage->timestamp;
     long elapsed = Util::get_system_milliseconds() - surroundImage->timestamp;
@@ -374,7 +399,8 @@ void StitchWorker::run()
             sideImage[i] = &(surroundImage->frame[i]);
         }
 
-        if (mEnableOpenCL)
+        outPano = new_pano_buffer(mAccelPolicy);
+        if (mAccelPolicy == ACCEL_POLICY_OPENCL)
         {
             stitching_cl(sideImage,
                     mLookupTab,
@@ -385,7 +411,18 @@ void StitchWorker::run()
                     mPanoSize,
                     outPano);
         }
-        else
+        else if (mAccelPolicy == ACCEL_POLICY_OPENCL_RENDER)
+        {
+            stitching_cl(sideImage,
+                    mLookupTab,
+                    mMask,
+                    mWeight,
+                    mScreenInfo.xres,
+                    mScreenInfo.yres,
+                    mFBSize,
+                    outPano);
+        }
+        else if (mAccelPolicy == ACCEL_POLICY_CPU)
         {
             stitching(sideImage,
                     mLookupTab,
@@ -396,6 +433,10 @@ void StitchWorker::run()
                     mPanoSize,
                     outPano);
         }
+        else
+        {
+            return;
+        }
     }
 
 #if DEBUG_STITCH
@@ -405,7 +446,8 @@ void StitchWorker::run()
     delete surroundImage;
     surroundImage = NULL;
 
-    if (NULL != outPano)
+    if (NULL != outPano
+        && (mAccelPolicy == ACCEL_POLICY_OPENCL || mAccelPolicy == ACCEL_POLICY_CPU))
     {
         surround_image_t* tmp = new surround_image_t();
 	    tmp->info.width = mPanoWidth;
@@ -503,7 +545,7 @@ void StitchWorker::stitching_init(const std::string configPath,
         cv::Mat* lookupTab[],
     	cv::Mat& mask,
     	cv::Mat& weight,
-        bool enableOpenCL)
+        int accelPolicy)
 {
 #if DEBUG_STITCH
     std::cout << "System Initialization:" << configPath << std::endl;
@@ -518,14 +560,24 @@ void StitchWorker::stitching_init(const std::string configPath,
 	fs["weight"] >> weight;
 	fs.release();
 
-    if (enableOpenCL)
+    if (accelPolicy > ACCEL_POLICY_CPU)
     {
         char procPath[1024] = {0};
         if (Util::getAbsolutePath(procPath, 1024) >= 0)
         {
             char cfgPathName[1024] = {0};
             sprintf(cfgPathName, "%sstitch.cl", procPath);
-            mCLPano2D->init(cfgPathName, "stitch_2d");
+            if (accelPolicy == ACCEL_POLICY_OPENCL)
+            {
+                mCLPano2D->init(cfgPathName, "stitch_2d");
+            }
+            else if (accelPolicy == ACCEL_POLICY_OPENCL_RENDER)
+            {
+                mCLPano2D->init(cfgPathName, "stitch_2d_render");
+            }
+            else
+            {
+            }
         }
     }
 
@@ -591,7 +643,7 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 				size_t index1 = lutFront->ptr<float>(i)[0];
 				panoImage[i] = front[index1];
 				break;
-			}
+			}unsigned char* new_pano_buffer(int accelPolicy);
 
 			case 2:
 			{
@@ -664,4 +716,106 @@ void StitchWorker::stitching_cl(surround_image_t* sideImage[],
 {
     mCLPano2D->stitch(sideImage, lookupTab, mask, weight,
                 panoWidth, panoHeight, panoSize, panoImage);
+}
+
+unsigned char* StitchWorker::new_pano_buffer(int accelPolicy)
+{
+    unsigned char* outPano = NULL;
+    if (mAccelPolicy == ACCEL_POLICY_OPENCL
+        || mAccelPolicy == ACCEL_POLICY_CPU)
+    {
+        outPano = new unsigned char[mPanoSize*sizeof(unsigned char)];
+    }
+    else if (mAccelPolicy == ACCEL_POLICY_OPENCL_RENDER)
+    {
+        if (NULL == mFBMem)
+        {
+            openFramebuffer(0);
+        }
+        
+        outPano = (unsigned char*)mFBMem;
+    }
+    else
+    {
+    }
+
+    return outPano;
+}
+
+int StitchWorker::openFramebuffer(int devIndex)
+{
+    char fb[16] = {0};
+    sprintf(fb, "/dev/fb%d", devIndex);
+    if ((mFBFd = open(fb, O_RDWR, 0)) < 0)
+    {
+	    return -1;
+    }
+
+    /* Get fix screen info. */
+    struct fb_fix_screeninfo fbInfo;
+    if (ioctl(mFBFd, FBIOGET_FSCREENINFO, &fbInfo) < 0)
+    {
+        std::cout << "FBIOGET_FSCREENINFO failed"
+                  << std::endl;
+	    return -1;
+    }
+
+    /* Get variable screen info. */
+    if (ioctl(mFBFd, FBIOGET_VSCREENINFO, &mScreenInfo) < 0)
+    {
+        std::cout << "FBIOGET_VSCREENINFO failed"
+                  << std::endl;
+	    return -1;
+    }
+
+    mScreenInfo.bits_per_pixel = 16;
+    if (mPanoPixfmt == V4L2_PIX_FMT_UYVY)
+    {
+        mScreenInfo.nonstd = IPU_PIX_FMT_UYVY;
+    }
+    else if (mPanoPixfmt == V4L2_PIX_FMT_YUYV)
+    {
+        mScreenInfo.nonstd = IPU_PIX_FMT_YUYV;
+    }
+    else
+    {
+    }
+
+    if (ioctl(mFBFd, FBIOPUT_VSCREENINFO, &mScreenInfo) < 0)
+    {
+        std::cout << "FBIOPUT_VSCREENINFO failed"
+                  << std::endl;
+	    return -1;
+    }
+
+    mFBSize = mScreenInfo.xres_virtual * mScreenInfo.yres_virtual * mScreenInfo.bits_per_pixel / 8;
+
+    /* Map the device to memory*/
+    mFBMem = (unsigned short *)mmap(0, mFBSize, PROT_READ | PROT_WRITE, MAP_SHARED, mFBFd, 0);
+    if ((int)mFBMem <= 0) {
+        std::cout << "failed to map framebuffer device to memory"
+                  << std::endl;
+	    return -1;
+    }
+
+    std::cout << "RenderDevice::openDevice"
+              << " fb:" << fb
+              << " xres_virtual:" << mScreenInfo.xres_virtual
+              << " yres_virtual:" << mScreenInfo.yres_virtual
+              << ", xres:" << mScreenInfo.xres
+              << ", yres:" << mScreenInfo.yres
+              << std::endl;
+
+    return 0;
+}
+
+void StitchWorker::closeFramebuffer()
+{
+    if (mFBFd > 0)
+    {
+        munmap(mFBMem, mFBSize);
+        mFBMem = NULL;       
+        close(mFBFd);
+        mFBFd = -1;
+    }
 }

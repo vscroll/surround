@@ -50,7 +50,7 @@ public:
     virtual int getFocusSourceHeight();
 
     //stitch
-    virtual bool enableOpenCL();
+    virtual int getAccelPolicy();
     virtual int getStitchFPS();
 
     //render

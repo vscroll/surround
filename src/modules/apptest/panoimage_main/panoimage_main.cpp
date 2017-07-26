@@ -38,7 +38,7 @@ int main (int argc, char **argv)
         return -1;
     }
 
-    bool enableOpenCL = config->enableOpenCL();
+    int accelPolicy = config->getAccelPolicy();
 
     int fps = config->getStitchFPS();
     if (fps <= 0)
@@ -50,7 +50,7 @@ int main (int argc, char **argv)
     panoImage->init(NULL,
             CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_UYVY,
             RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_UYVY,
-            algoCfgPathName, enableOpenCL);
+            algoCfgPathName, accelPolicy);
     panoImage->start(fps);
 
     PanoSourceSHMWriteWorker* panoSourceSHMWriteWorker = new PanoSourceSHMWriteWorker(panoImage);

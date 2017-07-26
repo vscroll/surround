@@ -155,7 +155,7 @@ int CLPano2D::stitch(surround_image_t* sideImage[],
 
 #if DEBUG_STITCH
     clock_t start6 = clock();
-    printf ("\nstitch_cl_2d: side:%f lut:%f pano:%f exe:%f read:%f release:%f total:%f\n",
+    printf ("\nCLPano2D: stitch_cl_2d side:%f lut:%f pano:%f exe:%f read:%f release:%f total:%f\n",
 		(double)(start1-start0)/CLOCKS_PER_SEC,
 		(double)(start2-start1)/CLOCKS_PER_SEC,
 		(double)(start3-start2)/CLOCKS_PER_SEC,

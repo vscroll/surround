@@ -59,7 +59,7 @@
 #define SOURCE_KEY_FOCUSHEIGHT  	"FocusHeight"
 
 #define SECTION_STITCH          "STITCH"
-#define STITCH_KEY_ENABLEOPENCL "EnableOpenCL"
+#define STITCH_KEY_ACCELPOLICY  "AccelPolicy"
 #define STITCH_KEY_FPS "FPS"
 
 #define SECTION_RENDER          	"RENDER"
@@ -395,14 +395,14 @@ int ConfigImpl::getFocusSourceHeight()
 }
 
 //stitch
-bool ConfigImpl::enableOpenCL()
+int ConfigImpl::getAccelPolicy()
 {
     if (mIniFile == NULL)
     {
         return false;
     }
 
-    return (mIniFile->getInt(SECTION_STITCH, STITCH_KEY_ENABLEOPENCL) == 1);    
+    return mIniFile->getInt(SECTION_STITCH, STITCH_KEY_ACCELPOLICY);    
 }
 
 int ConfigImpl::getStitchFPS()

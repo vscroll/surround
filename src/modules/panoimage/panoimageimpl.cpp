@@ -19,7 +19,7 @@ int PanoImageImpl::init(
 		unsigned int panoHeight,
 		unsigned int panoPixfmt,
 		char* algoCfgFilePath,
-		bool enableOpenCL)
+		int accelPolicy)
 {
     if (NULL == mWorker)
     {
@@ -35,7 +35,7 @@ int PanoImageImpl::init(
                 panoHeight,
                 panoPixfmt,
 		        algoCfgFilePath,
-		        enableOpenCL);
+		        accelPolicy);
 }
 
 void PanoImageImpl::uninit()

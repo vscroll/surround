@@ -18,7 +18,7 @@ public:
 		unsigned int panoHeight,
 		unsigned int panoPixfmt,
 		char* algoCfgFilePath,
-		bool enableOpenCL);
+		int accelPolicy);
     virtual void uninit();
     virtual int start(unsigned int fps);
     virtual void stop();

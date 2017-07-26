@@ -46,7 +46,7 @@ public:
     virtual int getFocusSourceHeight() = 0;
 
     //stitch
-    virtual bool enableOpenCL() = 0;
+    virtual int getAccelPolicy() = 0;
     virtual int getStitchFPS() = 0;
 
     //render

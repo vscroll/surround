@@ -125,7 +125,8 @@ void RenderDevice::closeFramebuffer()
 {
     if (mFBFd > 0)
     {
-        munmap(mFBMem, mFBSize);         
+        munmap(mFBMem, mFBSize);
+        mFBMem = NULL;       
         close(mFBFd);
         mFBFd = -1;
     }
