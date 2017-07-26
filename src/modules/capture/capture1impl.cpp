@@ -50,20 +50,29 @@ int Capture1Impl::setFocusSource(unsigned int focusChannelIndex, struct cap_src_
     {
         return -1;
     }
-
+    
+    struct cap_src_t oldFocusSource;
     if (mFocusChannelIndex != focusChannelIndex)
     {
         //clear
         if (NULL != mCaptureWorker[mFocusChannelIndex])
         {
+            mCaptureWorker[mFocusChannelIndex]->getFocusSource(&oldFocusSource);
             mCaptureWorker[mFocusChannelIndex]->clearFocusSource();
-        }       
+        }  
     }
 
     mFocusChannelIndex = focusChannelIndex;
     if (NULL != mCaptureWorker[mFocusChannelIndex])
     {
-        return mCaptureWorker[mFocusChannelIndex]->setFocusSource(focusSource);
+        if (NULL == focusSource)
+        {
+            return mCaptureWorker[mFocusChannelIndex]->setFocusSource(&oldFocusSource);
+        }
+        else
+        {
+            return mCaptureWorker[mFocusChannelIndex]->setFocusSource(focusSource);
+        }
     }
 
     return -1;

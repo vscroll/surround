@@ -75,6 +75,11 @@ int Capture1WorkerBase::setFocusSource(struct cap_src_t* focusSource)
     return 0;
 }
 
+void Capture1WorkerBase::getFocusSource(struct cap_src_t* focusSource)
+{
+    memcpy(focusSource, &mFocusSource, sizeof(mFocusSource));
+}
+
 void Capture1WorkerBase::clearFocusSource()
 {
     memset(&mFocusSource, 0, sizeof(mFocusSource));

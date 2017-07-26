@@ -1,294 +1,347 @@
 #include "controller.h"
+#include <iostream>
 #include "common.h"
+#include "IConfig.h"
+#include "configimpl.h"
 #include "ICapture.h"
 #include "captureimpl.h"
+#include "capture1impl.h"
 #include "IPanoImage.h"
 #include "panoimageimpl.h"
-#include "IRender.h"
-#include "renderimpl.h"
-#include "imageshm.h"
-#include <opencv/cv.h>
+#include "util.h"
+#include "v4l2.h"
+#include "focussourceshmwriteworker.h"
+#include "sourceshmwriteworker.h"
+#include "panosourceshmwriteworker.h"
 
 Controller::Controller()
 {
+    mConfig = NULL;
     mCapture = NULL;
     mPanoImage = NULL;
-    mRender = NULL;
+    mFocusSourceSHMWriteWorker = NULL;
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        mSourceSHMWriteWorker[i] = NULL;
+    }
 
-    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
-
-    mSideSHM = NULL;
-    mPanoSHM = NULL;
-
-    mPanoSHMWorker = NULL;
+    mPanoSourceSHMWriteWorker = NULL;
 }
 
 Controller::~Controller()
 {
 }
 
-ICapture* Controller::initCaptureModule(
-            unsigned int channel[],
-            unsigned int channelNum,
-            struct cap_sink_t sink[],
-            struct cap_src_t source[])
+int Controller::initConfigModule()
 {
-    if (NULL == mCapture)
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
     {
-        mCapture = new CaptureImpl();
-    }
-    mCapture->setCapCapacity(sink, source, channelNum);
-
-    struct cap_src_t focusSource;
-    focusSource.pixfmt = sink[0].pixfmt;
-    focusSource.width = sink[0].width;
-    focusSource.height = sink[0].height;
-    focusSource.size = sink[0].size;
-    mCapture->setFocusSource(0, &focusSource);
-    mCapture->openDevice(channel, channelNum);
-
-    return mCapture;
-}
-
-IPanoImage* Controller::initPanoImageModule(
-            ICapture* capture,
-            unsigned int inWidth,
-            unsigned int inHeight,
-            unsigned int inPixfmt,
-            unsigned int panoWidth,
-            unsigned int panoHeight,
-            unsigned int panoPixfmt,
-            char* algoCfgFilePath,
-            bool enableOpenCL)
-{
-    if (NULL == mPanoImage)
-    {
-        mPanoImage = new PanoImageImpl();
+        return -1;
     }
 
-    mPanoImage->init(mCapture, inWidth, inHeight, inPixfmt, panoWidth, panoHeight, panoPixfmt, algoCfgFilePath, enableOpenCL);
-    return mPanoImage;
-}
-
-ISideImage* Controller::initSideImageModule(
-            ICapture* capture,
-            unsigned int focusChannelIndex,
-            unsigned int outWidth,
-            unsigned int outHeight,
-            unsigned int outPixfmt)
-{
-    return NULL;
-}
-
-void Controller::uninitModules()
-{
-    if (NULL != mCapture)
+    char cfgPathName[1024] = {0};
+    sprintf(cfgPathName, "%sconfig.ini", procPath);
+    mConfig = new ConfigImpl();
+    if (mConfig->loadFromFile(cfgPathName) < 0)
     {
+        delete mConfig;
+        mConfig = NULL;
+        return -1;
+    }
+
+    return 0;
+}
+
+void Controller::uninitConfigModule()
+{
+    if (NULL != mConfig)
+    {
+        delete mConfig;
+        mConfig = NULL;
+    }
+}
+
+int Controller::startCaptureModule()
+{
+    if (NULL == mConfig)
+    {
+        return -1;
+    }
+
+    //capture
+    int frontChn;
+    int rearChn;
+    int leftChn;
+    int rightChn;
+    if (mConfig->getChannelNo(&frontChn, &rearChn, &leftChn, &rightChn) < 0)
+    {    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return -1;
+    }
+        return -1;
+    }
+
+    int captureFPS = mConfig->getCaptureFPS();
+    if (captureFPS <= 0)
+    {
+        captureFPS = VIDEO_FPS_15;
+    }
+
+	//sink
+	int sinkWidth = mConfig->getSinkWidth();
+	int sinkHeight = mConfig->getSinkHeight();
+	if (sinkWidth < 0
+		|| sinkHeight < 0
+		|| sinkWidth > CAPTURE_VIDEO_RES_X
+		|| sinkHeight > CAPTURE_VIDEO_RES_Y)
+	{
+	    std::cout << "sink config error"
+	            << std::endl;
+		return -1;
+	}
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return -1;
+    }
+	//crop
+	int cropX[VIDEO_CHANNEL_SIZE];
+	int cropY[VIDEO_CHANNEL_SIZE];
+	int cropWidth[VIDEO_CHANNEL_SIZE];
+	int cropHeight[VIDEO_CHANNEL_SIZE];
+	for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+	{
+		cropX[i] = mConfig->getSinkCropX(i);
+		cropY[i] = mConfig->getSinkCropY(i);
+		cropWidth[i] = mConfig->getSinkCropWidth(i);
+		cropHeight[i] = mConfig->getSinkCropHeight(i);
+		if (cropX[i] < 0
+			|| cropY[i] < 0
+			|| cropWidth[i] < 0
+			|| cropHeight[i] < 0
+			|| (cropX[i] + cropWidth[i]) > CAPTURE_VIDEO_RES_X
+			|| (cropY[i] + cropHeight[i]) > CAPTURE_VIDEO_RES_Y)
+		{
+		    std::cout << "sink crop config error"
+		            << std::endl;
+			return -1;
+		}
+	}
+
+	int focusSinkCropX = mConfig->getFocusSinkCropX();
+	int focusSinkCropY = mConfig->getFocusSinkCropY();
+	int focusSinkCropWidth = mConfig->getFocusSinkCropWidth();
+	int focusSinkCropHeight = mConfig->getFocusSinkCropHeight();
+	if (focusSinkCropX < 0
+		|| focusSinkCropY < 0
+		|| focusSinkCropX > CAPTURE_VIDEO_RES_X
+		|| focusSinkCropY > CAPTURE_VIDEO_RES_Y
+		|| focusSinkCropWidth < 0
+		|| focusSinkCropHeight < 0
+		|| focusSinkCropWidth > CAPTURE_VIDEO_RES_X
+		|| focusSinkCropHeight > CAPTURE_VIDEO_RES_Y)
+	{
+		std::cout << "focus sink crop config error"
+				<< std::endl;
+		return -1;
+	}
+
+	//source
+	int srcWidth[VIDEO_CHANNEL_SIZE];
+	int srcHeight[VIDEO_CHANNEL_SIZE];
+	for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+	{
+		srcWidth[i] = mConfig->getSourceWidth(i);
+		srcHeight[i] = mConfig->getSourceHeight(i);
+		if (srcWidth[i] < 0
+			|| srcHeight[i] < 0
+			|| srcWidth[i] > CAPTURE_VIDEO_RES_X
+			|| srcHeight[i] > CAPTURE_VIDEO_RES_Y)
+		{
+		    std::cout << "source config error"
+		            << std::endl;
+			return -1;
+		}
+	}
+
+	int focusSrcWidth = mConfig->getFocusSourceWidth();
+	int focusSrcHeight = mConfig->getFocusSourceHeight();
+	if (focusSrcWidth < 0
+		|| focusSrcHeight < 0
+		|| focusSrcWidth > CAPTURE_VIDEO_RES_X
+		|| focusSrcHeight > CAPTURE_VIDEO_RES_Y)
+	{
+		std::cout << "focus source config error"
+				<< std::endl;
+		return -1;
+	}
+
+#if 0
+    mCapture = new CaptureImpl();    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {#include "panosourceshmwriteworker.h"
+        return -1;
+    }
+#else
+    mCapture = new Capture1Impl(VIDEO_CHANNEL_SIZE);
+#endif
+
+    unsigned int channel[VIDEO_CHANNEL_SIZE] = {frontChn,rearChn,leftChn,rightChn};
+    struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
+    struct cap_src_t source[VIDEO_CHANNEL_SIZE];
+    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+    {
+        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        sink[i].width = CAPTURE_VIDEO_RES_X;
+        sink[i].height = CAPTURE_VIDEO_RES_Y;
+        sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
+        sink[i].crop_x = cropX[i];
+        sink[i].crop_y = cropY[i];
+        sink[i].crop_w = cropWidth[i];
+        sink[i].crop_h = cropHeight[i];
+
+        // source's pixfmt is same as sink
+        source[i].pixfmt = sink[i].pixfmt;
+        source[i].width = srcWidth[i];
+        source[i].height = srcHeight[i];
+        source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
+    }
+    if (mCapture->setCapCapacity(sink, source, VIDEO_CHANNEL_SIZE))
+    {
+        std::cout << "capture_main::setCapCapacity error"
+                << std::endl;
         delete mCapture;
         mCapture = NULL;
+        return -1;        
     }
 
-    if (NULL != mPanoImage)
+    // focus source's pixfmt is same as source
+    int focusChannelIndex = VIDEO_CHANNEL_FRONT;
+    struct cap_src_t focusSource;
+    focusSource.pixfmt = source[0].pixfmt;
+    focusSource.width = focusSrcWidth;
+    focusSource.height = focusSrcHeight;
+    focusSource.size = V4l2::getVideoSize(focusSource.pixfmt, focusSource.width, focusSource.height);
+    mCapture->setFocusSource(focusChannelIndex, &focusSource);
+
+    if (mCapture->openDevice(channel, VIDEO_CHANNEL_SIZE) < 0)
     {
-        delete mPanoImage;
-        mPanoImage = NULL;
+        std::cout << "capture_main::openDevice error"
+                << std::endl;
+        delete mCapture;
+        mCapture = NULL;
+        return -1;
     }
+
+    mCapture->start(captureFPS);
+
+    int accelPolicy = mConfig->getAccelPolicy();
+
+    //focus source
+    mFocusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(mCapture);
+    mFocusSourceSHMWriteWorker->start(captureFPS);
+
+    if (accelPolicy != ACCEL_POLICY_OPENCL_RENDER)
+    {
+        //4 source
+        for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+        {
+            mSourceSHMWriteWorker[i] = new SourceSHMWriteWorker(mCapture, i);
+            mSourceSHMWriteWorker[i]->start(captureFPS);
+        }
+    }
+
+    return 0;
 }
 
-IRender* Controller::initRenderModule(
-            ICapture* capture,
-            ISideImage* sideImage,
-            IPanoImage* panoImage,
-		    unsigned int sideLeft,
-		    unsigned int sideTop,
-		    unsigned int sideWidth,
-		    unsigned int sideHeight,
-		    unsigned int panoLeft,
-		    unsigned int panoTop,
-		    unsigned int panoWidth,
-		    unsigned int panoHeight)
+void Controller::stopCaptureModule()
 {
-    if (NULL == mRender)
+    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        mRender = new RenderImpl();
-    }
-    mRender->setCaptureModule(capture);
-    mRender->setSideImageRect(sideLeft, sideTop, sideWidth, sideHeight);
-    mRender->setMarkRect(sideLeft, sideTop, sideWidth, 26);
-
-    mRender->setPanoImageModule(panoImage);
-    mRender->setPanoImageRect(panoLeft, panoTop, panoWidth, panoHeight);
-
-    return mRender;
-} 
-
-void Controller::startModules(unsigned int fps)
-{
-    if (NULL != mCapture)
-    {
-        mCapture->start(fps);
+        mSourceSHMWriteWorker[i]->stop();
+        delete mSourceSHMWriteWorker[i];
+        mSourceSHMWriteWorker[i] = NULL;
     }
 
-    if (NULL != mPanoImage)
+    if (NULL != mFocusSourceSHMWriteWorker)
     {
-        mPanoImage->start(fps);
+        mFocusSourceSHMWriteWorker->stop();
+        delete mFocusSourceSHMWriteWorker;
+        mFocusSourceSHMWriteWorker = NULL;
     }
 
-    if (NULL != mRender)
-    {
-        mRender->start(fps);
-    }
-}
-
-void Controller::stopModules()
-{
     if (NULL != mCapture)
     {
         mCapture->stop();
-        mCapture->closeDevice();
+        delete mCapture;
+        mCapture = NULL;
+    }    
+}
+
+void Controller::updateFocusChannel(int channelIndex)
+{
+    if (NULL != mCapture)
+    {
+        mCapture->setFocusSource(channelIndex, NULL);
+    }
+}
+
+int Controller::startPanoImageModule()
+{
+    if (NULL == mConfig
+        || NULL == mCapture)
+    {
+        return -1;
+    }
+
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return -1;
+    }
+
+    char algoCfgPathName[1024] = {0};
+    sprintf(algoCfgPathName, "%sFishToPanoYUV.xml", procPath);
+
+    int accelPolicy = mConfig->getAccelPolicy();
+
+    int stitchFPS = mConfig->getStitchFPS();
+    if (stitchFPS <= 0)
+    {
+        stitchFPS = VIDEO_FPS_15;
+    }
+
+    mPanoImage = new PanoImageImpl();
+    mPanoImage->init(mCapture,
+            CAPTURE_VIDEO_RES_X, CAPTURE_VIDEO_RES_Y, V4L2_PIX_FMT_UYVY,
+            RENDER_VIDEO_RES_PANO_X, RENDER_VIDEO_RES_PANO_Y, V4L2_PIX_FMT_UYVY,
+            algoCfgPathName, accelPolicy);
+    mPanoImage->start(stitchFPS);
+
+    if (accelPolicy != ACCEL_POLICY_OPENCL_RENDER)
+    {
+        mPanoSourceSHMWriteWorker = new PanoSourceSHMWriteWorker(mPanoImage);
+        mPanoSourceSHMWriteWorker->start(stitchFPS);
+    }
+
+    return 0;
+}
+
+void Controller::stopPanoImageModule()
+{
+    if (NULL != mPanoSourceSHMWriteWorker)
+    {
+        mPanoSourceSHMWriteWorker->stop();
+        delete mPanoSourceSHMWriteWorker;
+        mPanoSourceSHMWriteWorker = NULL;
     }
 
     if (NULL != mPanoImage)
     {
         mPanoImage->stop();
-    }
-}
-
-void Controller::startLoop(unsigned int freq)
-{
-    mSideSHM = new ImageSHM();
-    mSideSHM->create((key_t)SHM_FOCUS_SOURCE_ID, SHM_FOCUS_SOURCE_SIZE);
-
-    mPanoSHM = new ImageSHM();
-    mPanoSHM->create((key_t)SHM_PANO_SOURCE_ID, SHM_PANO_SOURCE_SIZE);
-
-    start(freq);
-}
-
-void Controller::stopLoop()
-{
-    if (NULL != mSideSHM)
-    {
-        mSideSHM->destroy();
-        delete mSideSHM;
-        mSideSHM = NULL;
-    }
-
-    if (NULL != mPanoSHM)
-    {
-        mPanoSHM->destroy();
-        delete mPanoSHM;
-        mPanoSHM = NULL;
-    }
-}
-
-void Controller::run()
-{
-    if (NULL == mCapture
-        || NULL == mPanoImage)
-    {
-        return;
-    }
-
-    if (NULL == mSideSHM
-        || NULL == mPanoSHM)
-    {
-        return;
-    }
-
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
-    if (NULL != sideImage)
-    {
-		struct image_shm_header_t header = {};
-		header.width = sideImage->info.width;
-		header.height = sideImage->info.height;
-		header.pixfmt = sideImage->info.pixfmt;
-		header.size = sideImage->info.size;
-		header.timestamp = sideImage->timestamp;
-        unsigned char* frame = (unsigned char*)sideImage->data;
-        clock_t start = clock();
-        if (NULL != frame)
-        {
-            //mSideSHM->writeImage(&header, frame, header.size);
-            delete frame;
-        }
-#if 0
-        std::cout << " side shm write time: " << (clock()-start)/CLOCKS_PER_SEC
-                << " width:" << header.width
-                << " height:" << header.height
-                << " size:" << header.size
-                << " timestamp:" << header.timestamp
-                << std::endl;
-#endif
-    }
-
-/*
-    surround_images_t* surroundImages = mCapture->popOneFrame();
-    if (NULL == surroundImages)
-    {
-        return;
-    }
-*/
-
-    //Side
-#if 0
-    surround_image_t* sideImage = &(surroundImages->frame[mCurChannelIndex]);
-    if (NULL != sideImage)
-    {
-		struct image_shm_header_t header = {};
-		header.width = sideImage->info.width;
-		header.height = sideImage->info.height;
-		header.pixfmt = sideImage->info.pixfmt;
-		header.size = sideImage->info.size;
-		header.timestamp = sideImage->timestamp;
-        cv::Mat* frame = (cv::Mat*)sideImage->data;
-        clock_t start = clock();
-        if (NULL != frame)
-        {
-            //mSideSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
-        }
-#if 0
-        std::cout << " side shm write time: " << (clock()-start)/CLOCKS_PER_SEC
-                << " width:" << header.width
-                << " height:" << header.height
-                << " size:" << header.size
-                << " timestamp:" << header.timestamp
-                << std::endl;
-#endif
-    }
-#endif
-
-#if 0
-    mPanoImage->queueImages(surroundImages);
-
-    //Pano
-    surround_image_t* surroundImage = mPanoImage->dequeuePanoImage();
-    if (NULL != surroundImage)
-    {
-		struct image_shm_header_t header = {};
-		header.width = surroundImage->info.width;
-		header.height = surroundImage->info.height;
-		header.pixfmt = surroundImage->info.pixfmt;
-		header.size = surroundImage->info.size;
-		header.timestamp = surroundImage->timestamp;
-        cv::Mat* frame = (cv::Mat*)surroundImage->data;
-        clock_t start = clock();
-        if (NULL != frame)
-        {
-            //mPanoSHM->writeImage(&header, (unsigned char*)frame->data, header.size);
-            delete frame;
-        }
-#if 0
-        std::cout << " pano shm write time: " << (clock()-start)/CLOCKS_PER_SEC
-                << " width:" << header.width
-                << " height:" << header.height
-                << " size:" << header.size
-                << " timestamp:" << header.timestamp
-                << std::endl;
-#endif
-
-        delete surroundImage;
-    }
-#endif
-
+        delete mPanoImage;
+        mPanoImage = NULL;
+    }  
 }

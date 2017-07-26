@@ -1,77 +1,37 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "wrap_thread.h"
+#include "common.h"
 
+class IConfig;
 class ICapture;
 class IPanoImage;
-class ISideImage;
-class ImageSHM;
-class PanoSHMWorker;
-class IRender;
-class Controller : public WrapThread
+class FocusSourceSHMWriteWorker;
+class SourceSHMWriteWorker;
+class PanoSourceSHMWriteWorker;
+class Controller
 {
 public:
     Controller();
     virtual ~Controller();
 
-    ICapture* initCaptureModule(
-            unsigned int channel[],
-            unsigned int channelNum,
-            struct cap_sink_t sink[],
-            struct cap_src_t source[]);
+    int initConfigModule();
+    void uninitConfigModule();
 
-    IPanoImage* initPanoImageModule(
-            ICapture* capture,
-            unsigned int inWidth,
-            unsigned int inHeight,
-            unsigned int inPixfmt,
-            unsigned int panoWidth,
-            unsigned int panoHeight,
-            unsigned int panoPixfmt,
-            char* algoCfgFilePath,
-            bool enableOpenCL);
+    int startCaptureModule();
+    void stopCaptureModule();
+    void updateFocusChannel(int channelIndex);
 
-    ISideImage* initSideImageModule(
-            ICapture* capture,
-            unsigned int focusChannelIndex,
-            unsigned int outWidth,
-            unsigned int outHeight,
-            unsigned int outPixfmt);
-
-    IRender* initRenderModule(
-            ICapture* capture,
-            ISideImage* sideImage,
-            IPanoImage* panoImage,
-		    unsigned int sideLeft,
-		    unsigned int sideTop,
-		    unsigned int sideWidth,
-		    unsigned int sideHeight,
-		    unsigned int panoLeft,
-		    unsigned int panoTop,
-		    unsigned int panoWidth,
-		    unsigned int panoHeight);    
-
-    void uninitModules();
-    void startModules(unsigned int fps);
-    void stopModules();
-
-    void startLoop(unsigned int freq);
-    void stopLoop();
-public:
-    virtual void run();
+    int startPanoImageModule();   
+    void stopPanoImageModule();
 
 private:
+    IConfig* mConfig;
     ICapture* mCapture;
     IPanoImage* mPanoImage;
-    IRender* mRender;
-
-    unsigned int mFocusChannelIndex;
-
-    ImageSHM* mSideSHM;
-    ImageSHM* mPanoSHM;
-
-    PanoSHMWorker* mPanoSHMWorker;
+    FocusSourceSHMWriteWorker* mFocusSourceSHMWriteWorker;
+    SourceSHMWriteWorker* mSourceSHMWriteWorker[VIDEO_CHANNEL_SIZE];
+    PanoSourceSHMWriteWorker* mPanoSourceSHMWriteWorker;
 };
 
 #endif // CONTROLLER_H

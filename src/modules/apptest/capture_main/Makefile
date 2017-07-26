@@ -27,6 +27,7 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(TOPDIR)/src/util/cl \
 			                    -I$(TOPDIR)/src/modules/imageshm \
 			                    -I$(TOPDIR)/src/modules/panoimage \
+			                    -I$(TOPDIR)/src/modules/controller \
 			                    -I$(TOPDIR)/src/util/ini \
 			                    -I$(TOPDIR)/src/modules/config
 
@@ -47,6 +48,7 @@ SRCS                           += $(wildcard $(TOPDIR)/src/util/cl/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/imageshm/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/panoimage/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/config/*.cpp)
+SRCS                           += $(wildcard $(TOPDIR)/src/modules/controller/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/util/ini/*.cpp)
 
 include $(TOPDIR)/makefile.env

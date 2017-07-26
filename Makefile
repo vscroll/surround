@@ -11,7 +11,6 @@ dirs= \
 	src/modules/apptest/capture_main \
 	src/modules/apptest/capture_pano_main \
 	src/modules/apptest/colorconvert_main \
-	src/modules/apptest/controller_main \
 	src/modules/apptest/fb_main \
 	src/modules/apptest/g2d_main \
 	src/modules/apptest/ipu_main \

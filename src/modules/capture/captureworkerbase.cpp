@@ -79,20 +79,24 @@ int CaptureWorkerBase::setFocusSource(unsigned int focusChannelIndex, struct cap
         return -1;
     }
 
-    if (isNeedConvert(&mSink[focusChannelIndex], focusSource))
+    if (NULL != focusSource)
     {
-        std::cout << "CaptureWorkerBase::setFocusSource:"
+        if (isNeedConvert(&mSink[focusChannelIndex], focusSource))
+        {
+            std::cout << "CaptureWorkerBase::setFocusSource:"
                 << " not support convert sink to source"
 				<< ", sink width:" << mSink[focusChannelIndex].width
 				<< ", sink height:" << mSink[focusChannelIndex].height
 				<< ", source width:" << focusSource->width
 				<< ", source height:" << focusSource->height
                 << std::endl;
-        return -1;
+            return -1;
+        }
+
+        memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
     }
 
     mFocusChannelIndex = focusChannelIndex;
-    memcpy(&mFocusSource, focusSource, sizeof(mFocusSource));
 
     return 0;
 }

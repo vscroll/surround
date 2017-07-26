@@ -13,6 +13,7 @@ public:
 
     int setCapCapacity(struct cap_sink_t* sink, struct cap_src_t* source);
     int setFocusSource(struct cap_src_t* focusSource);
+    void getFocusSource(struct cap_src_t* focusSource);
     void clearFocusSource();
     virtual int openDevice(unsigned int channel) = 0;
     virtual void closeDevice() = 0;
