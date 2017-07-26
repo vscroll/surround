@@ -9,6 +9,10 @@
 #define DEBUG_UPDATE 1
 #endif
 
+#define ACCEL_POLICY_CPU                0
+#define ACCEL_POLICY_OPENCL             1
+#define ACCEL_POLICY_OPENCL_RENDER      2
+
 #define V4L2_BUF_COUNT 1
 
 #define CAPTURE_VIDEO_RES_X 704

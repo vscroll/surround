@@ -214,9 +214,12 @@ int main (int argc, char **argv)
             algoCfgPathName, accelPolicy);
     panoImage->start(stitchFPS);
 
-    PanoSourceSHMWriteWorker* panoSourceSHMWriteWorker = new PanoSourceSHMWriteWorker(panoImage);
-    panoSourceSHMWriteWorker->start(stitchFPS);
-
+    PanoSourceSHMWriteWorker* panoSourceSHMWriteWorker = NULL;
+    if (accelPolicy == ACCEL_POLICY_OPENCL_RENDER)
+    {
+        panoSourceSHMWriteWorker = new PanoSourceSHMWriteWorker(panoImage);
+        panoSourceSHMWriteWorker->start(stitchFPS);
+    }
 
     // touch screen event
     int eventFd = open("/dev/input/event0", O_RDONLY);
@@ -272,9 +275,12 @@ int main (int argc, char **argv)
     delete focusSourceSHMWriteWorker;
     focusSourceSHMWriteWorker = NULL;
 
-    panoSourceSHMWriteWorker->stop();
-    delete panoSourceSHMWriteWorker;
-    panoSourceSHMWriteWorker = NULL;
+    if (NULL != panoSourceSHMWriteWorker)
+    {
+        panoSourceSHMWriteWorker->stop();
+        delete panoSourceSHMWriteWorker;
+        panoSourceSHMWriteWorker = NULL;
+    }
 
     panoImage->stop();
     delete panoImage;

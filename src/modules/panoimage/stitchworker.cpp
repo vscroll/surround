@@ -12,10 +12,6 @@
 #include "ICapture.h"
 #include "imageshm.h"
 
-#define ACCEL_POLICY_CPU                0
-#define ACCEL_POLICY_OPENCL             1
-#define ACCEL_POLICY_OPENCL_RENDER      2
-
 using namespace cv;
 
 StitchWorker::SourceSHMReadWorker::SourceSHMReadWorker(unsigned int channelIndex, ImageSHM* imageSHM)
