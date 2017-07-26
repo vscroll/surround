@@ -1,0 +1,26 @@
+1. compiling
+ source /opt/fsl-imx-x11/3.14.52-1.1.0/environment-setup-cortexa9hf-vfp-neon-poky-linux-gnueabi
+ make clean
+ make debug="capture_main panoimage_main render_main"
+
+2. run calibration
+ mv config_calibrate.ini config.ini
+ ./render_main &
+ ./panoimage_main &
+ ././calibrate_main &
+
+3. run capture/panoimage/render
+ vi config.ini
+   AccelPolicy=0 //CPU
+   or
+   AccelPolicy=1 //GPU->OpenCL
+
+ ./render_main &
+ ./panoimage_main &
+ ./capture_main &
+
+4. run capture_pano
+ vi config.ini
+   AccelPolicy=2 //GPU->OpenCL->Framebuffer
+
+ ./capture_pano_main
