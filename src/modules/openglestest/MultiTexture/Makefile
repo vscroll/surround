@@ -4,7 +4,7 @@
 
 TOPDIR                      = ../../../..
 
-TARGET                      = texture2d_main
+TARGET                      = MultiTexture
 
 LIBPATH                     = $(TOPDIR)/lib/
 EXEPATH                     = $(TOPDIR)/bin/

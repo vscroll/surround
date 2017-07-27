@@ -4,7 +4,7 @@
 
 TOPDIR                      = ../../../..
 
-TARGET                      = opengles_main
+TARGET                      = Hello_Triangle
 
 LIBPATH                     = $(TOPDIR)/lib/
 EXEPATH                     = $(TOPDIR)/bin/
