@@ -109,7 +109,7 @@ EGLBoolean CreateEGLContext ( EGLNativeWindowType hWnd, EGLDisplay* eglDisplay,
 //
 //      This function initialized the native X11 display and window for EGL
 //
-EGLBoolean WinCreate(ESContext *esContext, const char *title)
+EGLBoolean WinCreate(ESContext *esContext, const char *title, GLboolean isFullScreen)
 {
     Window root;
     XSetWindowAttributes swa;
@@ -141,7 +141,7 @@ EGLBoolean WinCreate(ESContext *esContext, const char *title)
                CopyFromParent, CWEventMask,
                &swa );
 
-    xattr.override_redirect = FALSE;
+    xattr.override_redirect = isFullScreen;
     XChangeWindowAttributes ( x_display, win, CWOverrideRedirect, &xattr );
 
     hints.input = TRUE;
@@ -261,7 +261,7 @@ GLboolean ESUTIL_API esCreateWindow ( ESContext *esContext, const char* title, G
    esContext->width = width;
    esContext->height = height;
 
-   if ( !WinCreate ( esContext, title) )
+   if ( !WinCreate ( esContext, title, TRUE) )
    {
       return GL_FALSE;
    }
