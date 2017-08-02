@@ -25,5 +25,5 @@ LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),
 SRCS 			            = $(wildcard ./*.c)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
 
-include $(TOPDIR)/makefile_c.env
+include $(TOPDIR)/makefile.env
 
