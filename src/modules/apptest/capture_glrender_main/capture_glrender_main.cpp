@@ -8,11 +8,11 @@
 #include "common.h"
 #include <linux/input.h>
 
-#include "controllercl.h"
+#include "controllergl.h"
 
 int main (int argc, char **argv)
 {
-    ControllerCL controller;
+    ControllerGL controller;
     if (controller.initConfigModule() < 0)
     {
         return -1;
@@ -25,7 +25,7 @@ int main (int argc, char **argv)
     }
 
     
-    if (controller.startPanoImageModule() < 0)
+    if (controller.startGLRenderModule() < 0)
     {
         controller.stopCaptureModule();
         controller.uninitConfigModule();
@@ -84,7 +84,7 @@ int main (int argc, char **argv)
         usleep(100);
     }
 
-    controller.stopPanoImageModule();
+    controller.stopGLRenderModule();
     controller.stopCaptureModule();
     controller.uninitConfigModule();
 

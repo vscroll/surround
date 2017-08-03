@@ -48,7 +48,7 @@ SRCS                           += $(wildcard $(TOPDIR)/src/util/cl/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/imageshm/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/panoimage/*.cpp)
 SRCS                           += $(wildcard $(TOPDIR)/src/modules/config/*.cpp)
-SRCS                           += $(wildcard $(TOPDIR)/src/modules/controller/*.cpp)
+SRCS                           += $(TOPDIR)/src/modules/controller/controller.cpp
 SRCS                           += $(wildcard $(TOPDIR)/src/util/ini/*.cpp)
 
 include $(TOPDIR)/makefile.env

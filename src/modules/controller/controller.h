@@ -5,10 +5,8 @@
 
 class IConfig;
 class ICapture;
-class IPanoImage;
 class FocusSourceSHMWriteWorker;
 class SourceSHMWriteWorker;
-class PanoSourceSHMWriteWorker;
 class Controller
 {
 public:
@@ -18,20 +16,14 @@ public:
     int initConfigModule();
     void uninitConfigModule();
 
-    int startCaptureModule();
+    int startCaptureModule(bool enableSHM);
     void stopCaptureModule();
     void updateFocusChannel(int channelIndex);
-
-    int startPanoImageModule();   
-    void stopPanoImageModule();
-
-private:
+protected:
     IConfig* mConfig;
     ICapture* mCapture;
-    IPanoImage* mPanoImage;
     FocusSourceSHMWriteWorker* mFocusSourceSHMWriteWorker;
     SourceSHMWriteWorker* mSourceSHMWriteWorker[VIDEO_CHANNEL_SIZE];
-    PanoSourceSHMWriteWorker* mPanoSourceSHMWriteWorker;
 };
 
 #endif // CONTROLLER_H

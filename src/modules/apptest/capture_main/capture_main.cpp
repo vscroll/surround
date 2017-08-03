@@ -17,7 +17,7 @@ int main (int argc, char **argv)
         return -1;
     }
 
-    if (controller.startCaptureModule() < 0)
+    if (controller.startCaptureModule(true) < 0)
     {
         controller.uninitConfigModule();
         return -1;

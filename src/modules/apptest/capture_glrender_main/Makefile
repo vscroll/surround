@@ -4,7 +4,7 @@
 
 TOPDIR                      = ../../../..
 
-TARGET                      = capture_pano_main
+TARGET                      = capture_glrender_main
 
 LIBPATH                     = $(TOPDIR)/lib/
 EXEPATH                     = $(TOPDIR)/bin/
@@ -25,19 +25,19 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(TOPDIR)/src/util/v4l2 \
 			                    -I$(TOPDIR)/src/modules/capture \
 			                    -I$(TOPDIR)/src/util/shm \
-			                    -I$(TOPDIR)/src/util/cl \
 			                    -I$(TOPDIR)/src/modules/imageshm \
-			                    -I$(TOPDIR)/src/modules/panoimage \
 			                    -I$(TOPDIR)/src/modules/controller \
+			                    -I$(TOPDIR)/src/modules/glrender \
 			                    -I$(TOPDIR)/src/util/ini \
-			                    -I$(TOPDIR)/src/modules/config
+			                    -I$(TOPDIR)/src/modules/config \
+			                    -I$(TOPDIR)/src/util/gles
 
 ifneq ($(findstring $(TARGET),$(debug)),)
 CFLAGS                      += -DDEBUG=1
 endif
 
 LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
-			                    -lpthread -lCLC -lOpenCL -lopencv_core -lopencv_highgui
+			                    -lpthread -lEGL -lGLESv2 -lX11
 
 SRCS 			            = $(wildcard ./*.cpp )
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/*.cpp)
@@ -45,13 +45,13 @@ SRCS 		                += $(wildcard $(TOPDIR)/src/util/thread/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/v4l2/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/capture/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/shm/*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/cl/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/imageshm/*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/modules/panoimage/*.cpp)
+SRCS 		                += $(wildcard $(TOPDIR)/src/modules/glrender/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/config/*.cpp)
 SRCS                        += $(TOPDIR)/src/modules/controller/controller.cpp
-SRCS                        += $(TOPDIR)/src/modules/controller/controllercl.cpp
+SRCS                        += $(TOPDIR)/src/modules/controller/controllergl.cpp
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ini/*.cpp)
+SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
 
 include $(TOPDIR)/makefile.env
 
