@@ -35,7 +35,9 @@ int ControllerGL::startGLRenderModule()
         return -1;
     }
 
-    mGLRender->start(VIDEO_FPS_15);
+    //all the opengl es functions must be called in one thread, so we don't start another thread
+    //mGLRender->start(VIDEO_FPS_15);
+    mGLRender->draw();
 
     return 0;
 }

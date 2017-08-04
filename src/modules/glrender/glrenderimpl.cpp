@@ -78,3 +78,11 @@ void GLRenderImpl::stop()
         mWorker->stop();
     }
 }
+
+void GLRenderImpl::draw()
+{
+    if (NULL != mWorker)
+    {
+        mWorker->draw();
+    }
+}

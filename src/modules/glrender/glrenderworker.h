@@ -24,8 +24,12 @@ public:
         unsigned int height);
     int init(ICapture* capture);
 
+    void draw();
 public:
     virtual void run();
+
+public:
+    static const unsigned int YUV_CHN_NUM = 3;
 
 private:
     typedef struct
@@ -37,26 +41,21 @@ private:
         GLint  positionLoc;
         GLint  texCoordLoc;
 
-        // Sampler locations
-        GLint frontLoc;
-        GLint rearLoc;
-        GLint leftLoc;
-        GLint rightLoc;
-        GLint focusLoc;
+        // Sampler locations(Y,U,V)
+        GLint videoSamplerLoc[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
+        GLint focusVideoSamplerLoc[YUV_CHN_NUM];
 
-        // Texture handle
-        GLuint frontTexId;
-        GLuint rearTexId;
-        GLuint leftTexId;
-        GLuint rightTexId;
-        GLuint focusTexId;
+        // Texture handle(Y,U,V)
+        GLuint videoTexId[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
+        GLuint focusvideoTexId[YUV_CHN_NUM];
 
     } UserData;
 
     int GLInit();
     void GLDraw(ESContext* esContext);
     void GLShutdown(ESContext* esContext);
-    GLuint loadTexture(unsigned char *buffer, int width, int height);    
+    GLboolean loadTexture(GLuint textureId, unsigned char *buffer, int width, int height);
+    void GLCheckGlError(const char* op);
 
     int getScreenInfo(int devIndex);
 

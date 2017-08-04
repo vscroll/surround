@@ -23,7 +23,6 @@ int main (int argc, char **argv)
         controller.uninitConfigModule();
         return -1;
     }
-
     
     if (controller.startGLRenderModule() < 0)
     {

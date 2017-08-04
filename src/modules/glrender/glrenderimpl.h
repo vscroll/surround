@@ -22,6 +22,8 @@ public:
     virtual int start(unsigned int fps);
     virtual void stop();
 
+    virtual void draw();
+
 private:
     GLRenderWorker *mWorker;
 };

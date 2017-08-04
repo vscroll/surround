@@ -30,6 +30,8 @@ public:
     virtual int init(ICapture* capture) = 0;
     virtual int start(unsigned int fps) = 0;
     virtual void stop() = 0;
+
+    virtual void draw() = 0;
 };
 
 #endif // IGLRENDER_H
