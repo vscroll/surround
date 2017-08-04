@@ -7,6 +7,7 @@ class IConfig;
 class ICapture;
 class FocusSourceSHMWriteWorker;
 class SourceSHMWriteWorker;
+class InputEventWorker;
 class Controller
 {
 public:
@@ -18,10 +19,13 @@ public:
 
     int startCaptureModule(bool enableSHM);
     void stopCaptureModule();
-    void updateFocusChannel(int channelIndex);
+
+    int startInputEventModule();
+    void stopInputEventModule();
 protected:
     IConfig* mConfig;
     ICapture* mCapture;
+    InputEventWorker* mInputEventWorker;
     FocusSourceSHMWriteWorker* mFocusSourceSHMWriteWorker;
     SourceSHMWriteWorker* mSourceSHMWriteWorker[VIDEO_CHANNEL_SIZE];
 };

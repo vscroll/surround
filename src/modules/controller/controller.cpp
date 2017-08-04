@@ -10,11 +10,106 @@
 #include "v4l2.h"
 #include "focussourceshmwriteworker.h"
 #include "sourceshmwriteworker.h"
+#include "wrap_thread.h"
+#include <linux/input.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+
+class InputEventWorker : public WrapThread
+{
+public:
+    InputEventWorker(ICapture* capture, unsigned int focusChannelIndex);
+    virtual ~InputEventWorker();
+
+public:
+    virtual void run();
+
+private:
+    ICapture* mCapture;
+    unsigned int mFocusChannelIndex;
+    int mEventFd;
+};
+
+InputEventWorker::InputEventWorker(ICapture* capture, unsigned int focusChannelIndex)
+{
+    mCapture = capture;
+    mFocusChannelIndex = focusChannelIndex;
+    mEventFd = -1;
+}
+
+InputEventWorker::~InputEventWorker()
+{
+    if (mEventFd > 0)
+    {
+        close(mEventFd);
+        mEventFd = -1;
+    }
+}
+
+void InputEventWorker::run()
+{
+    if (NULL == mCapture)
+    {
+        return;
+    }
+
+    // touch screen event
+    if (-1 == mEventFd)
+    {
+        mEventFd = open("/dev/input/event0", O_RDONLY);
+        if (mEventFd < 0)
+        {
+            return;
+        }
+    }
+
+    struct input_event event[64] = {0};
+
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(mEventFd, &fds);
+
+    struct timeval tv;
+    tv.tv_sec = 2;
+    tv.tv_usec = 0;
+
+     //touch screen to switch focus channel
+    int r = select (mEventFd + 1, &fds, NULL, NULL, &tv);
+    if (-1 == r) {
+        usleep(100);
+    }
+
+    if (0 == r) {
+        usleep(100);
+    }
+
+    int rd = read(mEventFd, event, sizeof(struct input_event) * 64);
+    if (rd >= (int) sizeof(struct input_event))
+    {
+        for (int i = 0; i < rd / sizeof(struct input_event); i++)
+        {
+            if (event[i].type == EV_KEY
+                && event[i].code == BTN_TOUCH
+                && event[i].value == 0)
+            {
+                mFocusChannelIndex++;
+                if (mFocusChannelIndex >= VIDEO_CHANNEL_SIZE)
+                {
+                    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
+                }
+                mCapture->setFocusSource(mFocusChannelIndex, NULL);
+                break;
+            }
+        }
+    }
+}
 
 Controller::Controller()
 {
     mConfig = NULL;
     mCapture = NULL;
+    mInputEventWorker = NULL;
 
     mFocusSourceSHMWriteWorker = NULL;
     for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
@@ -269,10 +364,26 @@ void Controller::stopCaptureModule()
     }    
 }
 
-void Controller::updateFocusChannel(int channelIndex)
+int Controller::startInputEventModule()
 {
-    if (NULL != mCapture)
+    if (NULL == mCapture)
     {
-        mCapture->setFocusSource(channelIndex, NULL);
+        return -1;
     }
+
+    mInputEventWorker = new InputEventWorker(mCapture, VIDEO_CHANNEL_FRONT);
+    mInputEventWorker->start(15);
+
+    return 0;
+}
+
+void Controller::stopInputEventModule()
+{
+    if (NULL != mInputEventWorker)
+    {
+        mInputEventWorker->stop();
+        delete mInputEventWorker;
+        mInputEventWorker = NULL;
+    }
+
 }
