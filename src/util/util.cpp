@@ -101,6 +101,24 @@ void Util::uyvy_to_rgb24(int width, int height, unsigned char *src, unsigned cha
    }
 }
 
+void Util::uyvy_to_yuv(int width, int height, unsigned char *uyvy, unsigned char *y, unsigned char *u, unsigned char *v)
+{
+    unsigned char *s;
+    int l, c;
+
+    l = height;
+    s = uyvy;
+    while (l--) {   
+        c = width >> 1;
+        while (c--) {
+            *u++ = *s++;
+            *y++ = *s++;
+            *v++ = *s++;
+            *y++ = *s++;
+        }
+    }
+}
+
 int Util::getAbsolutePath(char* path, int length)
 {
     char buf[length] = {0}; 

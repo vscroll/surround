@@ -11,6 +11,7 @@ public:
 
     static void yuyv_to_rgb24(int width, int height, unsigned char *src, unsigned char *dst);
     static void uyvy_to_rgb24(int width, int height, unsigned char *src, unsigned char *dst);
+    static void uyvy_to_yuv(int width, int height, unsigned char *uyvy, unsigned char *y, unsigned char *u, unsigned char *v);
 
     static inline long get_system_milliseconds()
     {

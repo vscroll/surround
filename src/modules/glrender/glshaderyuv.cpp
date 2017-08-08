@@ -131,11 +131,15 @@ void GLShaderYUV::draw()
         unsigned char* buffer = Front_uyvy_352x288;
         int width = 352;
         int height = 288;
-        loadTexture(mUserData.frontYTexId, buffer, width, height);
-        loadTexture(mUserData.frontUTexId, buffer + width * height, width/2, height/2);
-        loadTexture(mUserData.frontVTexId, buffer + width * height * 5 / 4, width/2, height/2);
+        unsigned char y[width*height] = {0};
+        unsigned char u[width/2*height] = {0};
+        unsigned char v[width/2*height] = {0};
+        Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0], y, width, height);
+        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1], u, width/2, height);
+        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2], v, width/2, height);
 
-        glDraw(&mESContext);
+        glDraw();
 #else
         drawOnce();
 #endif
@@ -180,9 +184,13 @@ void GLShaderYUV::drawOnce()
                 buffer = (unsigned char*)(surroundImage->frame[i].data);
                 width = surroundImage->frame[i].info.width;
                 height = surroundImage->frame[i].info.height;
-                loadTexture(mUserData.videoTexId[i][0], buffer, width, height);
-                loadTexture(mUserData.videoTexId[i][1], buffer + width * height, width/2, height/2);
-                loadTexture(mUserData.videoTexId[i][2], buffer + width * height * 5 / 4, width/2, height/2);
+                unsigned char y[width*height] = {0};
+                unsigned char u[width/2*height] = {0};
+                unsigned char v[width/2*height] = {0};
+                Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+                loadTexture(mUserData.videoTexId[i][0], y, width, height);
+                loadTexture(mUserData.videoTexId[i][1], u, width/2, height);
+                loadTexture(mUserData.videoTexId[i][2], v, width/2, height);
             }
         }
 
@@ -197,9 +205,13 @@ void GLShaderYUV::drawOnce()
         unsigned char* buffer = (unsigned char*)(sideImage->data);
         int width = sideImage->info.width;
         int height = sideImage->info.height;
-        loadTexture(mUserData.focusVideoTexId[0], buffer, width, height);
-        loadTexture(mUserData.focusVideoTexId[1], buffer + width * height, width/2, height/2);
-        loadTexture(mUserData.focusVideoTexId[2], buffer + width * height * 5 / 4, width/2, height/2);
+        unsigned char y[width*height] = {0};
+        unsigned char u[width/2*height] = {0};
+        unsigned char v[width/2*height] = {0};
+        Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+        loadTexture(mUserData.focusVideoTexId[0], y, width, height);
+        loadTexture(mUserData.focusVideoTexId[1], u, width/2, height);
+        loadTexture(mUserData.focusVideoTexId[2], v, width/2, height);
 
         delete sideImage;
         sideImage = NULL;

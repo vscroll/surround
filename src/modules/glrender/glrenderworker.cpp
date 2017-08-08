@@ -61,7 +61,7 @@ int GLRenderWorker::init(ICapture* capture)
 {
     if (NULL == mShader)
     {
-#if 0
+#if 1
         mShader = new GLShaderYUV(capture);
 #else
         mShader = new GLShaderRGB(capture);
