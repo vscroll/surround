@@ -119,6 +119,24 @@ void Util::uyvy_to_yuv(int width, int height, unsigned char *uyvy, unsigned char
     }
 }
 
+void Util::yuyv_to_yuv(int width, int height, unsigned char *yuyv, unsigned char *y, unsigned char *u, unsigned char *v)
+{
+    unsigned char *s;
+    int l, c;
+
+    l = height;
+    s = yuyv;
+    while (l--) {   
+        c = width >> 1;
+        while (c--) {
+            *y++ = *s++;
+            *u++ = *s++;
+            *y++ = *s++;
+            *v++ = *s++;
+        }
+    }
+}
+
 int Util::getAbsolutePath(char* path, int length)
 {
     char buf[length] = {0}; 

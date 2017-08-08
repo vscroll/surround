@@ -6,7 +6,13 @@
 #define TEST 0
 
 #if TEST
+#if 1
+//this data from official G2D demo
+extern unsigned char yuyv_352x288[];
+#else
+//this data converting from ipu maybe have some error. cannot work well.
 extern unsigned char Front_uyvy_352x288[];
+#endif
 #endif
 
 static const char* gVideoSamplerVar[][GLShaderYUV::YUV_CHN_NUM] = {
@@ -27,7 +33,8 @@ static const char gVShaderStr[] =
     "   gl_Position = a_position;   \n"
     "   v_texCoord = a_texCoord;    \n"
     "}                              \n";
-   
+
+#if 1
 static const char gFShaderStr[] =  
     "precision mediump float;                               \n"
     "varying vec2 v_texCoord;                               \n"
@@ -58,6 +65,43 @@ static const char gFShaderStr[] =
     "               1.13983,   -0.58060,  0) * yuv;         \n"
     "   gl_FragColor = vec4(rgb, 1);                        \n"
     "}                                                      \n";
+
+#else
+//this fragment shader cannot work
+static const char gFShaderStr[] =  
+    "precision mediump float;                               \n"
+    "varying vec2 v_texCoord;                               \n"
+    "uniform sampler2D s_frontY;                            \n"
+    "uniform sampler2D s_frontU;                            \n"
+    "uniform sampler2D s_frontV;                            \n"
+    "uniform sampler2D s_rearY;                             \n"
+    "uniform sampler2D s_rearU;                             \n"
+    "uniform sampler2D s_rearV;                             \n"
+    "uniform sampler2D s_leftY;                             \n"
+    "uniform sampler2D s_leftU;                             \n"
+    "uniform sampler2D s_leftV;                             \n"
+    "uniform sampler2D s_rightY;                            \n"
+    "uniform sampler2D s_rightU;                            \n"
+    "uniform sampler2D s_rightV;                            \n"
+    "uniform sampler2D s_focusY;                            \n"
+    "uniform sampler2D s_focusU;                            \n"
+    "uniform sampler2D s_focusV;                            \n"
+    "void main()                                            \n"
+    "{                                                      \n"
+    "   mediump vec3 yuv;                                   \n"
+    "   vec4 color;                                         \n"
+    "   yuv.x = texture2D(s_frontY, v_texCoord).r;          \n"
+    "   yuv.y = texture2D(s_frontU, v_texCoord).r - 0.5;    \n"
+    "   yuv.z = texture2D(s_frontV, v_texCoord).r - 0.5;    \n"
+    "   color.r = yuv.r + 1.4022*yuv.b - 0.7011;            \n"
+    "   color.r = (color.r < 0.0) ? 0.0 : ((color.r > 1.0) ? 1.0 : color.r);    \n"
+    "   color.g = yuv.r - 0.3456*yuv.g - 0.7145*yuv.b + 0.53005;                \n"
+    "   color.g = (color.g < 0.0) ? 0.0 : ((color.g > 1.0) ? 1.0 : color.g);    \n"
+    "   color.b = yuv.r + 1.771*yuv.g - 0.8855;                                 \n"
+    "   color.b = (color.b < 0.0) ? 0.0 : ((color.b > 1.0) ? 1.0 : color.b);    \n"
+    "   gl_FragColor = color;                               \n"
+    "}                                                      \n";
+#endif
 
 GLShaderYUV::GLShaderYUV(ICapture* capture)
 {
@@ -128,13 +172,23 @@ void GLShaderYUV::draw()
     while (true)
     {
 #if TEST
+#if 1
+        unsigned char* buffer = yuyv_352x288;
+        int width = 352;
+        int height = 288;
+#else
         unsigned char* buffer = Front_uyvy_352x288;
         int width = 352;
         int height = 288;
+#endif
         unsigned char y[width*height] = {0};
         unsigned char u[width/2*height] = {0};
         unsigned char v[width/2*height] = {0};
+#if 1
+        Util::yuyv_to_yuv(width, height, buffer, y, u, v);
+#else
         Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+#endif
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0], y, width, height);
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1], u, width/2, height);
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2], v, width/2, height);
