@@ -2,6 +2,7 @@
 #define GLSHADERYUV_H
 
 #include <time.h>
+#include <opencv/cv.h>
 #include "common.h"
 #include "glshader.h"
 
@@ -14,6 +15,7 @@ public:
 
     virtual const char* getVertShader();
     virtual const char* getFragShader();
+    virtual int initConfig();
     virtual void initVertex();
     virtual void initTexture();
     virtual void draw();
@@ -48,6 +50,10 @@ private:
 
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
+
+    cv::Mat mLookupTab[VIDEO_CHANNEL_SIZE];
+    cv::Mat mMask;
+    cv::Mat mWeight;
 
     clock_t mLastCallTime;
 };

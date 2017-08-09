@@ -12,6 +12,7 @@ public:
 
     virtual const char* getVertShader() = 0;
     virtual const char* getFragShader() = 0;
+    virtual int initConfig() = 0;
     virtual int initProgram();
     virtual void initVertex() = 0;
     virtual void initTexture() = 0;

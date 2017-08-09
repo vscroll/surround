@@ -29,16 +29,30 @@ static const char gVShaderStr[] =
     "attribute vec4 a_position;     \n"
     "attribute vec2 a_texCoord;     \n"
     "varying vec2 v_texCoord;       \n"
+    "varying float v_s;             \n"
+    "varying float v_t;             \n"
     "void main()                    \n"
     "{                              \n"
+    "   vec4 position;              \n"
     "   gl_Position = a_position;   \n"
+    "   position = a_position/a_position.w; \n"
+    "   v_s = (position.s + 1.0)/2.0;       \n"
+    "   v_t = (position.t + 1.0)/2.0;       \n"
     "   v_texCoord = a_texCoord;    \n"
     "}                              \n";
 
 #if 1
 static const char gFShaderStr[] =  
     "precision mediump float;                               \n"
+    "uniform float lookupTabFront[508800];               \n"
+    "uniform float lookupTabRear[508800];                \n"
+    "uniform float lookupTabLeft[508800];                \n"
+    "uniform float lookupTabRight[508800];               \n"
+    "uniform int mask[508800];                           \n"
+    "uniform float weight[508800];                       \n"
     "varying vec2 v_texCoord;                               \n"
+    "varying float v_s;                                     \n"
+    "varying float v_t;                                     \n"
     "uniform sampler2D s_frontY;                            \n"
     "uniform sampler2D s_frontU;                            \n"
     "uniform sampler2D s_frontV;                            \n"
@@ -56,16 +70,38 @@ static const char gFShaderStr[] =
     "uniform sampler2D s_focusV;                            \n"
     "void main()                                            \n"
     "{                                                      \n"
-    "   mediump vec3 yuv;                                   \n"
-    "   lowp vec3 rgb;                                      \n"
-    "   yuv.x = texture2D(s_frontY, v_texCoord).r;          \n"
-    "   yuv.y = texture2D(s_frontU, v_texCoord).r - 0.5;    \n"
-    "   yuv.z = texture2D(s_frontV, v_texCoord).r - 0.5;    \n"
-    "   rgb = mat3( 1,   1,   1,                            \n"
+    "   mat3 yuv2rgb = mat3( 1,   1,   1,                   \n"
     "               0,         -0.39465,  2.03211,          \n"
-    "               1.13983,   -0.58060,  0) * yuv;         \n"
-    "   gl_FragColor = vec4(rgb, 1);                        \n"
-    "}                                                      \n";
+    "               1.13983,   -0.58060,  0);               \n"
+    "   mediump vec3 yuv_front;                             \n"
+    "   mediump vec3 yuv_rear;                              \n"
+    "   mediump vec3 yuv_left;                              \n"
+    "   mediump vec3 yuv_right;                             \n"
+    "   mediump vec3 yuv_focus;                             \n"
+    "   yuv_front.x = texture2D(s_frontY, v_texCoord).r;        \n"
+    "   yuv_front.y = texture2D(s_frontU, v_texCoord).r - 0.5;  \n"
+    "   yuv_front.z = texture2D(s_frontV, v_texCoord).r - 0.5;  \n"
+    "   yuv_rear.x = texture2D(s_rearY, v_texCoord).r;          \n"
+    "   yuv_rear.y = texture2D(s_rearU, v_texCoord).r - 0.5;    \n"
+    "   yuv_rear.z = texture2D(s_rearV, v_texCoord).r - 0.5;    \n"
+    "   yuv_left.x = texture2D(s_leftY, v_texCoord).r;          \n"
+    "   yuv_left.y = texture2D(s_leftU, v_texCoord).r - 0.5;    \n"
+    "   yuv_left.z = texture2D(s_leftV, v_texCoord).r - 0.5;    \n"
+    "   yuv_right.x = texture2D(s_rightY, v_texCoord).r;          \n"
+    "   yuv_right.y = texture2D(s_rightU, v_texCoord).r - 0.5;    \n"
+    "   yuv_right.z = texture2D(s_rightV, v_texCoord).r - 0.5;    \n"
+    "   yuv_focus.x = texture2D(s_focusY, v_texCoord).r;          \n"
+    "   yuv_focus.y = texture2D(s_focusU, v_texCoord).r - 0.5;    \n"
+    "   yuv_focus.z = texture2D(s_focusV, v_texCoord).r - 0.5;    \n"
+    "   lowp vec3 rgb;                                          \n"
+    "   if (v_s < 0.5)                                          \n"
+    "   {                                                       \n"
+    "       rgb = yuv2rgb * yuv_front;                          \n"
+    "   }else {                                                 \n"
+    "       rgb = yuv2rgb * yuv_focus;                          \n"
+    "   }                                                       \n"
+    "   gl_FragColor = vec4(rgb, 1);                            \n"
+    "}                                                          \n";
 
 #else
 //this fragment shader cannot work
@@ -126,6 +162,39 @@ const char* GLShaderYUV::getFragShader()
     return gFShaderStr;
 }
 
+int GLShaderYUV::initConfig()
+{
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return -1;
+    }
+
+    char algoCfgPathName[1024] = {0};
+    sprintf(algoCfgPathName, "%sFishToPanoYUV.xml", procPath);
+	cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
+	fs["map1"] >> mLookupTab[VIDEO_CHANNEL_FRONT];
+	fs["map2"] >> mLookupTab[VIDEO_CHANNEL_REAR];
+	fs["map3"] >> mLookupTab[VIDEO_CHANNEL_LEFT];
+	fs["map4"] >> mLookupTab[VIDEO_CHANNEL_RIGHT];
+
+	fs["mask"] >> mMask;
+	fs["weight"] >> mWeight;
+	fs.release();
+
+    std::cout << "GLShaderRGB::initConfig"
+            << ", lookupTab:" << mLookupTab[0].cols << "x" << mLookupTab[0].rows << " type:" << mLookupTab[0].type()
+            << std::endl;
+    std::cout << "GLShaderRGB::initConfig"
+            << ", mask:" << mMask.cols << "x" << mMask.rows << " type:" << mMask.type()
+            << std::endl;
+    std::cout << "GLShaderRGB::initConfig"
+            << ", weight:" << mWeight.cols << "x" << mWeight.rows << " type:" << mWeight.type()
+            << std::endl;
+
+    return 0;
+}
+
 void GLShaderYUV::initVertex()
 {
     // Get the attribute locations
@@ -135,6 +204,38 @@ void GLShaderYUV::initVertex()
 
 void GLShaderYUV::initTexture()
 {
+    GLint lookupTabFront = glGetUniformLocation (mProgramObject, "lookupTabFront");
+    GLint lookupTabRear = glGetUniformLocation (mProgramObject, "lookupTabRear");
+    GLint lookupTabLeft = glGetUniformLocation (mProgramObject, "lookupTabLeft");
+    GLint lookupTabRight = glGetUniformLocation (mProgramObject, "lookupTabRight");
+    GLint mask = glGetUniformLocation (mProgramObject, "mask");
+    GLint weight = glGetUniformLocation (mProgramObject, "weight");
+
+    int size;
+    float* array;
+    size = mLookupTab[VIDEO_CHANNEL_FRONT].rows * mLookupTab[VIDEO_CHANNEL_FRONT].cols;
+    array = (float*)(mLookupTab[VIDEO_CHANNEL_FRONT].data);
+    glUniform1fv(lookupTabFront, size, array);
+
+    size = mLookupTab[VIDEO_CHANNEL_REAR].rows * mLookupTab[VIDEO_CHANNEL_REAR].cols;
+    array = (float*)(mLookupTab[VIDEO_CHANNEL_REAR].data);
+    glUniform1fv(lookupTabRear, size, array);
+
+    size = mLookupTab[VIDEO_CHANNEL_LEFT].rows * mLookupTab[VIDEO_CHANNEL_LEFT].cols;
+    array = (float*)(mLookupTab[VIDEO_CHANNEL_LEFT].data);
+    glUniform1fv(lookupTabLeft, size, array);
+
+    size = mLookupTab[VIDEO_CHANNEL_RIGHT].rows * mLookupTab[VIDEO_CHANNEL_RIGHT].cols;
+    array = (float*)(mLookupTab[VIDEO_CHANNEL_RIGHT].data);
+    glUniform1fv(lookupTabRight, size, array);
+
+    size = mMask.rows * mMask.cols;
+    glUniform1iv(mask, size, (int*)mMask.data);
+
+    size = mWeight.rows * mWeight.cols;
+    glUniform1fv(weight, size, (float*)mWeight.data);
+    checkGlError("initTexture");
+
     // Get the sampler location
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
@@ -280,7 +381,7 @@ void GLShaderYUV::drawOnce()
 
 #if DEBUG_STITCH
 
-    std::cout << "GLRenderWorker::run"
+    std::cout << "GLShaderYUV::drawOnce"
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
             << ", render:" << (double)(start2-start1)/CLOCKS_PER_SEC
@@ -321,17 +422,70 @@ void GLShaderYUV::glDraw()
     glEnableVertexAttribArray(mUserData.positionLoc);
     glEnableVertexAttribArray(mUserData.texCoordLoc);
 
+    //Front
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[0][0]);
-    glUniform1i(mUserData.videoSamplerLoc[0][0], 0);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][0], 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[0][1]);
-    glUniform1i(mUserData.videoSamplerLoc[0][1], 1);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][1], 1);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[0][2]);
-    glUniform1i(mUserData.videoSamplerLoc[0][2], 2);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][2], 2);
+
+    //Rear
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][0]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][0], 3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][1]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][1], 4);
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][2]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][2], 5);
+
+    //Left
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][0]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][0], 6);
+
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][1]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][1], 7);
+
+    glActiveTexture(GL_TEXTURE8);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][2]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][2], 8);
+
+    //right
+    glActiveTexture(GL_TEXTURE9);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][0]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][0], 9);
+
+    glActiveTexture(GL_TEXTURE10);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][1]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][1], 10);
+
+    glActiveTexture(GL_TEXTURE11);
+    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][2]);
+    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][2], 11);
+
+    //focus
+    glActiveTexture(GL_TEXTURE12);
+    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[0]);
+    glUniform1i(mUserData.focusVideoSamplerLoc[0], 12);
+
+    glActiveTexture(GL_TEXTURE13);
+    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[1]);
+    glUniform1i(mUserData.focusVideoSamplerLoc[1], 13);
+
+    glActiveTexture(GL_TEXTURE14);
+    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[2]);
+    glUniform1i(mUserData.focusVideoSamplerLoc[2], 14);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

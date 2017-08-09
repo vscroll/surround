@@ -37,7 +37,7 @@ CFLAGS                      += -DDEBUG=1
 endif
 
 LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),-rpath-link=$(TARGET_PATH_LIB) \
-			                    -lpthread -lEGL -lGLESv2 -lX11
+			                    -lpthread -lEGL -lGLESv2 -lX11 -lopencv_core
 
 SRCS 			            = $(wildcard ./*.cpp )
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/*.cpp)

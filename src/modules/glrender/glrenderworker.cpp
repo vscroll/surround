@@ -68,6 +68,7 @@ int GLRenderWorker::init(ICapture* capture)
 #endif
     }
 
+    mShader->initConfig();
     mShader->initProgram();
     mShader->initVertex();
     mShader->initTexture();
