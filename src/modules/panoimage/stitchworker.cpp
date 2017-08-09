@@ -639,7 +639,7 @@ void StitchWorker::stitching(surround_image_t* sideImage[],
 				size_t index1 = lutFront->ptr<float>(i)[0];
 				panoImage[i] = front[index1];
 				break;
-			}unsigned char* new_pano_buffer(int accelPolicy);
+			}
 
 			case 2:
 			{
