@@ -279,7 +279,7 @@ int Controller::startCaptureModule(bool enableSHM)
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = V4L2_PIX_FMT_UYVY;
+        sink[i].pixfmt = V4L2_PIX_FMT_YUYV;
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);

@@ -119,28 +119,28 @@ void GLShaderRGB::drawOnce()
             width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
             unsigned char front[width*height*3] = {0};
-            Util::uyvy_to_rgb24(width, height, buffer, front);
+            Util::yuyv_to_rgb24(width, height, buffer, front);
             loadTexture(mUserData.frontTexId, front, width, height);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
             unsigned char rear[width*height*3] = {0};
-            Util::uyvy_to_rgb24(width, height, buffer, rear);
+            Util::yuyv_to_rgb24(width, height, buffer, rear);
             loadTexture(mUserData.rearTexId, rear, width, height);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
             unsigned char left[width*height*3] = {0};
-            Util::uyvy_to_rgb24(width, height, buffer, left);
+            Util::yuyv_to_rgb24(width, height, buffer, left);
             loadTexture(mUserData.leftTexId, left, width, height);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
             unsigned char right[width*height*3] = {0};
-            Util::uyvy_to_rgb24(width, height, buffer, right);
+            Util::yuyv_to_rgb24(width, height, buffer, right);
             loadTexture(mUserData.rightTexId, right, width, height);
         }
 
@@ -156,7 +156,7 @@ void GLShaderRGB::drawOnce()
         int width = sideImage->info.width;
         int height = sideImage->info.height;
         unsigned char side[width*height*3] = {0};
-        Util::uyvy_to_rgb24(width, height, buffer, side);
+        Util::yuyv_to_rgb24(width, height, buffer, side);
         loadTexture(mUserData.focusTexId, side, width, height);
 
         delete sideImage;

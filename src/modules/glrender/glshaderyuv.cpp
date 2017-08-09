@@ -2,6 +2,7 @@
 #include "ICapture.h"
 #include "util.h"
 #include <iostream>
+#include <string.h>
 
 #define TEST 0
 
@@ -241,7 +242,7 @@ void GLShaderYUV::drawOnce()
                 unsigned char y[width*height] = {0};
                 unsigned char u[width/2*height] = {0};
                 unsigned char v[width/2*height] = {0};
-                Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+                Util::yuyv_to_yuv(width, height, buffer, y, u, v);
                 loadTexture(mUserData.videoTexId[i][0], y, width, height);
                 loadTexture(mUserData.videoTexId[i][1], u, width/2, height);
                 loadTexture(mUserData.videoTexId[i][2], v, width/2, height);
@@ -262,7 +263,7 @@ void GLShaderYUV::drawOnce()
         unsigned char y[width*height] = {0};
         unsigned char u[width/2*height] = {0};
         unsigned char v[width/2*height] = {0};
-        Util::uyvy_to_yuv(width, height, buffer, y, u, v);
+        Util::yuyv_to_yuv(width, height, buffer, y, u, v);
         loadTexture(mUserData.focusVideoTexId[0], y, width, height);
         loadTexture(mUserData.focusVideoTexId[1], u, width/2, height);
         loadTexture(mUserData.focusVideoTexId[2], v, width/2, height);
