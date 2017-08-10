@@ -25,120 +25,9 @@ static const char* gVideoSamplerVar[][GLShaderYUV::YUV_CHN_NUM] = {
 static const char* gFocusVideoSamplerVar[GLShaderYUV::YUV_CHN_NUM] = {
     "s_focusY", "s_focusU", "s_focusV"};
 
-static const char gVShaderStr[] =  
-    "attribute vec4 a_position;     \n"
-    "attribute vec2 a_texCoord;     \n"
-    "varying vec2 v_texCoord;       \n"
-    "varying float v_s;             \n"
-    "varying float v_t;             \n"
-    "void main()                    \n"
-    "{                              \n"
-    "   vec4 position;              \n"
-    "   gl_Position = a_position;   \n"
-    "   position = a_position/a_position.w; \n"
-    "   v_s = (position.s + 1.0)/2.0;       \n"
-    "   v_t = (position.t + 1.0)/2.0;       \n"
-    "   v_texCoord = a_texCoord;    \n"
-    "}                              \n";
-
-#if 1
-static const char gFShaderStr[] =  
-    "precision mediump float;                               \n"
-    "uniform float lookupTabFront[508800];               \n"
-    "uniform float lookupTabRear[508800];                \n"
-    "uniform float lookupTabLeft[508800];                \n"
-    "uniform float lookupTabRight[508800];               \n"
-    "uniform int mask[508800];                           \n"
-    "uniform float weight[508800];                       \n"
-    "varying vec2 v_texCoord;                               \n"
-    "varying float v_s;                                     \n"
-    "varying float v_t;                                     \n"
-    "uniform sampler2D s_frontY;                            \n"
-    "uniform sampler2D s_frontU;                            \n"
-    "uniform sampler2D s_frontV;                            \n"
-    "uniform sampler2D s_rearY;                             \n"
-    "uniform sampler2D s_rearU;                             \n"
-    "uniform sampler2D s_rearV;                             \n"
-    "uniform sampler2D s_leftY;                             \n"
-    "uniform sampler2D s_leftU;                             \n"
-    "uniform sampler2D s_leftV;                             \n"
-    "uniform sampler2D s_rightY;                            \n"
-    "uniform sampler2D s_rightU;                            \n"
-    "uniform sampler2D s_rightV;                            \n"
-    "uniform sampler2D s_focusY;                            \n"
-    "uniform sampler2D s_focusU;                            \n"
-    "uniform sampler2D s_focusV;                            \n"
-    "void main()                                            \n"
-    "{                                                      \n"
-    "   mat3 yuv2rgb = mat3( 1,   1,   1,                   \n"
-    "               0,         -0.39465,  2.03211,          \n"
-    "               1.13983,   -0.58060,  0);               \n"
-    "   mediump vec3 yuv_front;                             \n"
-    "   mediump vec3 yuv_rear;                              \n"
-    "   mediump vec3 yuv_left;                              \n"
-    "   mediump vec3 yuv_right;                             \n"
-    "   mediump vec3 yuv_focus;                             \n"
-    "   yuv_front.x = texture2D(s_frontY, v_texCoord).r;        \n"
-    "   yuv_front.y = texture2D(s_frontU, v_texCoord).r - 0.5;  \n"
-    "   yuv_front.z = texture2D(s_frontV, v_texCoord).r - 0.5;  \n"
-    "   yuv_rear.x = texture2D(s_rearY, v_texCoord).r;          \n"
-    "   yuv_rear.y = texture2D(s_rearU, v_texCoord).r - 0.5;    \n"
-    "   yuv_rear.z = texture2D(s_rearV, v_texCoord).r - 0.5;    \n"
-    "   yuv_left.x = texture2D(s_leftY, v_texCoord).r;          \n"
-    "   yuv_left.y = texture2D(s_leftU, v_texCoord).r - 0.5;    \n"
-    "   yuv_left.z = texture2D(s_leftV, v_texCoord).r - 0.5;    \n"
-    "   yuv_right.x = texture2D(s_rightY, v_texCoord).r;          \n"
-    "   yuv_right.y = texture2D(s_rightU, v_texCoord).r - 0.5;    \n"
-    "   yuv_right.z = texture2D(s_rightV, v_texCoord).r - 0.5;    \n"
-    "   yuv_focus.x = texture2D(s_focusY, v_texCoord).r;          \n"
-    "   yuv_focus.y = texture2D(s_focusU, v_texCoord).r - 0.5;    \n"
-    "   yuv_focus.z = texture2D(s_focusV, v_texCoord).r - 0.5;    \n"
-    "   lowp vec3 rgb;                                          \n"
-    "   if (v_s < 0.5)                                          \n"
-    "   {                                                       \n"
-    "       rgb = yuv2rgb * yuv_front;                          \n"
-    "   }else {                                                 \n"
-    "       rgb = yuv2rgb * yuv_focus;                          \n"
-    "   }                                                       \n"
-    "   gl_FragColor = vec4(rgb, 1);                            \n"
-    "}                                                          \n";
-
-#else
-//this fragment shader cannot work
-static const char gFShaderStr[] =  
-    "precision mediump float;                               \n"
-    "varying vec2 v_texCoord;                               \n"
-    "uniform sampler2D s_frontY;                            \n"
-    "uniform sampler2D s_frontU;                            \n"
-    "uniform sampler2D s_frontV;                            \n"
-    "uniform sampler2D s_rearY;                             \n"
-    "uniform sampler2D s_rearU;                             \n"
-    "uniform sampler2D s_rearV;                             \n"
-    "uniform sampler2D s_leftY;                             \n"
-    "uniform sampler2D s_leftU;                             \n"
-    "uniform sampler2D s_leftV;                             \n"
-    "uniform sampler2D s_rightY;                            \n"
-    "uniform sampler2D s_rightU;                            \n"
-    "uniform sampler2D s_rightV;                            \n"
-    "uniform sampler2D s_focusY;                            \n"
-    "uniform sampler2D s_focusU;                            \n"
-    "uniform sampler2D s_focusV;                            \n"
-    "void main()                                            \n"
-    "{                                                      \n"
-    "   mediump vec3 yuv;                                   \n"
-    "   vec4 color;                                         \n"
-    "   yuv.x = texture2D(s_frontY, v_texCoord).r;          \n"
-    "   yuv.y = texture2D(s_frontU, v_texCoord).r - 0.5;    \n"
-    "   yuv.z = texture2D(s_frontV, v_texCoord).r - 0.5;    \n"
-    "   color.r = yuv.r + 1.4022*yuv.b - 0.7011;            \n"
-    "   color.r = (color.r < 0.0) ? 0.0 : ((color.r > 1.0) ? 1.0 : color.r);    \n"
-    "   color.g = yuv.r - 0.3456*yuv.g - 0.7145*yuv.b + 0.53005;                \n"
-    "   color.g = (color.g < 0.0) ? 0.0 : ((color.g > 1.0) ? 1.0 : color.g);    \n"
-    "   color.b = yuv.r + 1.771*yuv.g - 0.8855;                                 \n"
-    "   color.b = (color.b < 0.0) ? 0.0 : ((color.b > 1.0) ? 1.0 : color.b);    \n"
-    "   gl_FragColor = color;                               \n"
-    "}                                                      \n";
-#endif
+#define STRINGIFY(A)  #A
+#include "panorama2d.vert"
+#include "panorama2d.frag"
 
 GLShaderYUV::GLShaderYUV(ICapture* capture)
 {
@@ -182,13 +71,13 @@ int GLShaderYUV::initConfig()
 	fs["weight"] >> mWeight;
 	fs.release();
 
-    std::cout << "GLShaderRGB::initConfig"
+    std::cout << "GLShaderYUV::initConfig"
             << ", lookupTab:" << mLookupTab[0].cols << "x" << mLookupTab[0].rows << " type:" << mLookupTab[0].type()
             << std::endl;
-    std::cout << "GLShaderRGB::initConfig"
+    std::cout << "GLShaderYUV::initConfig"
             << ", mask:" << mMask.cols << "x" << mMask.rows << " type:" << mMask.type()
             << std::endl;
-    std::cout << "GLShaderRGB::initConfig"
+    std::cout << "GLShaderYUV::initConfig"
             << ", weight:" << mWeight.cols << "x" << mWeight.rows << " type:" << mWeight.type()
             << std::endl;
 

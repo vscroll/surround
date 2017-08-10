@@ -62,7 +62,7 @@ int GLShader::getScreenInfo(int devIndex)
                   << std::endl;
     }
 
-    std::cout << "GLRenderWorker::getScreenInfo"
+    std::cout << "GLShader::getScreenInfo"
               << " fb:" << fb
               << " xres_virtual:" << mScreenInfo.xres_virtual
               << " yres_virtual:" << mScreenInfo.yres_virtual
