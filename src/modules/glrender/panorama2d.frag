@@ -9,8 +9,6 @@ uniform float lookupTabRight[508800];
 uniform int mask[508800];
 uniform float weight[508800];
 varying vec2 v_texCoord;
-varying float v_s;
-varying float v_t;
 uniform sampler2D s_frontY;
 uniform sampler2D s_frontU;
 uniform sampler2D s_frontV;
@@ -52,14 +50,19 @@ void main()
     yuv_focus.y = texture2D(s_focusU, v_texCoord).r - 0.5;
     yuv_focus.z = texture2D(s_focusV, v_texCoord).r - 0.5;
     lowp vec3 rgb;
-    if (v_s < 0.5)
-    {
-        rgb = yuv2rgb * yuv_front;
-    }
-    else
+    int x = int(gl_FragCoord.x);
+    int y = int(gl_FragCoord.y);
+    if (x >= 424)
     {
         rgb = yuv2rgb * yuv_focus;
     }
+    else
+    {
+        //int i = y*424*2+x;
+        //int flag = mask[i];
+        rgb = yuv2rgb * yuv_front;
+    }
+
     gl_FragColor = vec4(rgb, 1);
 }
 );
