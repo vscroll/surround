@@ -17,8 +17,7 @@ void main()
     vec3 normalVector = normalize((uMMatrix*vec4(normalVectorOrigin,1)).xyz);
     vec3 vectorLight = normalize(uLightLocation - (uMMatrix * vec4(aPosition,1)).xyz);
     float factor = max(0.0, dot(normalVector, vectorLight));
-    //vDiffuse = factor*vec4(1,1,1,1.0);
-    vDiffuse = 0.8*vec4(1,1,1,1.0);
+    vDiffuse = factor*vec4(1,1,1,1.0);
     gl_Position = uMVPMatrix * vec4(aPosition,1);
     vTextureCoord = aTextureCoord;
 }

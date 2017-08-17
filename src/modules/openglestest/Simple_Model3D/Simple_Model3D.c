@@ -194,7 +194,7 @@ void initTexture(ESContext *esContext)
 
     int width;
     int height;
-    char *buffer = esLoadTGA("basemap.tga", &width, &height);
+    char *buffer = esLoadTGA("banana.tga", &width, &height);
     loadTexture(userData->textureId, buffer, width, height);
     free (buffer);
 
@@ -218,12 +218,12 @@ void Draw(ESContext *esContext)
 
 #if (!TEST)
     glVertexAttribPointer(userData->positionHandle, 3,  GL_FLOAT, GL_FALSE, 3 * 4, bananaVerts);
-    glVertexAttribPointer(userData->textureCoordHandle, 2,  GL_FLOAT, GL_FALSE, 2 * 4, bananaNormals);
-    glVertexAttribPointer(userData->normalHandle, 3, GL_FLOAT, GL_FALSE, 3 * 4, bananaTexCoords);
+    glVertexAttribPointer(userData->normalHandle, 3, GL_FLOAT, GL_FALSE, 3 * 4, bananaNormals);
+    glVertexAttribPointer(userData->textureCoordHandle, 2,  GL_FLOAT, GL_FALSE, 2 * 4, bananaTexCoords);
 
     glEnableVertexAttribArray(userData->positionHandle);
-    glEnableVertexAttribArray(userData->textureCoordHandle);
     glEnableVertexAttribArray(userData->normalHandle);
+    glEnableVertexAttribArray(userData->textureCoordHandle);
 	
     glUniform3f(userData->uLightLocationHandle, 0, 0, 10);
     glUniformMatrix4fv(userData->uMVPMatrixHandle, 1, GL_FALSE, (GLfloat*)&userData->mvpMatrix.m[0][0]);
@@ -267,7 +267,7 @@ void Update ( ESContext *esContext, float deltaTime )
    
    // Generate a perspective matrix with a 60 degree FOV
    esMatrixLoadIdentity( &perspective );
-   esPerspective( &perspective, 15.0f, aspect, 1.0f, 20.0f );
+   esPerspective( &perspective, 30.0f, aspect, 1.0f, 20.0f );
 
    // Generate a model view matrix to rotate/translate the cube
    esMatrixLoadIdentity( &userData->modelMatrix );
