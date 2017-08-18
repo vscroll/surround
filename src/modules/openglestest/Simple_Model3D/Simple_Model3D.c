@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include "esUtil.h"
 #include "banana.h"
+#include "car.h"
+#include "house.h"
 
 #define TEST 0
 
@@ -209,17 +211,46 @@ void Draw(ESContext *esContext)
     UserData *userData = (UserData *)esContext->userData;
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-      
+    //glClear ( GL_COLOR_BUFFER_BIT );
+
+    //glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Set the viewport
     glViewport ( 0, 0, esContext->width, esContext->height );
 
-    // Clear the color buffer
-    glClear ( GL_COLOR_BUFFER_BIT );
+    glEnable(GL_DEPTH_TEST);
+    // If enabled, cull polygons based on their winding in window coordinates
+    glEnable(GL_CULL_FACE);
+    // Culls back face
+    glCullFace(GL_BACK);
 
 #if (!TEST)
-    glVertexAttribPointer(userData->positionHandle, 3,  GL_FLOAT, GL_FALSE, 3 * 4, bananaVerts);
-    glVertexAttribPointer(userData->normalHandle, 3, GL_FLOAT, GL_FALSE, 3 * 4, bananaNormals);
-    glVertexAttribPointer(userData->textureCoordHandle, 2,  GL_FLOAT, GL_FALSE, 2 * 4, bananaTexCoords);
+
+#if 0
+    float* verts = carVerts;
+    float* normals = carNormals;
+    float* texCoords = carTexCoords;
+    unsigned int numVerts = carNumVerts;
+#endif
+
+#if 1
+    float* verts = bananaVerts;
+    float* normals = bananaNormals;
+    float* texCoords = bananaTexCoords;
+    unsigned int numVerts = bananaNumVerts;
+#endif
+
+#if 0
+    float* verts = houseVerts;
+    float* normals = houseNormals;
+    float* texCoords = houseTexCoords;
+    unsigned int numVerts = houseNumVerts;
+#endif
+
+    glVertexAttribPointer(userData->positionHandle, 3,  GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), verts);
+    glVertexAttribPointer(userData->normalHandle, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), normals);
+    glVertexAttribPointer(userData->textureCoordHandle, 2,  GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), texCoords);
 
     glEnableVertexAttribArray(userData->positionHandle);
     glEnableVertexAttribArray(userData->normalHandle);
@@ -233,7 +264,7 @@ void Draw(ESContext *esContext)
     glBindTexture(GL_TEXTURE_2D, userData->textureId);
     glUniform1i(userData->uTextureHandle, 0);
 
-    glDrawArrays ( GL_TRIANGLES, 0, bananaNumVerts );
+    glDrawArrays ( GL_TRIANGLES, 0, numVerts );
 #else
     // Load the vertex position
     glVertexAttribPointer ( userData->positionHandle, 3, GL_FLOAT, 
