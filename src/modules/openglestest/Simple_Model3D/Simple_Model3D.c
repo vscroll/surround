@@ -16,11 +16,23 @@
 //    OpenGL ES 2.0 rendering.
 #include <stdlib.h>
 #include "esUtil.h"
-#include "banana.h"
-#include "car.h"
-#include "house.h"
 
 #define TEST 0
+
+extern float carVerts[];
+extern float carNormals[];
+extern float carTexCoords[];
+extern unsigned int carNumVerts;
+
+extern float bananaVerts[];
+extern float bananaNormals[];
+extern float bananaTexCoords[];
+extern unsigned int bananaNumVerts;
+
+extern float houseVerts[];
+extern float houseNormals[];
+extern float houseTexCoords[];
+extern unsigned int houseNumVerts;
 
 #define STRINGIFY(A)  #A
 #include "model.vert"
@@ -227,14 +239,14 @@ void Draw(ESContext *esContext)
 
 #if (!TEST)
 
-#if 0
+#if 1
     float* verts = carVerts;
     float* normals = carNormals;
     float* texCoords = carTexCoords;
     unsigned int numVerts = carNumVerts;
 #endif
 
-#if 1
+#if 0
     float* verts = bananaVerts;
     float* normals = bananaNormals;
     float* texCoords = bananaTexCoords;
@@ -307,7 +319,9 @@ void Update ( ESContext *esContext, float deltaTime )
    esTranslate( &userData->modelMatrix, 0.0, 0.0, -2.0 );
 
    // Rotate the cube
-   esRotate( &userData->modelMatrix, userData->angle, 1.0, 0.0, 1.0 );
+   //esRotate( &userData->modelMatrix, userData->angle, 1.0, 0.0, 1.0 );
+    esRotate( &userData->modelMatrix, -90, 0.0, 1.0, 0.0 );
+    esRotate( &userData->modelMatrix, -90, 0.0, 0.0, 1.0 );
    
    // Compute the final MVP by multiplying the 
    // modevleiw and perspective matrices together
