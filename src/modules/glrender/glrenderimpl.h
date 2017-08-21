@@ -3,7 +3,7 @@
 
 #include "IGLRender.h"
 
-class GLRenderWorker;
+class IGLRenderWorker;
 class GLRenderImpl : public IGLRender
 {
 public:
@@ -25,7 +25,7 @@ public:
     virtual void draw();
 
 private:
-    GLRenderWorker *mWorker;
+    IGLRenderWorker *mWorker;
 };
 
 #endif // GLRENDERIMPL_H

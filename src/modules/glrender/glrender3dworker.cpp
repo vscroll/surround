@@ -9,6 +9,8 @@
 #include "glrenderwindow.h"
 #include "IGLRender.h"
 #include "glshader.h"
+#include "glshadercar.h"
+#include "glshadersurround.h"
 #include "esUtil.h"
 
 GLRender3DWorker::GLRender3DWorker()
@@ -17,9 +19,31 @@ GLRender3DWorker::GLRender3DWorker()
     {
         mShader[i] = NULL;
     }
+
+    mWindow = NULL;
 }
 
 GLRender3DWorker::~GLRender3DWorker()
+{
+
+}
+
+void GLRender3DWorker::setDisplayMode(unsigned int displayMode)
+{
+
+}
+
+void GLRender3DWorker::setPanoramaViewRect(unsigned int left,
+        unsigned int top,
+        unsigned int width,
+        unsigned int height)
+{
+}
+
+void GLRender3DWorker::setXViewRect(unsigned int left,
+        unsigned int top,
+        unsigned int width,
+        unsigned int height)
 {
 
 }
@@ -38,12 +62,12 @@ int GLRender3DWorker::init(ICapture* capture)
 
     if (NULL == mShader[0])
     {
-        //mShader[0] = new GLShaderCar(capture);
+        mShader[0] = new GLShaderCar(&mWindow->mESContext);
     }
 
     if (NULL == mShader[1])
     {
-        //mShader[1] = new GLShaderSurround(capture);
+        mShader[1] = new GLShaderSurround(&mWindow->mESContext);
     }
 
     for (int i = 0; i < 2; ++i)
@@ -60,12 +84,17 @@ int GLRender3DWorker::init(ICapture* capture)
 void GLRender3DWorker::draw()
 {
     //all the opengl es functions must be called in one thread
-    for (int i = 0; i < 2; ++i)
+    while (true)
     {
-        if (NULL != mShader[i])
+        for (int i = 0; i < 2; ++i)
         {
-            mShader[i]->draw();
+            if (NULL != mShader[i])
+            {
+                mShader[i]->draw();
+            }
         }
+
+        eglSwapBuffers(mWindow->mESContext.eglDisplay, mWindow->mESContext.eglSurface);
     }
 }
 

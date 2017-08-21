@@ -1,9 +1,15 @@
 #include "glrenderimpl.h"
+#include "IGLRenderWorker.h"
 #include "glrenderworker.h"
+#include "glrender3dworker.h"
 
 GLRenderImpl::GLRenderImpl()
 {
+#if 1
     mWorker = new GLRenderWorker();
+#else
+    mWorker = new GLRender3DWorker();
+#endif
 }
 
 GLRenderImpl::~GLRenderImpl()
@@ -68,14 +74,14 @@ int GLRenderImpl::start(unsigned int fps)
         return -1;
     }
 
-    return mWorker->start(fps);
+    //return mWorker->start(fps);
 }
 
 void GLRenderImpl::stop()
 {
     if (NULL != mWorker)
     {
-        mWorker->stop();
+        //mWorker->stop();
     }
 }
 

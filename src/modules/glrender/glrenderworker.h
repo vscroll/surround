@@ -1,29 +1,30 @@
 #ifndef GLRENDERWORKER_H
 #define GLRENDERWORKER_H
 
+#include "IGLRenderWorker.h"
 #include "wrap_thread.h"
 
 class ICapture;
 class GLRenderWindow;
 class GLShader;
-class GLRenderWorker : public WrapThread
+class GLRenderWorker : public IGLRenderWorker, public WrapThread
 {
 public:
     GLRenderWorker();
     virtual ~GLRenderWorker();
 
-    void setDisplayMode(unsigned int displayMode);
-    void setPanoramaViewRect(unsigned int left,
+    virtual void setDisplayMode(unsigned int displayMode);
+    virtual void setPanoramaViewRect(unsigned int left,
         unsigned int top,
         unsigned int width,
         unsigned int height);
-    void setXViewRect(unsigned int left,
+    virtual void setXViewRect(unsigned int left,
         unsigned int top,
         unsigned int width,
         unsigned int height);
-    int init(ICapture* capture);
+    virtual int init(ICapture* capture);
 
-    void draw();
+    virtual void draw();
 public:
     virtual void run();
 
