@@ -10,7 +10,7 @@ class ICapture;
 class GLShaderYUV: public GLShader
 {
 public:
-    GLShaderYUV(ICapture* capture);
+    GLShaderYUV(ESContext* context, ICapture* capture);
     virtual ~GLShaderYUV();
 
     virtual const char* getVertShader();

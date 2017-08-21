@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include "util.h"
+#include "glrenderwindow.h"
 #include "IGLRender.h"
 #include "glshader.h"
 #include "glshaderyuv.h"
@@ -25,6 +26,7 @@ GLRenderWorker::GLRenderWorker()
     mXViewWidth = 0;
     mXViewHeight = 0;
 
+    mWindow = NULL;
     mShader = NULL;
 }
 
@@ -59,12 +61,22 @@ void GLRenderWorker::setXViewRect(unsigned int left,
 
 int GLRenderWorker::init(ICapture* capture)
 {
+    if (NULL == mWindow)
+    {
+        mWindow = new GLRenderWindow();
+    }
+
+    if (mWindow->create(0) < 0)
+    {
+        return -1;
+    }
+
     if (NULL == mShader)
     {
 #if 1
-        mShader = new GLShaderYUV(capture);
+        mShader = new GLShaderYUV(&mWindow->mESContext, capture);
 #else
-        mShader = new GLShaderRGB(capture);
+        mShader = new GLShaderRGB(&mWindow->mESContext, capture);
 #endif
     }
 

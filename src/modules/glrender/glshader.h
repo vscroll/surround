@@ -1,13 +1,12 @@
 #ifndef GLSHADERR_H
 #define GLSHADERR_H
 
-#include <linux/mxcfb.h>
 #include "esUtil.h"
 
 class GLShader
 {
 public:
-    GLShader();
+    GLShader(ESContext* context);
     virtual ~GLShader();
 
     virtual const char* getVertShader() = 0;
@@ -22,13 +21,8 @@ public:
 protected:
     void checkGlError(const char* op);
 
-private:
-    int getScreenInfo(int devIndex);
-
 protected:
-    struct fb_var_screeninfo mScreenInfo;
-
-    ESContext mESContext;
+    ESContext* mESContext;
     GLuint mProgramObject;
 };
 

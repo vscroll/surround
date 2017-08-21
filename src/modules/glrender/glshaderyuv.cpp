@@ -3,6 +3,7 @@
 #include "util.h"
 #include <iostream>
 #include <string.h>
+#include "esUtil.h"
 
 #define TEST 0
 
@@ -29,7 +30,8 @@ static const char* gFocusVideoSamplerVar[GLShaderYUV::YUV_CHN_NUM] = {
 #include "panorama2d.vert"
 #include "panorama2d.frag"
 
-GLShaderYUV::GLShaderYUV(ICapture* capture)
+GLShaderYUV::GLShaderYUV(ESContext* context, ICapture* capture)
+:GLShader(context)
 {
     mCapture = capture;
 
@@ -296,7 +298,7 @@ void GLShaderYUV::glDraw()
     };
       
     // Set the viewport
-    glViewport(0, 0, mESContext.width, mESContext.height);
+    glViewport(0, 0, mESContext->width, mESContext->height);
    
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT);
@@ -378,7 +380,7 @@ void GLShaderYUV::glDraw()
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    eglSwapBuffers(mESContext.eglDisplay, mESContext.eglSurface);
+    eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
 }
 
 void GLShaderYUV::shutdown()

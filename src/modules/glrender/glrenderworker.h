@@ -4,6 +4,7 @@
 #include "wrap_thread.h"
 
 class ICapture;
+class GLRenderWindow;
 class GLShader;
 class GLRenderWorker : public WrapThread
 {
@@ -39,6 +40,7 @@ private:
     unsigned int mXViewWidth;
     unsigned int mXViewHeight;
 
+    GLRenderWindow* mWindow;
     GLShader* mShader;
 };
 

@@ -9,7 +9,7 @@ class ICapture;
 class GLShaderRGB: public GLShader
 {
 public:
-    GLShaderRGB(ICapture* capture);
+    GLShaderRGB(ESContext* context, ICapture* capture);
     virtual ~GLShaderRGB();
 
     virtual const char* getVertShader();

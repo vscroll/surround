@@ -1,6 +1,7 @@
 #include "glshaderrgb.h"
 #include "ICapture.h"
 #include "util.h"
+#include "esUtil.h"
 #include <iostream>
 
 static const char gVShaderStr[] =  
@@ -26,7 +27,8 @@ static const char gFShaderStr[] =
       "  gl_FragColor = texture2D( s_front, v_texCoord );  \n"
       "}                                                   \n";   
 
-GLShaderRGB::GLShaderRGB(ICapture* capture)
+GLShaderRGB::GLShaderRGB(ESContext* context, ICapture* capture)
+:GLShader(context)
 {
     mCapture = capture;
 
@@ -197,7 +199,7 @@ void GLShaderRGB::glDraw()
     };
       
     // Set the viewport
-    glViewport(0, 0, mESContext.width, mESContext.height);
+    glViewport(0, 0, mESContext->width, mESContext->height);
    
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT);
@@ -218,7 +220,7 @@ void GLShaderRGB::glDraw()
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    eglSwapBuffers(mESContext.eglDisplay, mESContext.eglSurface);
+    eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
 }
 
 void GLShaderRGB::shutdown()
