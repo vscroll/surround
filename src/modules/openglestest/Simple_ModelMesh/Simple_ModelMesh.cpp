@@ -22,6 +22,8 @@
 #include "model.vert"
 #include "model.frag"
 
+Mesh* gMesh = NULL;
+
 typedef struct
 {
     // Handle to a program object
@@ -140,6 +142,8 @@ void Draw(ESContext *esContext)
     glUniform3f(userData->uLightLocationHandle, 0, 0, 10);
     glUniformMatrix4fv(userData->uMVPMatrixHandle, 1, GL_FALSE, (GLfloat*)&userData->mvpMatrix.m[0][0]);
     glUniformMatrix4fv(userData->uMMatrixHandle, 1, GL_FALSE, (GLfloat*)&userData->modelMatrix.m[0][0]);
+
+    gMesh->Render();
 }
 
 void Update ( ESContext *esContext, float deltaTime )
@@ -191,13 +195,10 @@ int main ( int argc, char *argv[] )
     initVertexVar(&esContext);
 
     UserData *userData = (UserData*) esContext.userData;
-    Mesh* mesh = new Mesh();
-    mesh->LoadMesh("./Content/box.obj");
-    while (true)
-    {
-        Update(&esContext, 0.005);
-        Draw(&esContext);
-        mesh->Render();
-        eglSwapBuffers(esContext.eglDisplay, esContext.eglSurface);
-    }
+    gMesh = new Mesh();
+    gMesh->LoadMesh("./Content/box.obj");
+
+    esRegisterDrawFunc ( &esContext, Draw );
+    esRegisterUpdateFunc ( &esContext, Update );
+    esMainLoop ( &esContext );
 }
