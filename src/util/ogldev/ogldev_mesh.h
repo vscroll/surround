@@ -21,6 +21,7 @@
 
 #include <map>
 #include <vector>
+
 #include <Importer.hpp>      // C++ importer interface
 #include <scene.h>       // Output data structure
 #include <postprocess.h> // Post processing flags
@@ -29,10 +30,27 @@
 #include "ogldev_math_3d.h"
 #include "ogldev_texture.h"
 
+struct Vertex
+{
+    Vector3f m_pos;
+    Vector2f m_tex;
+    Vector3f m_normal;
+
+    Vertex() {}
+
+    Vertex(const Vector3f& pos, const Vector2f& tex, const Vector3f& normal)
+    {
+        m_pos    = pos;
+        m_tex    = tex;
+        m_normal = normal;
+    }
+};
+
+
 class Mesh
 {
 public:
-    Mesh(GLint attrPosition, GLint attrNormal, GLint attrTextureCoord);
+    Mesh();
 
     ~Mesh();
 
@@ -53,24 +71,17 @@ private:
 
         ~MeshEntry();
 
-        void Init(const std::vector<GLfloat>& position,
-                const std::vector<GLfloat>& textureCoord,
-                const std::vector<GLfloat>& normal,
-                const std::vector<unsigned int>& Indices);
+        void Init(const std::vector<Vertex>& Vertices,
+                  const std::vector<unsigned int>& Indices);
 
-        std::vector<GLfloat> mPosition;
-        std::vector<GLfloat> mTextureCoord;
-        std::vector<GLfloat> mNormal;
-        std::vector<unsigned int> mIndices;
-        unsigned int mMaterialIndex;
+        GLuint VB;
+        GLuint IB;
+        unsigned int NumIndices;
+        unsigned int MaterialIndex;
     };
 
-    std::vector<MeshEntry> mEntries;
-    std::vector<Texture*> mTextures;
-
-    GLint mAttrPosition;
-    GLint mAttrNormal;
-    GLint mAttrTextureCoord;
+    std::vector<MeshEntry> m_Entries;
+    std::vector<Texture*> m_Textures;
 };
 
 

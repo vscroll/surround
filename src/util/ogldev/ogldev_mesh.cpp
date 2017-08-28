@@ -22,30 +22,41 @@
 
 Mesh::MeshEntry::MeshEntry()
 {
-    mMaterialIndex = INVALID_MATERIAL;
+    VB = INVALID_OGL_VALUE;
+    IB = INVALID_OGL_VALUE;
+    NumIndices  = 0;
+    MaterialIndex = INVALID_MATERIAL;
 };
 
 Mesh::MeshEntry::~MeshEntry()
 {
+    if (VB != INVALID_OGL_VALUE)
+    {
+        glDeleteBuffers(1, &VB);
+    }
 
+    if (IB != INVALID_OGL_VALUE)
+    {
+        glDeleteBuffers(1, &IB);
+    }
 }
 
-void Mesh::MeshEntry::Init(const std::vector<GLfloat>& position,
-                const std::vector<GLfloat>& textureCoord,
-                const std::vector<GLfloat>& normal,
-                const std::vector<unsigned int>& indices)
+void Mesh::MeshEntry::Init(const std::vector<Vertex>& Vertices,
+                          const std::vector<unsigned int>& Indices)
 {
-    mPosition = position;
-    mTextureCoord = textureCoord;
-    mNormal = normal;
-    mIndices = indices;
+    NumIndices = Indices.size();
+
+    glGenBuffers(1, &VB);
+  	glBindBuffer(GL_ARRAY_BUFFER, VB);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * Vertices.size(), &Vertices[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &IB);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * NumIndices, &Indices[0], GL_STATIC_DRAW);
 }
 
-Mesh::Mesh(GLint attrPosition, GLint attrNormal, GLint attrTextureCoord)
+Mesh::Mesh()
 {
-    mAttrPosition = attrPosition;
-    mAttrNormal = attrNormal;
-    mAttrTextureCoord = attrTextureCoord;
 }
 
 
@@ -57,8 +68,8 @@ Mesh::~Mesh()
 
 void Mesh::Clear()
 {
-    for (unsigned int i = 0 ; i < mTextures.size() ; i++) {
-        SAFE_DELETE(mTextures[i]);
+    for (unsigned int i = 0 ; i < m_Textures.size() ; i++) {
+        SAFE_DELETE(m_Textures[i]);
     }
 }
 
@@ -85,13 +96,11 @@ bool Mesh::LoadMesh(const std::string& Filename)
 
 bool Mesh::InitFromScene(const aiScene* pScene, const std::string& Filename)
 {  
-    mEntries.resize(pScene->mNumMeshes);
-    mTextures.resize(pScene->mNumMaterials);
-
-    printf("InitFromScene mNumMeshes:%d, mNumMaterials:%d\n", pScene->mNumMeshes, pScene->mNumMaterials);
+    m_Entries.resize(pScene->mNumMeshes);
+    m_Textures.resize(pScene->mNumMaterials);
 
     // Initialize the meshes in the scene one by one
-    for (unsigned int i = 0 ; i < mEntries.size() ; i++) {
+    for (unsigned int i = 0 ; i < m_Entries.size() ; i++) {
         const aiMesh* paiMesh = pScene->mMeshes[i];
         InitMesh(i, paiMesh);
     }
@@ -101,12 +110,10 @@ bool Mesh::InitFromScene(const aiScene* pScene, const std::string& Filename)
 
 void Mesh::InitMesh(unsigned int Index, const aiMesh* paiMesh)
 {
-    mEntries[Index].mMaterialIndex = paiMesh->mMaterialIndex;
+    m_Entries[Index].MaterialIndex = paiMesh->mMaterialIndex;
     
-    std::vector<GLfloat> position;
-    std::vector<GLfloat> textureCoord;
-    std::vector<GLfloat> normal;
-    std::vector<unsigned int> indices;
+    std::vector<Vertex> Vertices;
+    std::vector<unsigned int> Indices;
 
     const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
 
@@ -115,34 +122,22 @@ void Mesh::InitMesh(unsigned int Index, const aiMesh* paiMesh)
         const aiVector3D* pNormal   = &(paiMesh->mNormals[i]);
         const aiVector3D* pTexCoord = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
 
-        position.push_back(pPos->x);
-        position.push_back(pPos->y);
-        position.push_back(pPos->z);
+        Vertex v(Vector3f(pPos->x, pPos->y, pPos->z),
+                 Vector2f(pTexCoord->x, pTexCoord->y),
+                 Vector3f(pNormal->x, pNormal->y, pNormal->z));
 
-        textureCoord.push_back(pTexCoord->x);
-        textureCoord.push_back(pTexCoord->y);
-
-        normal.push_back(pNormal->x);
-        normal.push_back(pNormal->y);
-        normal.push_back(pNormal->z);
+        Vertices.push_back(v);
     }
 
     for (unsigned int i = 0 ; i < paiMesh->mNumFaces ; i++) {
         const aiFace& Face = paiMesh->mFaces[i];
         assert(Face.mNumIndices == 3);
-        indices.push_back(Face.mIndices[0]);
-        indices.push_back(Face.mIndices[1]);
-        indices.push_back(Face.mIndices[2]);
+        Indices.push_back(Face.mIndices[0]);
+        Indices.push_back(Face.mIndices[1]);
+        Indices.push_back(Face.mIndices[2]);
     }
 
-    printf("InitMesh %d, MaterialIndex:%d, position:%d textureCoord:%d normal:%d face:%d\n",
-        Index, mEntries[Index].mMaterialIndex, position.size(), textureCoord.size(), normal.size(), paiMesh->mNumFaces);
-
-    printf("InitMesh %d, indices first:%d %d %d, last:%d %d %d\n",
-        Index, indices[0], indices[1], indices[2],
-        indices[indices.size()-3], indices[indices.size()-2], indices[indices.size()-1]);
-
-    mEntries[Index].Init(position, textureCoord, normal, indices);
+    m_Entries[Index].Init(Vertices, Indices);
 }
 
 bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
@@ -167,19 +162,19 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
     for (unsigned int i = 0 ; i < pScene->mNumMaterials ; i++) {
         const aiMaterial* pMaterial = pScene->mMaterials[i];
 
-        mTextures[i] = NULL;
+        m_Textures[i] = NULL;
 
         if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             aiString Path;
 
             if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
                 std::string FullPath = Dir + "/" + Path.data;
-                mTextures[i] = new Texture(GL_TEXTURE_2D, FullPath.c_str());
+                m_Textures[i] = new Texture(GL_TEXTURE_2D, FullPath.c_str());
 
-                if (!mTextures[i]->Load()) {
+                if (!m_Textures[i]->Load()) {
                     printf("Error loading texture '%s'\n", FullPath.c_str());
-                    delete mTextures[i];
-                    mTextures[i] = NULL;
+                    delete m_Textures[i];
+                    m_Textures[i] = NULL;
                     Ret = false;
                 }
                 else {
@@ -189,10 +184,10 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
         }
 
         // Load a white texture in case the model does not include its own texture
-        if (!mTextures[i]) {
-            printf("Loaded texture ./Content/white.png \n");
-            mTextures[i] = new Texture(GL_TEXTURE_2D, "./Content/white.png");
-            Ret = mTextures[i]->Load();
+        if (!m_Textures[i]) {
+            m_Textures[i] = new Texture(GL_TEXTURE_2D, "./Content/white.png");
+
+            Ret = m_Textures[i]->Load();
         }
     }
 
@@ -201,27 +196,28 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 
 void Mesh::Render()
 {
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
-    glEnableVertexAttribArray(mAttrPosition);
-    glEnableVertexAttribArray(mAttrTextureCoord);
-    glEnableVertexAttribArray(mAttrNormal);
+    for (unsigned int i = 0 ; i < m_Entries.size() ; i++) {
+        glBindBuffer(GL_ARRAY_BUFFER, m_Entries[i].VB);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)12);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)20);
 
-    for (unsigned int i = 0 ; i < mEntries.size() ; i++) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Entries[i].IB);
 
-        glVertexAttribPointer(mAttrPosition, 3,  GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), &(mEntries[i].mPosition[0]));
-        glVertexAttribPointer(mAttrTextureCoord, 2,  GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), &(mEntries[i].mTextureCoord[0]));
-        glVertexAttribPointer(mAttrNormal, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), &(mEntries[i].mNormal[0]));
+        const unsigned int MaterialIndex = m_Entries[i].MaterialIndex;
 
-        const unsigned int materialIndex = mEntries[i].mMaterialIndex;
-
-        if (materialIndex < mTextures.size() && mTextures[materialIndex]) {
-            mTextures[materialIndex]->Bind(GL_TEXTURE0);
+        if (MaterialIndex < m_Textures.size() && m_Textures[MaterialIndex]) {
+            m_Textures[MaterialIndex]->Bind(GL_TEXTURE0);
         }
 
-        glDrawElements(GL_TRIANGLES, mEntries[i].mIndices.size(), GL_UNSIGNED_INT, &(mEntries[i].mIndices[0]));
+        glDrawElements(GL_TRIANGLES, m_Entries[i].NumIndices, GL_UNSIGNED_INT, 0);
     }
 
-    glDisableVertexAttribArray(mAttrPosition);
-    glDisableVertexAttribArray(mAttrTextureCoord);
-    glDisableVertexAttribArray(mAttrNormal);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 }

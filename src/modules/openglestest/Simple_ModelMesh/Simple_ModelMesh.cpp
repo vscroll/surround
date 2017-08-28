@@ -103,11 +103,6 @@ int initProgram( ESContext *esContext )
 void initVertexVar(ESContext *esContext)
 {
     UserData *userData = (UserData*)(esContext->userData);
-
-	userData->positionHandle = glGetAttribLocation(userData->programObject, "aPosition");
-    userData->normalHandle = glGetAttribLocation(userData->programObject, "aNormal");
-    userData->textureCoordHandle = glGetAttribLocation(userData->programObject, "aTextureCoord");
-
 		
     userData->uMVPMatrixHandle = glGetUniformLocation(userData->programObject, "uMVPMatrix");
 
@@ -196,8 +191,7 @@ int main ( int argc, char *argv[] )
     initVertexVar(&esContext);
 
     UserData *userData = (UserData*) esContext.userData;
-    Mesh* mesh = new Mesh(userData->positionHandle, userData->normalHandle, userData->textureCoordHandle);
-    //Mesh* mesh = new Mesh();
+    Mesh* mesh = new Mesh();
     mesh->LoadMesh("./Content/box.obj");
     while (true)
     {

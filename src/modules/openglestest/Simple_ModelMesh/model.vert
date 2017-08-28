@@ -1,7 +1,7 @@
 static const char gVShaderStr[] = STRINGIFY(
 attribute vec3 aPosition;
-attribute vec3 aNormal;
 attribute vec2 aTextureCoord;
+attribute vec3 aNormal;
 uniform mat4 uMVPMatrix;
 uniform mat4 uMMatrix;
 uniform vec3 uLightLocation;
