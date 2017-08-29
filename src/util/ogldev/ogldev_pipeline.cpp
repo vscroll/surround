@@ -48,12 +48,12 @@ const Matrix4f& Pipeline::GetWorldTrans()
 
 const Matrix4f& Pipeline::GetViewTrans()
 {
-    //Matrix4f CameraTranslationTrans, CameraRotateTrans;
+    Matrix4f CameraTranslationTrans, CameraRotateTrans;
 
-    //CameraTranslationTrans.InitTranslationTransform(-m_camera.Pos.x, -m_camera.Pos.y, -m_camera.Pos.z);
-    //CameraRotateTrans.InitCameraTransform(m_camera.Target, m_camera.Up);
+    CameraTranslationTrans.InitTranslationTransform(-m_camera.Pos.x, -m_camera.Pos.y, -m_camera.Pos.z);
+    CameraRotateTrans.InitCameraTransform(m_camera.Target, m_camera.Up);
     
-    //m_Vtransformation = CameraRotateTrans * CameraTranslationTrans;
+    m_Vtransformation = CameraRotateTrans * CameraTranslationTrans;
 
     return m_Vtransformation;
 }

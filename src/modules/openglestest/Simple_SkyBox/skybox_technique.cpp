@@ -49,8 +49,8 @@ bool SkyboxTechnique::Init()
         return false;
     }
 
-    m_WVPLocation = GetUniformLocation("uWVP");
-    m_textureLocation = GetUniformLocation("uCubemapTexture");
+    m_WVPLocation = GetUniformLocation("uWVPMatrix");
+    m_textureLocation = GetUniformLocation("uSkyBoxTexture");
  
     if (m_WVPLocation == INVALID_UNIFORM_LOCATION ||
         m_textureLocation == INVALID_UNIFORM_LOCATION) {

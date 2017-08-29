@@ -1,13 +1,19 @@
 static const char gVShaderStr[] = STRINGIFY(
+
 attribute vec3 aPosition;
-uniform mat4 uWVP;
-varying vec3 vTexCoord;
+//attribute vec2 aTextureCoord;
+//attribute vec3 aNormal;
+uniform mat4 uWVPMatrix;
+varying mediump vec3 vTexCoord;
 
 void main()
 {
-    //vec4 WVP_Pos = uWVP * vec4(aPosition, 1.0);
-    //gl_Position = WVP_Pos.xyzw;
-    gl_Position = uWVP * vec4(aPosition, 1.0);
+    //transform every position vertex by the model-view-projection matrix
+    vec4 position = uWVPMatrix * vec4(aPosition, 1.0);
+
+    //Trick to place the skybox behind any other 3D model
+    gl_Position = position.xyww;
+
     vTexCoord = aPosition;
 }
 );

@@ -20,8 +20,10 @@
 #include "ogldev_pipeline.h"
 #include "ogldev_util.h"
 
-SkyBox::SkyBox(const PersProjInfo& p)
+SkyBox::SkyBox(const Camera* pCamera,
+               const PersProjInfo& p)
 {
+    m_pCamera = pCamera;
     m_persProjInfo = p;            
     
     m_pSkyboxTechnique = NULL;
@@ -67,7 +69,7 @@ bool SkyBox::Init(const string& Directory,
     if (!m_pCubemapTex->Load()) {
         return false;
     }
-        
+
     m_pMesh = new Mesh();
 
     return m_pMesh->LoadMesh("./Content/sphere.obj"); 
@@ -89,8 +91,8 @@ void SkyBox::Render()
     Pipeline p;    
     p.Scale(20.0f, 20.0f, 20.0f);
     p.Rotate(0.0f, 0.0f, 0.0f);
-    //p.WorldPos(m_pCamera->GetPos().x, m_pCamera->GetPos().y, m_pCamera->GetPos().z);
-    //p.SetCamera(m_pCamera->GetPos(), m_pCamera->GetTarget(), m_pCamera->GetUp());
+    p.WorldPos(m_pCamera->GetPos().x, m_pCamera->GetPos().y, m_pCamera->GetPos().z);
+    p.SetCamera(m_pCamera->GetPos(), m_pCamera->GetTarget(), m_pCamera->GetUp());
     p.SetPerspectiveProj(m_persProjInfo);
     m_pSkyboxTechnique->SetWVP(p.GetWVPTrans());
     m_pCubemapTex->Bind(GL_TEXTURE0);

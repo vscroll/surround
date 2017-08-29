@@ -19,6 +19,7 @@
 #define	PIPELINE_H
 
 #include "ogldev_math_3d.h"
+#include "ogldev_camera.h"
 
 struct Orientation
 {
@@ -96,6 +97,18 @@ public:
     {
         m_orthoProjInfo = p;
     }    
+
+    void SetCamera(const Vector3f& Pos, const Vector3f& Target, const Vector3f& Up)
+    {
+        m_camera.Pos = Pos;
+        m_camera.Target = Target;
+        m_camera.Up = Up;
+    }
+    
+    void SetCamera(const Camera& camera)
+    {
+        SetCamera(camera.GetPos(), camera.GetTarget(), camera.GetUp());
+    }
     
     void Orient(const Orientation& o)
     {
@@ -120,6 +133,12 @@ private:
 
     PersProjInfo m_persProjInfo;
     OrthoProjInfo m_orthoProjInfo;
+
+    struct {
+        Vector3f Pos;
+        Vector3f Target;
+        Vector3f Up;
+    } m_camera;
 
     Matrix4f m_WVPtransformation;
     Matrix4f m_VPtransformation;

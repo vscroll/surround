@@ -45,6 +45,7 @@ SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_texture.cp
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_cubemap_texture.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_technique.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_pipeline.cpp)
+SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_camera.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_math_3d.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
 

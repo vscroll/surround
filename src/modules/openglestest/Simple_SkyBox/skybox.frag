@@ -1,8 +1,14 @@
 static const char gFShaderStr[] = STRINGIFY(
-varying vec3 vTexCoord;
-uniform samplerCube uCubemapTexture;
+
+//declare a uniform sampler2d that contains the texture data
+uniform samplerCube uSkyBoxTexture;
+
+//declare varying type which will transfer the texture coordinates from the vertex shader
+varying mediump vec3 vTexCoord;
+
 void main()
 {
-    gl_FragColor = textureCube(uCubemapTexture, vTexCoord);
+    //set the final color to the output of the fragment shader
+    gl_FragColor = textureCube(uSkyBoxTexture, vTexCoord);
 }
 );

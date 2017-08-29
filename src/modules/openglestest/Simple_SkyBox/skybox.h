@@ -19,14 +19,15 @@
 #ifndef SKYBOX_H
 #define	SKYBOX_H
 
+#include "ogldev_camera.h"
 #include "skybox_technique.h"
 #include "ogldev_cubemap_texture.h"
-#include "ogldev_mesh.h"
+#include "mesh.h"
 
 class SkyBox
 {
 public:
-    SkyBox(const PersProjInfo& p);
+    SkyBox(const Camera* pCamera, const PersProjInfo& p);
 
     ~SkyBox();
     
@@ -42,6 +43,7 @@ public:
     
 private:    
     SkyboxTechnique* m_pSkyboxTechnique;
+    const Camera* m_pCamera;
     CubemapTexture* m_pCubemapTex;
     Mesh* m_pMesh;
     PersProjInfo m_persProjInfo;
