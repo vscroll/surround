@@ -21,7 +21,6 @@
 
 #include <map>
 #include <vector>
-
 #include <Importer.hpp>      // C++ importer interface
 #include <scene.h>       // Output data structure
 #include <postprocess.h> // Post processing flags

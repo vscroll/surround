@@ -15,7 +15,7 @@
 //    example is to demonstrate the basic concepts of 
 //    OpenGL ES 2.0 rendering.
 #include <stdlib.h>
-#include "ogldev_mesh.h"
+#include "mesh.h"
 #include "esUtil.h"
 
 #define STRINGIFY(A)  #A

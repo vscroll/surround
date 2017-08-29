@@ -39,7 +39,6 @@ LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),
 endif
 
 SRCS 			            = $(wildcard ./*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_mesh.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_texture.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
 
