@@ -28,9 +28,7 @@ LDFLAGS			            = -lstdc++ -lm -ldl -Wl,--library-path=$(TARGET_PATH_LIB),
                                 -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
 
 SRCS 			            = $(wildcard ./*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_mesh.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_texture.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_util.cpp)
+SRCS                           += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_util.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
 
 include $(TOPDIR)/makefile.env
