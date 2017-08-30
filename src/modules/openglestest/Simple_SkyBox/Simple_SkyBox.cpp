@@ -79,6 +79,13 @@ int initContext()
     return 0;
 }
 
+void Key ( ESContext *esContext, unsigned char key, int x, int y)
+{
+    
+    m_pGameCamera->OnKeyboard(OGLDEV_KEY(key));
+    printf("key:%d %d\n", key, OGLDEV_KEY(key));
+}
+
 void Draw ( ESContext *esContext )
 {
     m_pGameCamera->OnRender();
@@ -114,5 +121,6 @@ int main ( int argc, char *argv[] )
     }
 
     esRegisterDrawFunc ( &esContext, Draw );
+    esRegisterKeyFunc( &esContext, Key );
     esMainLoop ( &esContext );
 }
