@@ -24,11 +24,11 @@
 #define WINDOW_WIDTH  1024
 #define WINDOW_HEIGHT 600
 
-float m_scale;
-Mesh* m_pTankMesh;    
-SkyBox* m_pSkyBox;
+float m_scale = 0.0f;
+Mesh* m_pTankMesh = NULL;    
+SkyBox* m_pSkyBox = NULL;
 PersProjInfo m_persProjInfo;
-Camera* m_pGameCamera;
+Camera* m_pGameCamera = NULL;
 
 int initWindow( ESContext *esContext )
 {

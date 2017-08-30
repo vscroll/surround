@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "ogldev_util.h"
-#include "ogldev_technique.h"
+#include "technique.h"
 
 Technique::Technique()
 {

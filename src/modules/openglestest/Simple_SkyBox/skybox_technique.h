@@ -19,7 +19,7 @@
 #define	SKYBOX_TECHNIQUE_H
 
 #include <GLES2/gl2.h>
-#include "ogldev_technique.h"
+#include "technique.h"
 #include "ogldev_math_3d.h"
 
 
