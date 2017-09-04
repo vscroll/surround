@@ -15,6 +15,13 @@
 #include <stdlib.h>
 #include "esUtil.h"
 
+#include <string>
+#include <iostream>
+#include <ImageMagick-6/Magick++.h>
+#include "ogldev_util.h"
+
+using namespace std;
+
 typedef struct
 {
    // Handle to a program object
@@ -66,7 +73,8 @@ GLuint CreateSimpleTextureCubemap( )
 
    // Bind the texture object
    glBindTexture ( GL_TEXTURE_CUBE_MAP, textureId );
-   
+
+#if 0   
    // Load the cube face - Positive X
    glTexImage2D ( GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, 1, 1, 0, 
                   GL_RGB, GL_UNSIGNED_BYTE, &cubePixels[0] );
@@ -95,6 +103,51 @@ GLuint CreateSimpleTextureCubemap( )
    glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
    glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
+#else
+
+    static const GLenum types[6] = {  GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                                  GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                                  GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                                  GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                                  GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                                  GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+
+    string m_fileNames[6];
+    m_fileNames[0] = "Content/sp3right.jpg";
+    m_fileNames[1] = "Content/sp3left.jpg";
+    m_fileNames[2] = "Content/sp3top.jpg";
+    m_fileNames[3] = "Content/sp3bot.jpg";
+    m_fileNames[4] = "Content/sp3front.jpg";
+    m_fileNames[5] = "Content/sp3back.jpg";
+
+    Magick::Image* pImage = NULL;
+    Magick::Blob blob;
+
+    for (unsigned int i = 0 ; i < ARRAY_SIZE_IN_ELEMENTS(types) ; i++) {
+        pImage = new Magick::Image(m_fileNames[i]);
+        
+        try {            
+            pImage->write(&blob, "RGB");
+        }
+        catch (Magick::Error& Error) {
+            cout << "Error loading texture '" << m_fileNames[i] << "': " << Error.what() << endl;
+            delete pImage;
+            return false;
+        }
+
+        cout << "Image" << i << ":" << pImage->columns() << "x" << pImage->rows() << endl;
+        glTexImage2D(types[i], 0, GL_RGB, pImage->columns(), pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, blob.data());
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);           
+        
+        delete pImage;
+    }
+#endif
+
    return textureId;
 
 }
@@ -106,8 +159,8 @@ GLuint CreateSimpleTextureCubemap( )
 int Init ( ESContext *esContext )
 {
    //esContext->userData = malloc(sizeof(UserData));
-   UserData *userData = esContext->userData;
-   GLbyte vShaderStr[] =  
+   UserData *userData = (UserData *)esContext->userData;
+   const char vShaderStr[] =  
       "attribute vec4 a_position;   \n"
       "attribute vec3 a_normal;     \n"
       "varying vec3 v_normal;       \n"
@@ -117,7 +170,7 @@ int Init ( ESContext *esContext )
       "   v_normal = a_normal;      \n"
       "}                            \n";
    
-   GLbyte fShaderStr[] =  
+   const char fShaderStr[] =  
       "precision mediump float;                            \n"
       "varying vec3 v_normal;                              \n"
       "uniform samplerCube s_texture;                      \n"
@@ -152,7 +205,7 @@ int Init ( ESContext *esContext )
 //
 void Draw ( ESContext *esContext )
 {
-   UserData *userData = esContext->userData;
+   UserData *userData = (UserData *)esContext->userData;
 
    // Set the viewport
    glViewport ( 0, 0, esContext->width, esContext->height );
@@ -192,7 +245,7 @@ void Draw ( ESContext *esContext )
 //
 void ShutDown ( ESContext *esContext )
 {
-   UserData *userData = esContext->userData;
+   UserData *userData = (UserData *)esContext->userData;
 
    // Delete texture object
    glDeleteTextures ( 1, &userData->textureId );
@@ -214,7 +267,7 @@ int main ( int argc, char *argv[] )
    esInitContext ( &esContext );
    esContext.userData = &userData;
 
-   esCreateWindow ( &esContext, "Simple Texture Cubemap", 320, 240, ES_WINDOW_RGB );
+   esCreateWindow ( &esContext, "Simple Texture Cubemap", 1024, 600, ES_WINDOW_RGB );
 
    if ( !Init ( &esContext ) )
       return 0;

@@ -184,7 +184,23 @@ int main ( int argc, char *argv[] )
    esCreateWindow ( &esContext, "Simple Texture 2D", 320, 240, ES_WINDOW_RGB );
 
    if ( !Init ( &esContext ) )
-      return 0;
+       return 0;
+
+   GLint maxVertexAttribs, maxVertexUniforms, maxVaryings;
+   GLint maxVertexTextureUnits, maxCombinedTextureUnits;
+   GLint maxFragmentUniforms;
+   glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVertexAttribs);
+   glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxVertexUniforms);
+   glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxFragmentUniforms);
+   glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
+   glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,&maxVertexTextureUnits);
+   glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS,&maxCombinedTextureUnits);
+   printf("max vertex attribs:%d\n", maxVertexAttribs);
+   printf("max vertex uniform vectors:%d\n", maxVertexUniforms);
+   printf("max fragment uniform vectors:%d\n", maxFragmentUniforms);
+   printf("max varying vectors:%d\n", maxVaryings);
+   printf("max vertex texture image units:%d\n", maxVertexTextureUnits);
+   printf("max combined texture image units:%d\n", maxCombinedTextureUnits);
 
    esRegisterDrawFunc ( &esContext, Draw );
    esRegisterUpdateFunc ( &esContext, Update );
