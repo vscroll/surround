@@ -69,7 +69,7 @@ bool CubemapTexture::Load()
         pImage = new Magick::Image(m_fileNames[i]);
         
         try {            
-            pImage->write(&blob, "RGBA");
+            pImage->write(&blob, "RGB");
         }
         catch (Magick::Error& Error) {
             cout << "Error loading texture '" << m_fileNames[i] << "': " << Error.what() << endl;
@@ -77,7 +77,7 @@ bool CubemapTexture::Load()
             return false;
         }
 
-        glTexImage2D(types[i], 0, GL_RGB, pImage->columns(), pImage->rows(), 0, GL_RGBA, GL_UNSIGNED_BYTE, blob.data());
+        glTexImage2D(types[i], 0, GL_RGB, pImage->columns(), pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, blob.data());
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
