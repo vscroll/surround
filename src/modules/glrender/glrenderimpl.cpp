@@ -1,15 +1,10 @@
 #include "glrenderimpl.h"
 #include "IGLRenderWorker.h"
 #include "glrenderworker.h"
-#include "glrender3dworker.h"
 
 GLRenderImpl::GLRenderImpl()
 {
-#if 1
     mWorker = new GLRenderWorker();
-#else
-    mWorker = new GLRender3DWorker();
-#endif
 }
 
 GLRenderImpl::~GLRenderImpl()

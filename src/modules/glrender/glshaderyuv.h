@@ -51,9 +51,9 @@ private:
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
 
-    cv::Mat mLookupTab[VIDEO_CHANNEL_SIZE];
+    cv::Mat mLookupTabHor;
+    cv::Mat mLookupTabVer;
     cv::Mat mMask;
-    cv::Mat mWeight;
 
     clock_t mLastCallTime;
 };

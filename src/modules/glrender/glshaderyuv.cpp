@@ -8,13 +8,8 @@
 #define TEST 0
 
 #if TEST
-#if 1
 //this data from official G2D demo
 extern unsigned char yuyv_352x288[];
-#else
-//this data converting from ipu maybe have some error. cannot work well.
-extern unsigned char Front_uyvy_352x288[];
-#endif
 #endif
 
 static const char* gVideoSamplerVar[][GLShaderYUV::YUV_CHN_NUM] = {
@@ -62,25 +57,21 @@ int GLShaderYUV::initConfig()
     }
 
     char algoCfgPathName[1024] = {0};
-    sprintf(algoCfgPathName, "%sFishToPanoYUV.xml", procPath);
+    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_1.xml", procPath);
 	cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
-	fs["map1"] >> mLookupTab[VIDEO_CHANNEL_FRONT];
-	fs["map2"] >> mLookupTab[VIDEO_CHANNEL_REAR];
-	fs["map3"] >> mLookupTab[VIDEO_CHANNEL_LEFT];
-	fs["map4"] >> mLookupTab[VIDEO_CHANNEL_RIGHT];
-
-	fs["mask"] >> mMask;
-	fs["weight"] >> mWeight;
+	fs["Map_1"] >> mLookupTabHor;
+	fs["Map_2"] >> mLookupTabVer;
+	fs["Mask"] >> mMask;
 	fs.release();
 
     std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTab:" << mLookupTab[0].cols << "x" << mLookupTab[0].rows << " type:" << mLookupTab[0].type()
+            << ", lookupTabHor:" << mLookupTabHor.cols << "x" << mLookupTabHor.rows << " type:" << mLookupTabHor.type()
+            << std::endl;
+    std::cout << "GLShaderYUV::initConfig"
+            << ", lookupTabVer:" << mLookupTabVer.cols << "x" << mLookupTabVer.rows << " type:" << mLookupTabVer.type()
             << std::endl;
     std::cout << "GLShaderYUV::initConfig"
             << ", mask:" << mMask.cols << "x" << mMask.rows << " type:" << mMask.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", weight:" << mWeight.cols << "x" << mWeight.rows << " type:" << mWeight.type()
             << std::endl;
 
     return 0;
@@ -95,36 +86,25 @@ void GLShaderYUV::initVertex()
 
 void GLShaderYUV::initTexture()
 {
-    GLint lookupTabFront = glGetUniformLocation (mProgramObject, "lookupTabFront");
-    GLint lookupTabRear = glGetUniformLocation (mProgramObject, "lookupTabRear");
-    GLint lookupTabLeft = glGetUniformLocation (mProgramObject, "lookupTabLeft");
-    GLint lookupTabRight = glGetUniformLocation (mProgramObject, "lookupTabRight");
+    GLint lookupTabHor = glGetUniformLocation (mProgramObject, "lookupTabHor");
+    GLint lookupTabVer = glGetUniformLocation (mProgramObject, "lookupTabVer");
     GLint mask = glGetUniformLocation (mProgramObject, "mask");
     GLint weight = glGetUniformLocation (mProgramObject, "weight");
 
     int size;
     float* array;
-    size = mLookupTab[VIDEO_CHANNEL_FRONT].rows * mLookupTab[VIDEO_CHANNEL_FRONT].cols;
-    array = (float*)(mLookupTab[VIDEO_CHANNEL_FRONT].data);
-    glUniform1fv(lookupTabFront, size, array);
+    size = mLookupTabHor.rows * mLookupTabHor.cols;
+    array = (float*)(mLookupTabHor.data);
+    glUniform1fv(lookupTabHor, size, array);
 
-    size = mLookupTab[VIDEO_CHANNEL_REAR].rows * mLookupTab[VIDEO_CHANNEL_REAR].cols;
-    array = (float*)(mLookupTab[VIDEO_CHANNEL_REAR].data);
-    glUniform1fv(lookupTabRear, size, array);
+    size = mLookupTabVer.rows * mLookupTabVer.cols;
+    array = (float*)(mLookupTabVer.data);
+    glUniform1fv(lookupTabVer, size, array);
 
-    size = mLookupTab[VIDEO_CHANNEL_LEFT].rows * mLookupTab[VIDEO_CHANNEL_LEFT].cols;
-    array = (float*)(mLookupTab[VIDEO_CHANNEL_LEFT].data);
-    glUniform1fv(lookupTabLeft, size, array);
-
-    size = mLookupTab[VIDEO_CHANNEL_RIGHT].rows * mLookupTab[VIDEO_CHANNEL_RIGHT].cols;
-    array = (float*)(mLookupTab[VIDEO_CHANNEL_RIGHT].data);
-    glUniform1fv(lookupTabRight, size, array);
 
     size = mMask.rows * mMask.cols;
     glUniform1iv(mask, size, (int*)mMask.data);
 
-    size = mWeight.rows * mWeight.cols;
-    glUniform1fv(weight, size, (float*)mWeight.data);
     checkGlError("initTexture");
 
     // Get the sampler location
@@ -165,23 +145,13 @@ void GLShaderYUV::draw()
     while (true)
     {
 #if TEST
-#if 1
         unsigned char* buffer = yuyv_352x288;
         int width = 352;
         int height = 288;
-#else
-        unsigned char* buffer = Front_uyvy_352x288;
-        int width = 352;
-        int height = 288;
-#endif
         unsigned char y[width*height] = {0};
         unsigned char u[width/2*height] = {0};
         unsigned char v[width/2*height] = {0};
-#if 1
         Util::yuyv_to_yuv(width, height, buffer, y, u, v);
-#else
-        Util::uyvy_to_yuv(width, height, buffer, y, u, v);
-#endif
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0], y, width, height);
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1], u, width/2, height);
         loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2], v, width/2, height);
@@ -283,19 +253,42 @@ void GLShaderYUV::drawOnce()
 
 void GLShaderYUV::glDraw()
 {
+#if 1
     static GLfloat squareVertices[] = {  
-        -1.0f, -1.0f,  
-        1.0f, -1.0f,  
-        -1.0f,  1.0f,  
-        1.0f,  1.0f,  
-    };  
-  
-    static GLfloat coordVertices[] = {  
-        0.0f, 1.0f,  
-        1.0f, 1.0f,  
-        0.0f,  0.0f,  
-        1.0f,  0.0f,  
+        -1.0f, -1.0f, 
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f
     };
+#else
+    static GLfloat squareVertices[] = {
+        -1, -0.95666f,
+        0.0, -0.95666f,
+        -1, 0.95666f,
+        0.0,  0.95666f,
+        1.0f, -0.95666f,
+        1.0f, 0.95666f,
+    };
+#endif  
+
+#if 1  
+    static GLfloat coordVertices[] = {  
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f
+    };
+#else
+    static GLfloat coordVertices[] = {  
+        0.0f, 0.9566f,  
+        0.6875f, 0.9566f,  
+        0.0f, 0.0f,  
+        0.6875f, 0.0f,   
+    };
+#endif
+
+    GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
+    //GLushort indices[] = { 0, 1, 2, 1, 2, 3, 1, 4, 3, 4, 3, 5 };
       
     // Set the viewport
     glViewport(0, 0, mESContext->width, mESContext->height);
@@ -378,7 +371,7 @@ void GLShaderYUV::glDraw()
     glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[2]);
     glUniform1i(mUserData.focusVideoSamplerLoc[2], 14);
 
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
 
     eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
 }
