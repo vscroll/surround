@@ -30,7 +30,8 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(TOPDIR)/src/modules/glrender \
 			                    -I$(TOPDIR)/src/util/ini \
 			                    -I$(TOPDIR)/src/modules/config \
-			                    -I$(TOPDIR)/src/util/gles
+			                    -I$(TOPDIR)/src/util/gles \
+			                    -I$(TOPDIR)/src/util/ogldev
 
 ifneq ($(findstring $(TARGET),$(debug)),)
 CFLAGS                      += -DDEBUG=1
@@ -52,6 +53,7 @@ SRCS                        += $(TOPDIR)/src/modules/controller/controller.cpp
 SRCS                        += $(TOPDIR)/src/modules/controller/controllergl.cpp
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/ini/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/gles/*.c)
+SRCS 		                += $(wildcard $(TOPDIR)/src/util/ogldev/ogldev_util.cpp)
 
 include $(TOPDIR)/makefile.env
 

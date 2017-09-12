@@ -3,6 +3,10 @@
 
 #include <stdio.h>
 #include <sys/time.h>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
 
 class Util
 {
@@ -22,6 +26,17 @@ public:
     }
 
     static int getAbsolutePath(char* path, int length);
+
+    static bool exists(const char* filename);
+
+    static int readAllBytes(std::vector<unsigned char>& byteArray, const char* filename);
+
+    static int writeAllBytes(const char* filename, const std::vector<unsigned char>& byteArray, int size);
+private:
+    static size_t convert(const std::streamoff value);
+    static int getStreamLength(std::ifstream& stream);
+    static int streamRead(std::ifstream& stream, void* dst, const size_t length);
+    static int streamWrite(std::ofstream& stream, const void* dst, const size_t length);
 };
 
 #endif // UTIL_H

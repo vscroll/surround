@@ -160,3 +160,96 @@ int Util::getAbsolutePath(char* path, int length)
 
     return 0;
 }
+
+bool Util::exists(const char* filename)
+{
+    std::ifstream file(filename);
+    return file.good();
+}
+
+size_t Util::convert(const std::streamoff value)
+{
+    return static_cast<size_t>(value);
+}
+
+int Util::getStreamLength(std::ifstream& stream)
+{
+    if (!stream.good())
+    {
+        return -1;
+    }
+
+    // Dumb C++ way of getting the stream length
+    stream.seekg(0, stream.end);
+    const std::streamoff streamLength = stream.tellg();
+    stream.seekg(0, stream.beg);
+
+    return convert(streamLength);
+}
+
+int Util::streamRead(std::ifstream& stream, void* dst, const size_t length)
+{
+    // Read the entire content of the file
+    if( length > 0 )
+    {
+        stream.read(static_cast<char*>(dst), length);
+    }
+
+    if (!stream.good())
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int Util::streamWrite(std::ofstream& stream, const void* dst, const size_t length)
+{
+    // Read the entire content of the file
+    if (length > 0)
+    {
+        stream.write(static_cast<const char*>(dst), length);
+    }
+
+    if (!stream.good())
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int Util::readAllBytes(std::vector<unsigned char>& byteArray, const char* filename)
+{
+    try
+    {
+        std::ifstream file(filename, std::ios::in | std::ios::binary);
+        const size_t length = getStreamLength(file);
+        byteArray.resize(length);
+
+        // Read the entire content of the file
+        streamRead(file, byteArray.data(), length);
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int Util::writeAllBytes(const char* filename, const std::vector<unsigned char>& byteArray, int size)
+{
+    try
+    {
+        std::ofstream file(filename, std::ios::out | std::ios::binary);
+        // Write the entire content of the file
+        streamWrite(file, byteArray.data(), size);
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        return -1;
+    }
+    return 0;
+}

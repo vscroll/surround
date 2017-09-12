@@ -10,7 +10,7 @@ class ICapture;
 class GLShaderYUV: public GLShader
 {
 public:
-    GLShaderYUV(ESContext* context, ICapture* capture);
+    GLShaderYUV(ESContext* context, const std::string programBinaryFile, ICapture* capture);
     virtual ~GLShaderYUV();
 
     virtual const char* getVertShader();
@@ -39,10 +39,16 @@ private:
         // Sampler locations(Y,U,V)
         GLint videoSamplerLoc[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
         GLint focusVideoSamplerLoc[YUV_CHN_NUM];
+        GLint lutHorSamplerLoc;
+        GLint lutVerSamplerLoc;
+        GLint lutMaskSamplerLoc;
 
         // Texture handle(Y,U,V)
         GLuint videoTexId[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
         GLuint focusVideoTexId[YUV_CHN_NUM];
+        GLuint lutHorTexId;
+        GLuint lutVerTexId;
+        GLuint lutMaskTexId;
 
     } UserData;
 

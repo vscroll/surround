@@ -3,7 +3,10 @@
 #include "util.h"
 #include "esUtil.h"
 #include <iostream>
+#include <string.h>
+#include "ogldev_util.h"
 
+#if 0
 static const char gVShaderStr[] =  
     "attribute vec4 a_position;     \n"
     "attribute vec2 a_texCoord;     \n"
@@ -27,8 +30,19 @@ static const char gFShaderStr[] =
       "  gl_FragColor = texture2D( s_front, v_texCoord );  \n"
       "}                                                   \n";   
 
-GLShaderRGB::GLShaderRGB(ESContext* context, ICapture* capture)
-:GLShader(context)
+#else
+static const char gFShaderPrefix[] =
+      "#version 300 es                                     \n"
+      "precision mediump float;                            \n";
+
+static std::string gVShaderStr;
+static std::string gVShaderHeader;
+static std::string gFShaderConst;
+static std::string gFShaderStr;
+#endif
+
+GLShaderRGB::GLShaderRGB(ESContext* context, const std::string programBinaryFile, ICapture* capture)
+:GLShader(context, programBinaryFile)
 {
     mCapture = capture;
 
@@ -42,12 +56,32 @@ GLShaderRGB::~GLShaderRGB()
 
 const char* GLShaderRGB::getVertShader()
 {
-    return gVShaderStr;
+    ReadFile("panorama_rgb.vert", gVShaderStr);
+    std::cout << gVShaderStr << std::endl;
+    return gVShaderStr.c_str();
 }
 
 const char* GLShaderRGB::getFragShader()
 {
-    return gFShaderStr;
+#if 0
+    ReadFile("panorama_rgb_frag.header", gVShaderHeader);
+    ReadFile("panorama_rgb_hor.lut", gFShaderConst);
+    ReadFile("panorama_rgb.frag", gFShaderStr);
+    std::string str = gVShaderHeader;
+    str += gFShaderConst;
+    str += gFShaderStr;
+    std::cout << str << std::endl;
+    return str.c_str();
+#else
+    ReadFile("panorama_rgb.frag", gFShaderStr);
+    //std::cout << gFShaderStr << std::endl;
+    return gFShaderStr.c_str();
+#endif
+}
+
+int GLShaderRGB::initConfig()
+{
+    return 0;
 }
 
 void GLShaderRGB::initVertex()
@@ -217,6 +251,18 @@ void GLShaderRGB::glDraw()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
     glUniform1i(mUserData.frontLoc, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
+    glUniform1i(mUserData.rearLoc, 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
+    glUniform1i(mUserData.leftLoc, 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
+    glUniform1i(mUserData.rightLoc, 3);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

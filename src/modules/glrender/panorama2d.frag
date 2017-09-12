@@ -3,9 +3,9 @@ precision mediump float;
 const int pano_width = 424;
 const int pano_height = 600;
 const int size = pano_width*pano_height;
-uniform float lookupTabHor[size];
-uniform float lookupTabVer[size];
-uniform float mask[size];
+uniform sampler2D s_lutHor;
+uniform sampler2D s_lutVer;
+uniform sampler2D s_mask;
 varying vec2 v_texCoord;
 uniform sampler2D s_frontY;
 uniform sampler2D s_frontU;
@@ -32,9 +32,6 @@ void main()
     mediump vec3 yuv_left;
     mediump vec3 yuv_right;
     mediump vec3 yuv_focus;
-    yuv_front.x = texture2D(s_frontY, v_texCoord).r;
-    yuv_front.y = texture2D(s_frontU, v_texCoord).r - 0.5;
-    yuv_front.z = texture2D(s_frontV, v_texCoord).r - 0.5;
     yuv_left.x = texture2D(s_leftY, v_texCoord).r;
     yuv_left.y = texture2D(s_leftU, v_texCoord).r - 0.5;
     yuv_left.z = texture2D(s_leftV, v_texCoord).r - 0.5;
@@ -47,10 +44,22 @@ void main()
     int y = int(gl_FragCoord.y);
     if (x < 512)
     {
-        yuv_rear.x = texture2D(s_rearY, v_texCoord).r;
-        yuv_rear.y = texture2D(s_rearU, v_texCoord).r - 0.5;
-        yuv_rear.z = texture2D(s_rearV, v_texCoord).r - 0.5;
-        rgb = yuv2rgb * yuv_rear;
+        //int m = 0;
+        int m = int(texture2D(lookupTabHor, vec2(0.0, 0.0)).r);
+        if (m == 88125)
+        {
+            yuv_front.x = texture2D(s_frontY, v_texCoord).r;
+            yuv_front.y = texture2D(s_frontU, v_texCoord).r - 0.5;
+            yuv_front.z = texture2D(s_frontV, v_texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_front;
+        }
+        else
+        {
+            yuv_rear.x = texture2D(s_rearY, v_texCoord).r;
+            yuv_rear.y = texture2D(s_rearU, v_texCoord).r - 0.5;
+            yuv_rear.z = texture2D(s_rearV, v_texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_rear;
+        }
     }
     else
     {

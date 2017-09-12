@@ -2,11 +2,12 @@
 #define GLSHADERR_H
 
 #include "esUtil.h"
+#include <string>
 
 class GLShader
 {
 public:
-    GLShader(ESContext* context);
+    GLShader(ESContext* context, const std::string programBinaryFile);
     virtual ~GLShader();
 
     virtual const char* getVertShader() = 0;
@@ -17,12 +18,15 @@ public:
     virtual void initTexture() = 0;
     virtual void draw() = 0;
     virtual void shutdown();
+private:
+    GLuint LoadProgram(unsigned char *buf, int length);
 
 protected:
     void checkGlError(const char* op);
 
 protected:
     ESContext* mESContext;
+    std::string mProgramBinaryFile;
     GLuint mProgramObject;
 };
 

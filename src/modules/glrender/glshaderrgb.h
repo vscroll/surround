@@ -9,11 +9,12 @@ class ICapture;
 class GLShaderRGB: public GLShader
 {
 public:
-    GLShaderRGB(ESContext* context, ICapture* capture);
+    GLShaderRGB(ESContext* context, const std::string programBinaryFile, ICapture* capture);
     virtual ~GLShaderRGB();
 
     virtual const char* getVertShader();
     virtual const char* getFragShader();
+    virtual int initConfig();
     virtual void initVertex();
     virtual void initTexture();
     virtual void draw();

@@ -25,8 +25,8 @@ static const char* gFocusVideoSamplerVar[GLShaderYUV::YUV_CHN_NUM] = {
 #include "panorama2d.vert"
 #include "panorama2d.frag"
 
-GLShaderYUV::GLShaderYUV(ESContext* context, ICapture* capture)
-:GLShader(context)
+GLShaderYUV::GLShaderYUV(ESContext* context, const std::string programBinaryFile, ICapture* capture)
+:GLShader(context, programBinaryFile)
 {
     mCapture = capture;
 
@@ -86,27 +86,6 @@ void GLShaderYUV::initVertex()
 
 void GLShaderYUV::initTexture()
 {
-    GLint lookupTabHor = glGetUniformLocation (mProgramObject, "lookupTabHor");
-    GLint lookupTabVer = glGetUniformLocation (mProgramObject, "lookupTabVer");
-    GLint mask = glGetUniformLocation (mProgramObject, "mask");
-    GLint weight = glGetUniformLocation (mProgramObject, "weight");
-
-    int size;
-    float* array;
-    size = mLookupTabHor.rows * mLookupTabHor.cols;
-    array = (float*)(mLookupTabHor.data);
-    glUniform1fv(lookupTabHor, size, array);
-
-    size = mLookupTabVer.rows * mLookupTabVer.cols;
-    array = (float*)(mLookupTabVer.data);
-    glUniform1fv(lookupTabVer, size, array);
-
-
-    size = mMask.rows * mMask.cols;
-    glUniform1iv(mask, size, (int*)mMask.data);
-
-    checkGlError("initTexture");
-
     // Get the sampler location
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
@@ -135,7 +114,136 @@ void GLShaderYUV::initTexture()
         glGenTextures(1, &mUserData.focusVideoTexId[j]);
     }
 
-    checkGlError("initTexture");
+    checkGlError("initTexture: gene image texture");
+
+    mUserData.lutHorSamplerLoc = glGetUniformLocation (mProgramObject, "s_lutHor");
+    mUserData.lutVerSamplerLoc  = glGetUniformLocation (mProgramObject, "s_lutVer");
+    mUserData.lutMaskSamplerLoc  = glGetUniformLocation (mProgramObject, "s_mask");
+
+    glGenTextures(1, &mUserData.lutHorTexId);
+    glGenTextures(1, &mUserData.lutVerTexId);
+    glGenTextures(1, &mUserData.lutMaskTexId);
+
+    checkGlError("initTexture: gene map texture");
+
+    std::cout << "mLookupTabHor [0,0]:" << mLookupTabHor.at<float>(0*424 + 0, 0)
+                           << " [423,0]:" << mLookupTabHor.at<float>(0*424 + 423, 0)
+                           << std::endl;
+    std::cout << "mLookupTabHor [0,599]:" << mLookupTabHor.at<float>(599*424 + 0, 0)
+                           << " [423,599]:" << mLookupTabHor.at<float>(599*424 + 423, 0)
+                           << std::endl;
+
+    std::cout << "mLookupTabVer [0,0]:" << mLookupTabVer.at<float>(0*424 + 0, 0)
+                           << " [423,0]:" << mLookupTabVer.at<float>(0*424 + 423, 0)
+                           << std::endl;
+    std::cout << "mLookupTabVer [0,599]:" << mLookupTabVer.at<float>(599*424 + 0, 0)
+                           << " [423,599]:" << mLookupTabVer.at<float>(599*424 + 423, 0)
+                           << std::endl;
+
+    std::cout << "mMask [0,0]:" << mMask.at<float>(0*424 + 0, 0)
+                   << " [423,0]:" << mMask.at<float>(0*424 + 423, 0)
+                   << std::endl;
+    std::cout << "mMask [0,599]:" << mMask.at<float>(599*424 + 0, 0)
+                   << " [423,599]:" << mMask.at<float>(599*424 + 423, 0)
+                   << std::endl;
+
+    unsigned char hor[1024*600] = {};
+    for(int i = 0; i < 600; i++)
+    {
+        for(int j = 0; j < 1024; j++)
+        {
+            if (i < 600 && j < 424)
+            {
+                hor[i*1024+j] = mLookupTabHor.at<float>(i*424 + j, 0);
+            }
+            else
+            {
+                hor[i*1024+j] = 0.0;
+            }
+        }
+    }
+
+    unsigned char ver[1024*600] = {};
+    for(int i = 0; i < 600; i++)
+    {
+        for(int j = 0; j < 1024; j++)
+        {
+            if (i < 600 && j < 424)
+            {
+                ver[i*1024+j] = mLookupTabVer.at<float>(i*424 + j, 0);
+            }
+            else
+            {
+                ver[i*1024+j] = 0.0;
+            }
+        }
+    }
+
+    unsigned char mask[1024*600] = {};
+    for(int i = 0; i < 600; i++)
+    {
+        for(int j = 0; j < 1024; j++)
+        {
+            if (i < 600 && j < 424)
+            {
+                mask[i*1024+j] = mMask.at<float>(i*424 + j, 0);
+            }
+            else
+            {
+                mask[i*1024+j] = 0.0;
+            }
+        }
+    }
+
+    std::cout << "hor [0,0]:" << hor[0*424 + 0]
+                    << " [423,0]:" << hor[0*424 + 423]
+                    << " [1023,0]:" << hor[0*424 + 1023]
+                    << std::endl;
+    std::cout << "hor [0,599]:" << hor[599*424 + 0]
+                    << " [423,599]:" << hor[599*424 + 423]
+                    << " [1023,599]:" << hor[599*424 + 1023]
+                    << std::endl;
+
+    std::cout << "ver [0,0]:" << ver[0*424 + 0]
+                    << " [423,0]:" << ver[0*424 + 423]
+                    << " [1023,0]:" << ver[0*424 + 1023]
+                    << std::endl;
+    std::cout << "ver [0,599]:" << ver[599*424 + 0]
+                    << " [423,599]:" << ver[599*424 + 423]
+                    << " [1023,599]:" << ver[599*424 + 1023]
+                    << std::endl;
+
+    std::cout << "mask [0,0]:" << mask[0*424 + 0]
+                    << " [423,0]:" << mask[0*424 + 423]
+                    << " [1023,0]:" << mask[0*424 + 1023]
+                    << std::endl;
+    std::cout << "mask [0,599]:" << mask[599*424 + 0]
+                    << " [423,599]:" << mask[599*424 + 423]
+                    << " [1023,599]:" << mask[599*424 + 1023]
+                    << std::endl;
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, hor);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, ver);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutMaskTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mask);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    checkGlError("initTexture: load map texture");
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
@@ -208,7 +316,9 @@ void GLShaderYUV::drawOnce()
                 loadTexture(mUserData.videoTexId[i][0], y, width, height);
                 loadTexture(mUserData.videoTexId[i][1], u, width/2, height);
                 loadTexture(mUserData.videoTexId[i][2], v, width/2, height);
+                checkGlError("initTexture: load side image texture");
             }
+
         }
 
         delete surroundImage;
@@ -229,6 +339,7 @@ void GLShaderYUV::drawOnce()
         loadTexture(mUserData.focusVideoTexId[0], y, width, height);
         loadTexture(mUserData.focusVideoTexId[1], u, width/2, height);
         loadTexture(mUserData.focusVideoTexId[2], v, width/2, height);
+        checkGlError("initTexture: load focus image texture");
 
         delete sideImage;
         sideImage = NULL;
@@ -288,7 +399,6 @@ void GLShaderYUV::glDraw()
 #endif
 
     GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
-    //GLushort indices[] = { 0, 1, 2, 1, 2, 3, 1, 4, 3, 4, 3, 5 };
       
     // Set the viewport
     glViewport(0, 0, mESContext->width, mESContext->height);
@@ -371,6 +481,18 @@ void GLShaderYUV::glDraw()
     glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[2]);
     glUniform1i(mUserData.focusVideoSamplerLoc[2], 14);
 
+    glActiveTexture(GL_TEXTURE15);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glUniform1i(mUserData.lutHorSamplerLoc, 15);
+
+    glActiveTexture(GL_TEXTURE16);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glUniform1i(mUserData.lutVerSamplerLoc, 16);
+
+    glActiveTexture(GL_TEXTURE17);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutMaskTexId);
+    glUniform1i(mUserData.lutMaskSamplerLoc, 17);
+
     glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
 
     eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
@@ -404,8 +526,6 @@ GLboolean GLShaderYUV::loadTexture(GLuint textureId, unsigned char *buffer, int 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    checkGlError("loadTexture");
 
     return TRUE;
 }
