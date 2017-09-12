@@ -21,9 +21,6 @@ public:
     virtual void draw();
     virtual void shutdown();
 
-public:
-    static const unsigned int YUV_CHN_NUM = 3;
-
 private:
     GLboolean loadTexture(GLuint textureId, unsigned char *buffer, int width, int height);
     void drawOnce();
@@ -36,19 +33,25 @@ private:
         GLint  positionLoc;
         GLint  texCoordLoc;
 
-        // Sampler locations(Y,U,V)
-        GLint videoSamplerLoc[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
-        GLint focusVideoSamplerLoc[YUV_CHN_NUM];
-        GLint lutHorSamplerLoc;
-        GLint lutVerSamplerLoc;
-        GLint lutMaskSamplerLoc;
+        // Sampler locations(Y,UV)
+        GLint frontYLoc;
+        GLint frontUVLoc;
+        GLint rearYLoc;
+        GLint rearUVLoc;
+        GLint leftYLoc;
+        GLint leftUVLoc;
+        GLint rightYLoc;
+        GLint rightUVLoc;
 
         // Texture handle(Y,U,V)
-        GLuint videoTexId[VIDEO_CHANNEL_SIZE][YUV_CHN_NUM];
-        GLuint focusVideoTexId[YUV_CHN_NUM];
-        GLuint lutHorTexId;
-        GLuint lutVerTexId;
-        GLuint lutMaskTexId;
+        GLuint frontYTexId;
+        GLuint frontUVTexId;
+        GLuint rearYTexId;
+        GLuint rearUVTexId;
+        GLuint leftYTexId;
+        GLuint leftUVTexId;
+        GLuint rightYTexId;
+        GLuint rightUVTexId;
 
     } UserData;
 
@@ -56,10 +59,6 @@ private:
 
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
-
-    cv::Mat mLookupTabHor;
-    cv::Mat mLookupTabVer;
-    cv::Mat mMask;
 
     clock_t mLastCallTime;
 };

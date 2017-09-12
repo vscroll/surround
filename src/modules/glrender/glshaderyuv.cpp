@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string.h>
 #include "esUtil.h"
+#include "ogldev_util.h"
 
 #define TEST 0
 
@@ -12,18 +13,8 @@
 extern unsigned char yuyv_352x288[];
 #endif
 
-static const char* gVideoSamplerVar[][GLShaderYUV::YUV_CHN_NUM] = {
-    "s_frontY", "s_frontU", "s_frontV",
-    "s_rearY", "s_rearU", "s_rearV",
-    "s_leftY", "s_leftU", "s_leftV",
-    "s_rightY", "s_rightU", "s_rightV"};
-
-static const char* gFocusVideoSamplerVar[GLShaderYUV::YUV_CHN_NUM] = {
-    "s_focusY", "s_focusU", "s_focusV"};
-
-#define STRINGIFY(A)  #A
-#include "panorama2d.vert"
-#include "panorama2d.frag"
+static std::string gVShaderStr;
+static std::string gFShaderStr;
 
 GLShaderYUV::GLShaderYUV(ESContext* context, const std::string programBinaryFile, ICapture* capture)
 :GLShader(context, programBinaryFile)
@@ -40,40 +31,20 @@ GLShaderYUV::~GLShaderYUV()
 
 const char* GLShaderYUV::getVertShader()
 {
-    return gVShaderStr;
+    ReadFile("panorama_yuv.vert", gVShaderStr);
+    std::cout << gVShaderStr << std::endl;
+    return gVShaderStr.c_str();
 }
 
 const char* GLShaderYUV::getFragShader()
 {
-    return gFShaderStr;
+    ReadFile("panorama_yuv.frag", gFShaderStr);
+    //std::cout << gFShaderStr << std::endl;
+    return gFShaderStr.c_str();
 }
 
 int GLShaderYUV::initConfig()
 {
-    char procPath[1024] = {0};
-    if (Util::getAbsolutePath(procPath, 1024) < 0)
-    {
-        return -1;
-    }
-
-    char algoCfgPathName[1024] = {0};
-    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_1.xml", procPath);
-	cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
-	fs["Map_1"] >> mLookupTabHor;
-	fs["Map_2"] >> mLookupTabVer;
-	fs["Mask"] >> mMask;
-	fs.release();
-
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabHor:" << mLookupTabHor.cols << "x" << mLookupTabHor.rows << " type:" << mLookupTabHor.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabVer:" << mLookupTabVer.cols << "x" << mLookupTabVer.rows << " type:" << mLookupTabVer.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", mask:" << mMask.cols << "x" << mMask.rows << " type:" << mMask.type()
-            << std::endl;
-
     return 0;
 }
 
@@ -87,163 +58,24 @@ void GLShaderYUV::initVertex()
 void GLShaderYUV::initTexture()
 {
     // Get the sampler location
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        for (int j = 0; j < YUV_CHN_NUM; ++j)
-        {
-            mUserData.videoSamplerLoc[i][j] = glGetUniformLocation(mProgramObject, gVideoSamplerVar[i][j]);
-        }
-    }
-
-    for (int j = 0; j < YUV_CHN_NUM; ++j)
-    {
-        mUserData.focusVideoSamplerLoc[j] = glGetUniformLocation(mProgramObject, gFocusVideoSamplerVar[j]);
-    }
-
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        for (int j = 0; j < YUV_CHN_NUM; ++j)
-        {
-            glGenTextures(1, &mUserData.videoTexId[i][j]);
-        }
-    }
+    mUserData.frontYLoc = glGetUniformLocation(mProgramObject, "s_frontY");
+    mUserData.frontUVLoc = glGetUniformLocation(mProgramObject, "s_frontUV");
+    mUserData.rearYLoc = glGetUniformLocation(mProgramObject, "s_rearY");
+    mUserData.rearUVLoc = glGetUniformLocation(mProgramObject, "s_rearUV");
+    mUserData.leftYLoc = glGetUniformLocation(mProgramObject, "s_leftY");
+    mUserData.leftUVLoc = glGetUniformLocation(mProgramObject, "s_leftUV");
+    mUserData.rightYLoc = glGetUniformLocation(mProgramObject, "s_rightY");
+    mUserData.rightUVLoc = glGetUniformLocation(mProgramObject, "s_rightUV");
 
 
-    for (int j = 0; j < YUV_CHN_NUM; ++j)
-    {
-        glGenTextures(1, &mUserData.focusVideoTexId[j]);
-    }
-
-    checkGlError("initTexture: gene image texture");
-
-    mUserData.lutHorSamplerLoc = glGetUniformLocation (mProgramObject, "s_lutHor");
-    mUserData.lutVerSamplerLoc  = glGetUniformLocation (mProgramObject, "s_lutVer");
-    mUserData.lutMaskSamplerLoc  = glGetUniformLocation (mProgramObject, "s_mask");
-
-    glGenTextures(1, &mUserData.lutHorTexId);
-    glGenTextures(1, &mUserData.lutVerTexId);
-    glGenTextures(1, &mUserData.lutMaskTexId);
-
-    checkGlError("initTexture: gene map texture");
-
-    std::cout << "mLookupTabHor [0,0]:" << mLookupTabHor.at<float>(0*424 + 0, 0)
-                           << " [423,0]:" << mLookupTabHor.at<float>(0*424 + 423, 0)
-                           << std::endl;
-    std::cout << "mLookupTabHor [0,599]:" << mLookupTabHor.at<float>(599*424 + 0, 0)
-                           << " [423,599]:" << mLookupTabHor.at<float>(599*424 + 423, 0)
-                           << std::endl;
-
-    std::cout << "mLookupTabVer [0,0]:" << mLookupTabVer.at<float>(0*424 + 0, 0)
-                           << " [423,0]:" << mLookupTabVer.at<float>(0*424 + 423, 0)
-                           << std::endl;
-    std::cout << "mLookupTabVer [0,599]:" << mLookupTabVer.at<float>(599*424 + 0, 0)
-                           << " [423,599]:" << mLookupTabVer.at<float>(599*424 + 423, 0)
-                           << std::endl;
-
-    std::cout << "mMask [0,0]:" << mMask.at<float>(0*424 + 0, 0)
-                   << " [423,0]:" << mMask.at<float>(0*424 + 423, 0)
-                   << std::endl;
-    std::cout << "mMask [0,599]:" << mMask.at<float>(599*424 + 0, 0)
-                   << " [423,599]:" << mMask.at<float>(599*424 + 423, 0)
-                   << std::endl;
-
-    unsigned char hor[1024*600] = {};
-    for(int i = 0; i < 600; i++)
-    {
-        for(int j = 0; j < 1024; j++)
-        {
-            if (i < 600 && j < 424)
-            {
-                hor[i*1024+j] = mLookupTabHor.at<float>(i*424 + j, 0);
-            }
-            else
-            {
-                hor[i*1024+j] = 0.0;
-            }
-        }
-    }
-
-    unsigned char ver[1024*600] = {};
-    for(int i = 0; i < 600; i++)
-    {
-        for(int j = 0; j < 1024; j++)
-        {
-            if (i < 600 && j < 424)
-            {
-                ver[i*1024+j] = mLookupTabVer.at<float>(i*424 + j, 0);
-            }
-            else
-            {
-                ver[i*1024+j] = 0.0;
-            }
-        }
-    }
-
-    unsigned char mask[1024*600] = {};
-    for(int i = 0; i < 600; i++)
-    {
-        for(int j = 0; j < 1024; j++)
-        {
-            if (i < 600 && j < 424)
-            {
-                mask[i*1024+j] = mMask.at<float>(i*424 + j, 0);
-            }
-            else
-            {
-                mask[i*1024+j] = 0.0;
-            }
-        }
-    }
-
-    std::cout << "hor [0,0]:" << hor[0*424 + 0]
-                    << " [423,0]:" << hor[0*424 + 423]
-                    << " [1023,0]:" << hor[0*424 + 1023]
-                    << std::endl;
-    std::cout << "hor [0,599]:" << hor[599*424 + 0]
-                    << " [423,599]:" << hor[599*424 + 423]
-                    << " [1023,599]:" << hor[599*424 + 1023]
-                    << std::endl;
-
-    std::cout << "ver [0,0]:" << ver[0*424 + 0]
-                    << " [423,0]:" << ver[0*424 + 423]
-                    << " [1023,0]:" << ver[0*424 + 1023]
-                    << std::endl;
-    std::cout << "ver [0,599]:" << ver[599*424 + 0]
-                    << " [423,599]:" << ver[599*424 + 423]
-                    << " [1023,599]:" << ver[599*424 + 1023]
-                    << std::endl;
-
-    std::cout << "mask [0,0]:" << mask[0*424 + 0]
-                    << " [423,0]:" << mask[0*424 + 423]
-                    << " [1023,0]:" << mask[0*424 + 1023]
-                    << std::endl;
-    std::cout << "mask [0,599]:" << mask[599*424 + 0]
-                    << " [423,599]:" << mask[599*424 + 423]
-                    << " [1023,599]:" << mask[599*424 + 1023]
-                    << std::endl;
-
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, hor);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, ver);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutMaskTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1024, 600, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mask);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    checkGlError("initTexture: load map texture");
+    glGenTextures(1, &mUserData.frontYTexId);
+    glGenTextures(1, &mUserData.frontUVTexId);
+    glGenTextures(1, &mUserData.rearYTexId);
+    glGenTextures(1, &mUserData.rearUVTexId);
+    glGenTextures(1, &mUserData.leftYTexId);
+    glGenTextures(1, &mUserData.leftUVTexId);
+    glGenTextures(1, &mUserData.rightYTexId);
+    glGenTextures(1, &mUserData.rightUVTexId);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
@@ -257,12 +89,10 @@ void GLShaderYUV::draw()
         int width = 352;
         int height = 288;
         unsigned char y[width*height] = {0};
-        unsigned char u[width/2*height] = {0};
-        unsigned char v[width/2*height] = {0};
-        Util::yuyv_to_yuv(width, height, buffer, y, u, v);
-        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0], y, width, height);
-        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1], u, width/2, height);
-        loadTexture(mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2], v, width/2, height);
+        unsigned char uv[width*height] = {0};
+        Util::yuyv_to_yuv(width, height, buffer, y, uv, uv+width*height/2);
+        loadTexture(mUserData.frontYTexId, y, width, height);
+        loadTexture(mUserData.frontUVTexId, uv, width, height);
 
         glDraw();
 #else
@@ -304,27 +134,51 @@ void GLShaderYUV::drawOnce()
             int width;
             int height;
 
-            for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-            {
-                buffer = (unsigned char*)(surroundImage->frame[i].data);
-                width = surroundImage->frame[i].info.width;
-                height = surroundImage->frame[i].info.height;
-                unsigned char y[width*height] = {0};
-                unsigned char u[width/2*height] = {0};
-                unsigned char v[width/2*height] = {0};
-                Util::yuyv_to_yuv(width, height, buffer, y, u, v);
-                loadTexture(mUserData.videoTexId[i][0], y, width, height);
-                loadTexture(mUserData.videoTexId[i][1], u, width/2, height);
-                loadTexture(mUserData.videoTexId[i][2], v, width/2, height);
-                checkGlError("initTexture: load side image texture");
-            }
+            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_FRONT].data);
+            width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
+            height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
+            unsigned char y0[width*height] = {0};
+            unsigned char uv0[width*height] = {0};
+            Util::yuyv_to_yuv(width, height, buffer, y0, uv0, uv0 + width*height/2);
+            loadTexture(mUserData.frontYTexId, y0, width, height);
+            loadTexture(mUserData.frontUVTexId, uv0, width, height);
+            checkGlError("initTexture: load front image texture");
 
+            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
+            width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
+            height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
+            unsigned char y1[width*height] = {0};
+            unsigned char uv1[width*height] = {0};
+            Util::yuyv_to_yuv(width, height, buffer, y1, uv1, uv1 + width*height/2);
+            loadTexture(mUserData.rearYTexId, y1, width, height);
+            loadTexture(mUserData.rearUVTexId, uv1, width, height);
+            checkGlError("initTexture: load rear image texture");  
+
+            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
+            width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
+            height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
+            unsigned char y2[width*height] = {0};
+            unsigned char uv2[width*height] = {0};
+            Util::yuyv_to_yuv(width, height, buffer, y2, uv2, uv2 + width*height/2);
+            loadTexture(mUserData.leftYTexId, y2, width, height);
+            loadTexture(mUserData.leftUVTexId, uv2, width, height);
+            checkGlError("initTexture: load left image texture");
+
+            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
+            width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
+            height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
+            unsigned char y3[width*height] = {0};
+            unsigned char uv3[width*height] = {0};
+            Util::yuyv_to_yuv(width, height, buffer, y3, uv3, uv3 + width*height/2);
+            loadTexture(mUserData.rightYTexId, y3, width, height);
+            loadTexture(mUserData.rightUVTexId, uv3, width, height);
+            checkGlError("initTexture: load right image texture");
         }
 
         delete surroundImage;
         surroundImage = NULL;
     }
-
+#if 0
     surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
     mFocusChannelIndex = mCapture->getFocusChannelIndex();
     if (NULL != sideImage)
@@ -333,17 +187,16 @@ void GLShaderYUV::drawOnce()
         int width = sideImage->info.width;
         int height = sideImage->info.height;
         unsigned char y[width*height] = {0};
-        unsigned char u[width/2*height] = {0};
-        unsigned char v[width/2*height] = {0};
-        Util::yuyv_to_yuv(width, height, buffer, y, u, v);
+        unsigned char uv[width*height] = {0};
+        Util::yuyv_to_yuv(width, height, buffer, y, uv, uv + width*height/2);
         loadTexture(mUserData.focusVideoTexId[0], y, width, height);
-        loadTexture(mUserData.focusVideoTexId[1], u, width/2, height);
-        loadTexture(mUserData.focusVideoTexId[2], v, width/2, height);
+        loadTexture(mUserData.focusVideoTexId[1], uv, width, height);
         checkGlError("initTexture: load focus image texture");
 
         delete sideImage;
         sideImage = NULL;
     }
+#endif
 
     glDraw();
 
@@ -418,80 +271,39 @@ void GLShaderYUV::glDraw()
 
     //Front
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][0]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][0], 0);
+    glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
+    glUniform1i(mUserData.frontYLoc, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][1]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][1], 1);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_FRONT][2]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_FRONT][2], 2);
+    glBindTexture(GL_TEXTURE_2D, mUserData.frontUVTexId);
+    glUniform1i(mUserData.frontUVLoc, 1);
 
     //Rear
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][0]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][0], 3);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
+    glUniform1i(mUserData.rearYLoc, 2);
 
     glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][1]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][1], 4);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_REAR][2]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_REAR][2], 5);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
+    glUniform1i(mUserData.rearUVLoc, 3);
 
     //Left
     glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][0]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][0], 6);
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
+    glUniform1i(mUserData.leftYLoc, 4);
 
     glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][1]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][1], 7);
-
-    glActiveTexture(GL_TEXTURE8);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_LEFT][2]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_LEFT][2], 8);
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
+    glUniform1i(mUserData.leftUVLoc, 5);
 
     //right
     glActiveTexture(GL_TEXTURE9);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][0]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][0], 9);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
+    glUniform1i(mUserData.rightYLoc, 6);
 
     glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][1]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][1], 10);
-
-    glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_2D, mUserData.videoTexId[VIDEO_CHANNEL_RIGHT][2]);
-    glUniform1i(mUserData.videoSamplerLoc[VIDEO_CHANNEL_RIGHT][2], 11);
-
-    //focus
-    glActiveTexture(GL_TEXTURE12);
-    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[0]);
-    glUniform1i(mUserData.focusVideoSamplerLoc[0], 12);
-
-    glActiveTexture(GL_TEXTURE13);
-    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[1]);
-    glUniform1i(mUserData.focusVideoSamplerLoc[1], 13);
-
-    glActiveTexture(GL_TEXTURE14);
-    glBindTexture(GL_TEXTURE_2D, mUserData.focusVideoTexId[2]);
-    glUniform1i(mUserData.focusVideoSamplerLoc[2], 14);
-
-    glActiveTexture(GL_TEXTURE15);
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
-    glUniform1i(mUserData.lutHorSamplerLoc, 15);
-
-    glActiveTexture(GL_TEXTURE16);
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
-    glUniform1i(mUserData.lutVerSamplerLoc, 16);
-
-    glActiveTexture(GL_TEXTURE17);
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutMaskTexId);
-    glUniform1i(mUserData.lutMaskSamplerLoc, 17);
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
+    glUniform1i(mUserData.rightUVLoc, 7);
 
     glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
 
@@ -501,18 +313,14 @@ void GLShaderYUV::glDraw()
 void GLShaderYUV::shutdown()
 {
     // Delete texture object
-    for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        for (int j = 0; j < YUV_CHN_NUM; ++j)
-        {
-            glDeleteTextures(1, &mUserData.videoTexId[i][j]);
-        }
-    }
-
-    for (int j = 0; j < YUV_CHN_NUM; ++j)
-    {
-        glDeleteTextures(1, &mUserData.focusVideoTexId[j]);
-    }
+    glDeleteTextures(1, &mUserData.frontYTexId);
+    glDeleteTextures(1, &mUserData.frontUVTexId);
+    glDeleteTextures(1, &mUserData.rearYTexId);
+    glDeleteTextures(1, &mUserData.rearUVTexId);
+    glDeleteTextures(1, &mUserData.leftYTexId);
+    glDeleteTextures(1, &mUserData.leftUVTexId);
+    glDeleteTextures(1, &mUserData.rightYTexId);
+    glDeleteTextures(1, &mUserData.rightUVTexId);
 
     GLShader::shutdown();
 }

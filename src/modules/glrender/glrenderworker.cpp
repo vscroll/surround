@@ -73,8 +73,8 @@ int GLRenderWorker::init(ICapture* capture)
 
     if (NULL == mShader)
     {
-#if 0
-        mShader = new GLShaderYUV(&mWindow->mESContext, capture);
+#if 1
+        mShader = new GLShaderYUV(&mWindow->mESContext, "panorama_yuv.prog", capture);
 #else
         mShader = new GLShaderRGB(&mWindow->mESContext, "panorama_rgb.prog", capture);
 #endif

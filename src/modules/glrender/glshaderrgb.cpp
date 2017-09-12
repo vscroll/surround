@@ -31,13 +31,7 @@ static const char gFShaderStr[] =
       "}                                                   \n";   
 
 #else
-static const char gFShaderPrefix[] =
-      "#version 300 es                                     \n"
-      "precision mediump float;                            \n";
-
 static std::string gVShaderStr;
-static std::string gVShaderHeader;
-static std::string gFShaderConst;
 static std::string gFShaderStr;
 #endif
 
@@ -63,20 +57,9 @@ const char* GLShaderRGB::getVertShader()
 
 const char* GLShaderRGB::getFragShader()
 {
-#if 0
-    ReadFile("panorama_rgb_frag.header", gVShaderHeader);
-    ReadFile("panorama_rgb_hor.lut", gFShaderConst);
-    ReadFile("panorama_rgb.frag", gFShaderStr);
-    std::string str = gVShaderHeader;
-    str += gFShaderConst;
-    str += gFShaderStr;
-    std::cout << str << std::endl;
-    return str.c_str();
-#else
     ReadFile("panorama_rgb.frag", gFShaderStr);
     //std::cout << gFShaderStr << std::endl;
     return gFShaderStr.c_str();
-#endif
 }
 
 int GLShaderRGB::initConfig()
