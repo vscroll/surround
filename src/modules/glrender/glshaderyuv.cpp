@@ -53,6 +53,56 @@ void GLShaderYUV::initVertex()
     // Get the attribute locations
     mUserData.positionLoc = glGetAttribLocation(mProgramObject, "a_position");
     mUserData.texCoordLoc = glGetAttribLocation(mProgramObject, "a_texCoord");
+
+#if 1
+    static GLfloat squareVertices[] = {  
+        -1.0f, -1.0f, 
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f
+    };
+#else
+    static GLfloat squareVertices[] = {
+        -1, -0.95666f,
+        0.0, -0.95666f,
+        -1, 0.95666f,
+        0.0,  0.95666f,
+        1.0f, -0.95666f,
+        1.0f, 0.95666f,
+    };
+#endif  
+
+#if 1  
+    static GLfloat coordVertices[] = {  
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f
+    };
+#else
+    // 600/574 = 1.045296f; 1024/704 = 1.454545f;
+    static GLfloat coordVertices[] = {  
+        0.0f, 1.045296f,
+        1.454545f, 1.045296f,
+        0.0f, 0.0f,
+        1.454545f, 0.0f
+    };
+#endif
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+      
+    // Set the viewport
+    glViewport(0, 0, mESContext->width, mESContext->height);
+   
+    // Clear the color buffer
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Load the vertex position
+    glVertexAttribPointer ( mUserData.positionLoc, 2, GL_FLOAT, 
+                           GL_FALSE, 2 * sizeof(GLfloat), squareVertices );
+    // Load the texture coordinate
+    glVertexAttribPointer ( mUserData.texCoordLoc, 2, GL_FLOAT,
+                           GL_FALSE, 2 * sizeof(GLfloat), coordVertices );
 }
 
 void GLShaderYUV::initTexture()
@@ -77,7 +127,53 @@ void GLShaderYUV::initTexture()
     glGenTextures(1, &mUserData.rightYTexId);
     glGenTextures(1, &mUserData.rightUVTexId);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.frontUVTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void GLShaderYUV::draw()
@@ -139,64 +235,57 @@ void GLShaderYUV::drawOnce()
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
             unsigned char y0[width*height] = {0};
             unsigned char uv0[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y0, uv0, uv0 + width*height/2);
-            loadTexture(mUserData.frontYTexId, y0, width, height);
-            loadTexture(mUserData.frontUVTexId, uv0, width, height);
-            checkGlError("initTexture: load front image texture");
+            Util::yuyv_to_yuv(width, height, buffer, y0, uv0);
+            glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y0);
+
+            glBindTexture(GL_TEXTURE_2D, mUserData.frontUVTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv0);
+            //checkGlError("initTexture: load front image texture");
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
             unsigned char y1[width*height] = {0};
             unsigned char uv1[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y1, uv1, uv1 + width*height/2);
-            loadTexture(mUserData.rearYTexId, y1, width, height);
-            loadTexture(mUserData.rearUVTexId, uv1, width, height);
-            checkGlError("initTexture: load rear image texture");  
+            Util::yuyv_to_yuv(width, height, buffer, y1, uv1);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y1);
+
+            glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv1);
+            //checkGlError("initTexture: load rear image texture");  
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
             unsigned char y2[width*height] = {0};
             unsigned char uv2[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y2, uv2, uv2 + width*height/2);
-            loadTexture(mUserData.leftYTexId, y2, width, height);
-            loadTexture(mUserData.leftUVTexId, uv2, width, height);
-            checkGlError("initTexture: load left image texture");
+            Util::yuyv_to_yuv(width, height, buffer, y2, uv2);
+            glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y2);
+
+            glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv2);
+            //checkGlError("initTexture: load left image texture");
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
             unsigned char y3[width*height] = {0};
             unsigned char uv3[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y3, uv3, uv3 + width*height/2);
-            loadTexture(mUserData.rightYTexId, y3, width, height);
-            loadTexture(mUserData.rightUVTexId, uv3, width, height);
-            checkGlError("initTexture: load right image texture");
+            Util::yuyv_to_yuv(width, height, buffer, y3, uv3);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y3);
+
+            glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv3);
+            //checkGlError("initTexture: load right image texture");
         }
 
         delete surroundImage;
         surroundImage = NULL;
     }
-#if 0
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
-    mFocusChannelIndex = mCapture->getFocusChannelIndex();
-    if (NULL != sideImage)
-    {
-        unsigned char* buffer = (unsigned char*)(sideImage->data);
-        int width = sideImage->info.width;
-        int height = sideImage->info.height;
-        unsigned char y[width*height] = {0};
-        unsigned char uv[width*height] = {0};
-        Util::yuyv_to_yuv(width, height, buffer, y, uv, uv + width*height/2);
-        loadTexture(mUserData.focusVideoTexId[0], y, width, height);
-        loadTexture(mUserData.focusVideoTexId[1], uv, width, height);
-        checkGlError("initTexture: load focus image texture");
-
-        delete sideImage;
-        sideImage = NULL;
-    }
-#endif
 
     glDraw();
 
@@ -217,55 +306,6 @@ void GLShaderYUV::drawOnce()
 
 void GLShaderYUV::glDraw()
 {
-#if 1
-    static GLfloat squareVertices[] = {  
-        -1.0f, -1.0f, 
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f
-    };
-#else
-    static GLfloat squareVertices[] = {
-        -1, -0.95666f,
-        0.0, -0.95666f,
-        -1, 0.95666f,
-        0.0,  0.95666f,
-        1.0f, -0.95666f,
-        1.0f, 0.95666f,
-    };
-#endif  
-
-#if 1  
-    static GLfloat coordVertices[] = {  
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 0.0f
-    };
-#else
-    static GLfloat coordVertices[] = {  
-        0.0f, 0.9566f,  
-        0.6875f, 0.9566f,  
-        0.0f, 0.0f,  
-        0.6875f, 0.0f,   
-    };
-#endif
-
-    GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
-      
-    // Set the viewport
-    glViewport(0, 0, mESContext->width, mESContext->height);
-   
-    // Clear the color buffer
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Load the vertex position
-    glVertexAttribPointer ( mUserData.positionLoc, 2, GL_FLOAT, 
-                           GL_FALSE, 2 * sizeof(GLfloat), squareVertices );
-    // Load the texture coordinate
-    glVertexAttribPointer ( mUserData.texCoordLoc, 2, GL_FLOAT,
-                           GL_FALSE, 2 * sizeof(GLfloat), coordVertices );
-
     glEnableVertexAttribArray(mUserData.positionLoc);
     glEnableVertexAttribArray(mUserData.texCoordLoc);
 
@@ -279,33 +319,37 @@ void GLShaderYUV::glDraw()
     glUniform1i(mUserData.frontUVLoc, 1);
 
     //Rear
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
     glUniform1i(mUserData.rearYLoc, 2);
 
-    glActiveTexture(GL_TEXTURE4);
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
     glUniform1i(mUserData.rearUVLoc, 3);
 
     //Left
-    glActiveTexture(GL_TEXTURE6);
+    glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
     glUniform1i(mUserData.leftYLoc, 4);
 
-    glActiveTexture(GL_TEXTURE7);
+    glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
     glUniform1i(mUserData.leftUVLoc, 5);
 
     //right
-    glActiveTexture(GL_TEXTURE9);
+    glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
     glUniform1i(mUserData.rightYLoc, 6);
 
-    glActiveTexture(GL_TEXTURE10);
+    glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
     glUniform1i(mUserData.rightUVLoc, 7);
 
+    GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
     glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
+
+    glDisableVertexAttribArray(mUserData.positionLoc);
+    glDisableVertexAttribArray(mUserData.texCoordLoc);
 
     eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
 }

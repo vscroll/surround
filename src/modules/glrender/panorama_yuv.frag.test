@@ -1,0 +1,109 @@
+#version 300 es
+
+precision mediump float;
+
+const int screen_width = 1024;
+const int screen_height = 600;
+const int panorama_width = 424;
+const int panorama_height = 600;
+const int image_width = 704;
+const int image_height = 574;
+
+in vec2 v_texCoord;
+uniform sampler2D s_frontY;
+uniform sampler2D s_frontUV;
+uniform sampler2D s_rearY;
+uniform sampler2D s_rearUV;
+uniform sampler2D s_leftY;
+uniform sampler2D s_leftUV;
+uniform sampler2D s_rightY;
+uniform sampler2D s_rightUV;
+out vec4 o_fragColor;
+
+void main()
+{
+    mediump vec3 yuv_front;
+    mediump vec3 yuv_rear;
+    mediump vec3 yuv_left;
+    mediump vec3 yuv_right;
+    lowp vec3 rgb;
+
+    //screen coordinates: left bottom
+    //image coordinates: left top
+    //texture coordinates: left bottom
+
+    int x_screen = int(gl_FragCoord.x);
+    int y_screen = int(gl_FragCoord.y);
+    int display_width = screen_width/2;
+    int display_height = screen_height/2;
+
+    mat3 yuv2rgb = mat3(1, 0, 1.2802,  
+                        1, -0.214821, -0.380589,  
+                        1, 2.127982, 0); 
+
+    if (x_screen < display_width)
+    {
+        if (y_screen < display_height)
+        {
+            int y_image = image_height - y_screen - 1;
+            int display_offset = image_height - display_height;
+            int display_y = y_image - display_offset;
+            int display_x = x_screen;
+            float s = float(display_x)/float(image_width);
+            float t = float(display_y)/float(image_height);
+            vec2 texCoord = vec2(s, t);
+            yuv_rear.x = 1.1643 * (texture(s_rearY, texCoord).r - 0.0625);
+            yuv_rear.y = texture(s_rearUV, texCoord).a - 0.5;
+            yuv_rear.z = texture(s_rearUV, texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_rear;
+        }
+        else
+        {
+            int y_image = image_height - (y_screen - display_height) - 1;
+            int display_offset = image_height - display_height;
+            int display_y = y_image - display_offset;
+            int display_x = x_screen;
+            float s = float(display_x)/float(image_width);
+            float t = float(display_y)/float(image_height);
+            vec2 texCoord = vec2(s, t);
+            yuv_front.x = 1.1643 * (texture(s_frontY, texCoord).r - 0.0625);
+            yuv_front.y = texture(s_frontUV, texCoord).a - 0.5;
+            yuv_front.z = texture(s_frontUV, texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_front;
+        }
+    }
+    else
+    {
+        if (y_screen < display_height)
+        {
+            int y_image = image_height - y_screen - 1;
+            int display_offset = image_height - display_height;
+            int display_y = y_image - display_offset;
+            int display_x = x_screen - display_width;
+            float s = float(display_x)/float(image_width);
+            float t = float(display_y)/float(image_height);
+            vec2 texCoord = vec2(s, t);
+            yuv_right.x = 1.1643 * (texture(s_rightY, texCoord).r - 0.0625);
+            yuv_right.y = texture(s_rightUV, texCoord).a - 0.5;
+            yuv_right.z = texture(s_rightUV, texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_right;
+        }
+        else
+        {
+            int y_image = image_height - (y_screen - display_height) - 1;
+            int display_offset = image_height - display_height;
+            int display_y = y_image - display_offset;
+            int display_x = x_screen - display_width;
+            float s = float(display_x)/float(image_width);
+            float t = float(display_y)/float(image_height);
+            vec2 texCoord = vec2(s, t);
+            yuv_left.x = 1.1643 * (texture(s_leftY, texCoord).r - 0.0625);
+            yuv_left.y = texture(s_leftUV, texCoord).a - 0.5;
+            yuv_left.z = texture(s_leftUV, texCoord).r - 0.5;
+            rgb = yuv2rgb * yuv_left;
+        }
+    }
+
+    //rgb = vec3(1.0, 0.0, 0.0);
+    o_fragColor = vec4(rgb, 1);
+}
