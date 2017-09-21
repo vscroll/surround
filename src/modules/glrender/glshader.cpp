@@ -55,6 +55,7 @@ int GLShader::initProgram()
     else
     {
         mProgramObject = esLoadProgram(getVertShader(), getFragShader());
+#if 0
         if (mProgramObject > 0)
         {
             GLsizei length = 0;
@@ -65,6 +66,7 @@ int GLShader::initProgram()
             Util::writeAllBytes(mProgramBinaryFile.c_str(), byteArray, length);
             std::cout << "initProgram::write program, length:" << length << " format:" << binaryFormat << std::endl;
         }
+#endif
     }
 
     if ( mProgramObject <= 0)

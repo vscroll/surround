@@ -5,6 +5,9 @@
 #include <string.h>
 #include "esUtil.h"
 #include "ogldev_util.h"
+#include "panorama_yuv_hor.lut"
+#include "panorama_yuv_ver.lut"
+#include "panorama_yuv_mask.lut"
 
 #define TEST 0
 
@@ -117,6 +120,10 @@ void GLShaderYUV::initTexture()
     mUserData.rightYLoc = glGetUniformLocation(mProgramObject, "s_rightY");
     mUserData.rightUVLoc = glGetUniformLocation(mProgramObject, "s_rightUV");
 
+    mUserData.maskLoc = glGetUniformLocation(mProgramObject, "s_mask");
+    mUserData.lutHorLoc = glGetUniformLocation(mProgramObject, "s_lutHor");
+    mUserData.lutVerLoc = glGetUniformLocation(mProgramObject, "s_lutVer");
+
 
     glGenTextures(1, &mUserData.frontYTexId);
     glGenTextures(1, &mUserData.frontUVTexId);
@@ -126,6 +133,10 @@ void GLShaderYUV::initTexture()
     glGenTextures(1, &mUserData.leftUVTexId);
     glGenTextures(1, &mUserData.rightYTexId);
     glGenTextures(1, &mUserData.rightUVTexId);
+
+    glGenTextures(1, &mUserData.maskTexId);
+    glGenTextures(1, &mUserData.lutHorTexId);
+    glGenTextures(1, &mUserData.lutVerTexId);
 
     glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -170,6 +181,28 @@ void GLShaderYUV::initTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    //lut
+    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, mask);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutHor);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutVer);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -345,6 +378,19 @@ void GLShaderYUV::glDraw()
     glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
     glUniform1i(mUserData.rightUVLoc, 7);
 
+    //lut
+    glActiveTexture(GL_TEXTURE8);
+    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
+    glUniform1i(mUserData.maskLoc, 8);
+
+    glActiveTexture(GL_TEXTURE9);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glUniform1i(mUserData.lutHorLoc, 9);
+
+    glActiveTexture(GL_TEXTURE10);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glUniform1i(mUserData.lutVerLoc, 10);
+
     GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
     glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
 
@@ -365,6 +411,10 @@ void GLShaderYUV::shutdown()
     glDeleteTextures(1, &mUserData.leftUVTexId);
     glDeleteTextures(1, &mUserData.rightYTexId);
     glDeleteTextures(1, &mUserData.rightUVTexId);
+
+    glDeleteTextures(1, &mUserData.maskTexId);
+    glDeleteTextures(1, &mUserData.lutHorTexId);
+    glDeleteTextures(1, &mUserData.lutVerTexId);
 
     GLShader::shutdown();
 }

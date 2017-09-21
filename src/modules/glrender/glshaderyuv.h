@@ -43,6 +43,10 @@ private:
         GLint rightYLoc;
         GLint rightUVLoc;
 
+        GLint maskLoc;
+        GLint lutHorLoc;
+        GLint lutVerLoc;
+
         // Texture handle(Y,U,V)
         GLuint frontYTexId;
         GLuint frontUVTexId;
@@ -52,6 +56,10 @@ private:
         GLuint leftUVTexId;
         GLuint rightYTexId;
         GLuint rightUVTexId;
+
+        GLuint maskTexId;
+        GLuint lutHorTexId;
+        GLuint lutVerTexId;
 
     } UserData;
 

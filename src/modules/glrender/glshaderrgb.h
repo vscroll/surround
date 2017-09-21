@@ -37,14 +37,20 @@ private:
         GLint rearLoc;
         GLint leftLoc;
         GLint rightLoc;
-        GLint focusLoc;
+
+        GLint maskLoc;
+        GLint lutHorLoc;
+        GLint lutVerLoc;
 
         // Texture handle
         GLuint frontTexId;
         GLuint rearTexId;
         GLuint leftTexId;
         GLuint rightTexId;
-        GLuint focusTexId;
+
+        GLuint maskTexId;
+        GLuint lutHorTexId;
+        GLuint lutVerTexId;
 
     } UserData;
 

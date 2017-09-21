@@ -6,6 +6,10 @@
 #include <string.h>
 #include "ogldev_util.h"
 
+#include "panorama_rgb_hor.lut"
+#include "panorama_rgb_ver.lut"
+#include "panorama_rgb_mask.lut"
+
 #if 0
 static const char gVShaderStr[] =  
     "attribute vec4 a_position;     \n"
@@ -72,6 +76,33 @@ void GLShaderRGB::initVertex()
     // Get the attribute locations
     mUserData.positionLoc = glGetAttribLocation(mProgramObject, "a_position");
     mUserData.texCoordLoc = glGetAttribLocation(mProgramObject, "a_texCoord");
+
+    static GLfloat squareVertices[] = {  
+        -1.0f, -1.0f,  
+        1.0f, -1.0f,  
+        -1.0f,  1.0f,  
+        1.0f,  1.0f,  
+    };  
+  
+    static GLfloat coordVertices[] = {  
+        0.0f, 1.0f,  
+        1.0f, 1.0f,  
+        0.0f,  0.0f,  
+        1.0f,  0.0f,  
+    };
+      
+    // Set the viewport
+    glViewport(0, 0, mESContext->width, mESContext->height);
+   
+    // Clear the color buffer
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Load the vertex position
+    glVertexAttribPointer ( mUserData.positionLoc, 2, GL_FLOAT, 
+                           GL_FALSE, 2 * sizeof(GLfloat), squareVertices );
+    // Load the texture coordinate
+    glVertexAttribPointer ( mUserData.texCoordLoc, 2, GL_FLOAT,
+                           GL_FALSE, 2 * sizeof(GLfloat), coordVertices );
 }
 
 void GLShaderRGB::initTexture()
@@ -81,17 +112,65 @@ void GLShaderRGB::initTexture()
     mUserData.rearLoc = glGetUniformLocation(mProgramObject, "s_rear");
     mUserData.leftLoc = glGetUniformLocation(mProgramObject, "s_left");
     mUserData.rightLoc = glGetUniformLocation(mProgramObject, "s_right");
-    mUserData.focusLoc = glGetUniformLocation(mProgramObject, "s_focus");
+
+    mUserData.maskLoc = glGetUniformLocation(mProgramObject, "s_mask");
+    mUserData.lutHorLoc = glGetUniformLocation(mProgramObject, "s_lutHor");
+    mUserData.lutVerLoc = glGetUniformLocation(mProgramObject, "s_lutVer");
 
     glGenTextures(1, &mUserData.frontTexId);
     glGenTextures(1, &mUserData.rearTexId);
     glGenTextures(1, &mUserData.leftTexId);
     glGenTextures(1, &mUserData.rightTexId);
-    glGenTextures(1, &mUserData.focusTexId);
 
-    checkGlError("initTexture");
+    glGenTextures(1, &mUserData.maskTexId);
+    glGenTextures(1, &mUserData.lutHorTexId);
+    glGenTextures(1, &mUserData.lutVerTexId);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    //lut
+    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, mask);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutHor);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutVer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void GLShaderRGB::draw()
@@ -139,47 +218,36 @@ void GLShaderRGB::drawOnce()
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
             unsigned char front[width*height*3] = {0};
             Util::yuyv_to_rgb24(width, height, buffer, front);
-            loadTexture(mUserData.frontTexId, front, width, height);
+            glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, front);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
             unsigned char rear[width*height*3] = {0};
             Util::yuyv_to_rgb24(width, height, buffer, rear);
-            loadTexture(mUserData.rearTexId, rear, width, height);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rear);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
             unsigned char left[width*height*3] = {0};
             Util::yuyv_to_rgb24(width, height, buffer, left);
-            loadTexture(mUserData.leftTexId, left, width, height);
+            glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, left);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
             unsigned char right[width*height*3] = {0};
             Util::yuyv_to_rgb24(width, height, buffer, right);
-            loadTexture(mUserData.rightTexId, right, width, height);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, right);
         }
 
         delete surroundImage;
         surroundImage = NULL;
-    }
-
-    surround_image_t* sideImage = mCapture->popOneFrame4FocusSource();
-    mFocusChannelIndex = mCapture->getFocusChannelIndex();
-    if (NULL != sideImage)
-    {
-        unsigned char* buffer = (unsigned char*)(sideImage->data);
-        int width = sideImage->info.width;
-        int height = sideImage->info.height;
-        unsigned char side[width*height*3] = {0};
-        Util::yuyv_to_rgb24(width, height, buffer, side);
-        loadTexture(mUserData.focusTexId, side, width, height);
-
-        delete sideImage;
-        sideImage = NULL;
     }
 
     glDraw();
@@ -201,33 +269,6 @@ void GLShaderRGB::drawOnce()
 
 void GLShaderRGB::glDraw()
 {
-    static GLfloat squareVertices[] = {  
-        -1.0f, -1.0f,  
-        1.0f, -1.0f,  
-        -1.0f,  1.0f,  
-        1.0f,  1.0f,  
-    };  
-  
-    static GLfloat coordVertices[] = {  
-        0.0f, 1.0f,  
-        1.0f, 1.0f,  
-        0.0f,  0.0f,  
-        1.0f,  0.0f,  
-    };
-      
-    // Set the viewport
-    glViewport(0, 0, mESContext->width, mESContext->height);
-   
-    // Clear the color buffer
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Load the vertex position
-    glVertexAttribPointer ( mUserData.positionLoc, 2, GL_FLOAT, 
-                           GL_FALSE, 2 * sizeof(GLfloat), squareVertices );
-    // Load the texture coordinate
-    glVertexAttribPointer ( mUserData.texCoordLoc, 2, GL_FLOAT,
-                           GL_FALSE, 2 * sizeof(GLfloat), coordVertices );
-
     glEnableVertexAttribArray(mUserData.positionLoc);
     glEnableVertexAttribArray(mUserData.texCoordLoc);
 
@@ -247,7 +288,23 @@ void GLShaderRGB::glDraw()
     glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
     glUniform1i(mUserData.rightLoc, 3);
 
+    //lut
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
+    glUniform1i(mUserData.maskLoc, 4);
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
+    glUniform1i(mUserData.lutHorLoc, 5);
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
+    glUniform1i(mUserData.lutVerLoc, 6);
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glDisableVertexAttribArray(mUserData.positionLoc);
+    glDisableVertexAttribArray(mUserData.texCoordLoc);
 
     eglSwapBuffers(mESContext->eglDisplay, mESContext->eglSurface);
 }
@@ -255,6 +312,14 @@ void GLShaderRGB::glDraw()
 void GLShaderRGB::shutdown()
 {
     // Delete texture object
+    glDeleteTextures(1, &mUserData.frontTexId);
+    glDeleteTextures(1, &mUserData.rearTexId);
+    glDeleteTextures(1, &mUserData.leftTexId);
+    glDeleteTextures(1, &mUserData.rightTexId);
+
+    glDeleteTextures(1, &mUserData.maskTexId);
+    glDeleteTextures(1, &mUserData.lutHorTexId);
+    glDeleteTextures(1, &mUserData.lutVerTexId);
 
     GLShader::shutdown();
 }
