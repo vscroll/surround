@@ -5,9 +5,9 @@
 #include <string.h>
 #include "esUtil.h"
 #include "ogldev_util.h"
-#include "panorama_yuv_hor.lut"
-#include "panorama_yuv_ver.lut"
-#include "panorama_yuv_mask.lut"
+
+#define PANORAMA_WIDTH 424
+#define PANORAMA_HEIGHT 600
 
 #define TEST 0
 
@@ -48,6 +48,50 @@ const char* GLShaderYUV::getFragShader()
 
 int GLShaderYUV::initConfig()
 {
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return -1;
+    }
+
+    cv::Mat lookupTabHor;
+    cv::Mat lookupTabVer;
+    cv::Mat mask;
+
+    char algoCfgPathName[1024] = {0};
+    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_1.xml", procPath);
+       cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
+       fs["Map_1"] >> lookupTabHor;
+       fs["Map_2"] >> lookupTabVer;
+       fs["Mask"] >> mask;
+       fs.release();
+
+    std::cout << "GLShaderYUV::initConfig"
+            << ", lookupTabHor:" << lookupTabHor.cols << "x" << lookupTabHor.rows << " type:" << lookupTabHor.type()
+            << std::endl;
+    std::cout << "GLShaderYUV::initConfig"
+            << ", lookupTabVer:" << lookupTabVer.cols << "x" << lookupTabVer.rows << " type:" << lookupTabVer.type()
+            << std::endl;
+    std::cout << "GLShaderYUV::initConfig"
+            << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
+            << std::endl;
+
+    cv::Mat mat(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
+    for (int i = 0; i < mat.rows; i++)
+    {
+        for (int j = 0; j < mat.cols; j++)
+        {
+            mat.at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
+            mat.at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
+            mat.at<float>(i, j+2) = mask.ptr<float>(i)[j];
+        }
+    }
+    mLutAll = mat;
+
+    std::cout << "GLShaderYUV::initConfig"
+            << ", mLutAll:" << mLutAll.cols << "x" << mLutAll.rows << " type:" << lookupTabHor.type()
+            << std::endl;
+
     return 0;
 }
 
@@ -120,9 +164,7 @@ void GLShaderYUV::initTexture()
     mUserData.rightYLoc = glGetUniformLocation(mProgramObject, "s_rightY");
     mUserData.rightUVLoc = glGetUniformLocation(mProgramObject, "s_rightUV");
 
-    mUserData.maskLoc = glGetUniformLocation(mProgramObject, "s_mask");
-    mUserData.lutHorLoc = glGetUniformLocation(mProgramObject, "s_lutHor");
-    mUserData.lutVerLoc = glGetUniformLocation(mProgramObject, "s_lutVer");
+    mUserData.lutLoc = glGetUniformLocation(mProgramObject, "s_lut");
 
 
     glGenTextures(1, &mUserData.frontYTexId);
@@ -134,9 +176,7 @@ void GLShaderYUV::initTexture()
     glGenTextures(1, &mUserData.rightYTexId);
     glGenTextures(1, &mUserData.rightUVTexId);
 
-    glGenTextures(1, &mUserData.maskTexId);
-    glGenTextures(1, &mUserData.lutHorTexId);
-    glGenTextures(1, &mUserData.lutVerTexId);
+    glGenTextures(1, &mUserData.lutTexId);
 
     glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -187,22 +227,8 @@ void GLShaderYUV::initTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     //lut
-    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, mask);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutHor);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 424, 600, 0, GL_RED, GL_FLOAT, lutVer);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll.data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -380,16 +406,8 @@ void GLShaderYUV::glDraw()
 
     //lut
     glActiveTexture(GL_TEXTURE8);
-    glBindTexture(GL_TEXTURE_2D, mUserData.maskTexId);
-    glUniform1i(mUserData.maskLoc, 8);
-
-    glActiveTexture(GL_TEXTURE9);
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutHorTexId);
-    glUniform1i(mUserData.lutHorLoc, 9);
-
-    glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_2D, mUserData.lutVerTexId);
-    glUniform1i(mUserData.lutVerLoc, 10);
+    glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
+    glUniform1i(mUserData.lutLoc, 8);
 
     GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
     glDrawElements ( GL_TRIANGLES, sizeof(indices)/sizeof(GLushort), GL_UNSIGNED_SHORT, indices );
@@ -412,23 +430,8 @@ void GLShaderYUV::shutdown()
     glDeleteTextures(1, &mUserData.rightYTexId);
     glDeleteTextures(1, &mUserData.rightUVTexId);
 
-    glDeleteTextures(1, &mUserData.maskTexId);
-    glDeleteTextures(1, &mUserData.lutHorTexId);
-    glDeleteTextures(1, &mUserData.lutVerTexId);
+    glDeleteTextures(1, &mUserData.lutTexId);
 
     GLShader::shutdown();
-}
-
-GLboolean GLShaderYUV::loadTexture(GLuint textureId, unsigned char *buffer, int width, int height)
-{
-    glBindTexture(GL_TEXTURE_2D, textureId);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, buffer);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    return TRUE;
 }
 

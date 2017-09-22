@@ -2,6 +2,7 @@
 #define GLSHADERRGB_H
 
 #include <time.h>
+#include <opencv/cv.h>
 #include "common.h"
 #include "glshader.h"
 
@@ -21,7 +22,6 @@ public:
     virtual void shutdown();
 
 private:
-    GLboolean loadTexture(GLuint textureId, unsigned char *buffer, int width, int height);
     void drawOnce();
     void glDraw();
 
@@ -38,9 +38,7 @@ private:
         GLint leftLoc;
         GLint rightLoc;
 
-        GLint maskLoc;
-        GLint lutHorLoc;
-        GLint lutVerLoc;
+        GLint lutLoc;
 
         // Texture handle
         GLuint frontTexId;
@@ -48,9 +46,7 @@ private:
         GLuint leftTexId;
         GLuint rightTexId;
 
-        GLuint maskTexId;
-        GLuint lutHorTexId;
-        GLuint lutVerTexId;
+        GLuint lutTexId;
 
     } UserData;
 
@@ -58,6 +54,8 @@ private:
 
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
+
+    cv::Mat mLutAll;
 
     clock_t mLastCallTime;
 };

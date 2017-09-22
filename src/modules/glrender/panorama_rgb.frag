@@ -15,9 +15,7 @@ uniform sampler2D s_front;
 uniform sampler2D s_rear;
 uniform sampler2D s_left;
 uniform sampler2D s_right;
-uniform sampler2D s_mask;
-uniform sampler2D s_lutHor;
-uniform sampler2D s_lutVer;
+uniform sampler2D s_lut;
 
 out vec4 o_fragColor;
 
@@ -35,10 +33,7 @@ vec2 lutIndex2TextureCoord(int index)
 
 void main()
 {
-    mediump vec4 mask;
-    mediump vec4 lut_hor;
-    mediump vec4 lut_ver;
-
+    mediump vec4 v_lut;
     lowp vec4 rgb;
 
     int x_screen = int(gl_FragCoord.x);
@@ -52,18 +47,15 @@ void main()
         float lut_t = float(y_panoram)/float(panorama_height);
         vec2 lut_texCoord = vec2(lut_s, lut_t);
 
-        mask = texture(s_mask, lut_texCoord);
-        lut_hor = texture(s_lutHor, lut_texCoord);
-        lut_ver = texture(s_lutVer, lut_texCoord);
-
-        int select_num = int(mask.r);
-        float alpha = mask.r - float(select_num);
+        v_lut = texture(s_lut, lut_texCoord);
+        int select_num = int(v_lut.b);
+        float alpha = v_lut.b - float(select_num);
 
         switch (select_num)
         {
             case 1:
             {
-                int index = int(lut_hor.r);
+                int index = int(v_lut.r);
                 if (index < image_size)
                 {
                     vec2 texCoord = lutIndex2TextureCoord(index);
@@ -73,8 +65,8 @@ void main()
             }
             case 2:
             {
-                int index1 = int(lut_hor.r);
-                int index2 = int(lut_ver.r);
+                int index1 = int(v_lut.r);
+                int index2 = int(v_lut.g);
                 if (index1 < image_size && index2 < image_size)
                 {
                     vec2 texCoord1 = lutIndex2TextureCoord(index1);
@@ -89,7 +81,7 @@ void main()
             }
             case 3:
             {
-                int index = int(lut_ver.r);
+                int index = int(v_lut.g);
                 if (index < image_size)
                 {
                     vec2 texCoord = lutIndex2TextureCoord(index);
@@ -99,8 +91,8 @@ void main()
             }
             case 4:
             {
-                int index1 = int(lut_hor.r);
-                int index2 = int(lut_ver.r);
+                int index1 = int(v_lut.r);
+                int index2 = int(v_lut.g);
                 if (index1 < image_size && index2 < image_size)
                 {
                     vec2 texCoord1 = lutIndex2TextureCoord(index1);
@@ -115,7 +107,7 @@ void main()
             }
             case 5:
             {
-                int index = int(lut_hor.r);
+                int index = int(v_lut.r);
                 if (index < image_size)
                 {
                     vec2 texCoord = lutIndex2TextureCoord(index);
@@ -125,8 +117,8 @@ void main()
             }
             case 6:
             {
-                int index1 = int(lut_hor.r);
-                int index2 = int(lut_ver.r);
+                int index1 = int(v_lut.r);
+                int index2 = int(v_lut.g);
                 if (index1 < image_size && index2 < image_size)
                 {
                     vec2 texCoord1 = lutIndex2TextureCoord(index1);
@@ -141,7 +133,7 @@ void main()
             }
             case 7:
             {
-                int index = int(lut_ver.r);
+                int index = int(v_lut.g);
                 if (index < image_size)
                 {
                     vec2 texCoord = lutIndex2TextureCoord(index);
@@ -151,8 +143,8 @@ void main()
             }
             case 8:
             {
-                int index1 = int(lut_hor.r);
-                int index2 = int(lut_ver.r);
+                int index1 = int(v_lut.r);
+                int index2 = int(v_lut.g);
                 if (index1 < image_size && index2 < image_size)
                 {
                     vec2 texCoord1 = lutIndex2TextureCoord(index1);

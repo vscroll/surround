@@ -22,7 +22,6 @@ public:
     virtual void shutdown();
 
 private:
-    GLboolean loadTexture(GLuint textureId, unsigned char *buffer, int width, int height);
     void drawOnce();
     void glDraw();
 
@@ -43,9 +42,7 @@ private:
         GLint rightYLoc;
         GLint rightUVLoc;
 
-        GLint maskLoc;
-        GLint lutHorLoc;
-        GLint lutVerLoc;
+        GLint lutLoc;
 
         // Texture handle(Y,U,V)
         GLuint frontYTexId;
@@ -57,9 +54,7 @@ private:
         GLuint rightYTexId;
         GLuint rightUVTexId;
 
-        GLuint maskTexId;
-        GLuint lutHorTexId;
-        GLuint lutVerTexId;
+        GLuint lutTexId;
 
     } UserData;
 
@@ -67,6 +62,8 @@ private:
 
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
+
+    cv::Mat mLutAll;
 
     clock_t mLastCallTime;
 };
