@@ -190,7 +190,12 @@ void GLShaderYUV::updateFocusChannel()
 
 void GLShaderYUV::updatePanoramaView()
 {
+    if (++mPanoramaView > PANORAMA_VIEW_NUM)
+    {
+        mPanoramaView = PANORAMA_VIEW_BIRD;
+    }
 
+    loadLut(mPanoramaView);
 }
 
 void GLShaderYUV::draw()
@@ -365,6 +370,7 @@ void GLShaderYUV::glDraw()
     //lut
     glActiveTexture(GL_TEXTURE8);
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
     glUniform1i(mUserData.lutLoc, 8);
 
     GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
