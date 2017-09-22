@@ -21,9 +21,14 @@ public:
     virtual void draw();
     virtual void shutdown();
 
+    virtual void updateFocusChannel();
+    virtual void updatePanoramaView();
+
 private:
     void drawOnce();
     void glDraw();
+
+    void loadLut(int index);
 
 private:
     typedef struct
@@ -54,8 +59,9 @@ private:
 
     ICapture* mCapture;
     unsigned int mFocusChannelIndex;
+    unsigned int mPanoramaView;
 
-    cv::Mat mLutAll;
+    cv::Mat* mLutAll;
 
     clock_t mLastCallTime;
 };

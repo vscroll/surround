@@ -52,6 +52,16 @@ void GLRenderImpl::setXViewRect(unsigned int left,
     mWorker->setXViewRect(left, top, width, height);
 }
 
+void GLRenderImpl::updateFocusChannel()
+{
+    mWorker->updateFocusChannel();
+}
+
+void GLRenderImpl::updatePanoramaView()
+{
+    mWorker->updatePanoramaView();
+}
+
 int GLRenderImpl::init(ICapture* capture)
 {
     if (NULL == mWorker)

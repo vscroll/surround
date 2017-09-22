@@ -235,6 +235,16 @@ void GLShaderYUV::initTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
+void GLShaderYUV::updateFocusChannel()
+{
+
+}
+
+void GLShaderYUV::updatePanoramaView()
+{
+
+}
+
 void GLShaderYUV::draw()
 {
     while (true)

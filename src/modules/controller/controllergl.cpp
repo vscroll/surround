@@ -51,3 +51,27 @@ void ControllerGL::stopGLRenderModule()
         mGLRender = NULL;
     }  
 }
+
+void ControllerGL::procEvent(int event)
+{
+    if (NULL == mGLRender)
+    {
+        return;
+    }
+
+    switch (event)
+    {
+        case EVENT_UPDATE_FOCUS_CHANNEL:
+        {
+            mGLRender->updateFocusChannel();
+            break;
+        }
+        case EVENT_UPDATE_PANORAMA_VIEW:
+        {
+            mGLRender->updatePanoramaView();
+            break;
+        }            
+        default:
+            break;
+    }
+}

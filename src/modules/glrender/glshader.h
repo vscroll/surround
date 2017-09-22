@@ -18,6 +18,9 @@ public:
     virtual void initTexture() = 0;
     virtual void draw() = 0;
     virtual void shutdown();
+
+    virtual void updateFocusChannel() = 0;
+    virtual void updatePanoramaView() = 0;
 private:
     GLuint LoadProgram(unsigned char *buf, int length);
 

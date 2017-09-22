@@ -59,6 +59,22 @@ void GLRenderWorker::setXViewRect(unsigned int left,
 
 }
 
+void GLRenderWorker::updateFocusChannel()
+{
+    if (NULL != mShader)
+    {
+        mShader->updateFocusChannel();
+    }
+}
+
+void GLRenderWorker::updatePanoramaView()
+{
+    if (NULL != mShader)
+    {
+        mShader->updatePanoramaView();
+    }
+}
+
 int GLRenderWorker::init(ICapture* capture)
 {
     if (NULL == mWindow)

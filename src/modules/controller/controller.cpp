@@ -19,22 +19,21 @@
 class InputEventWorker : public WrapThread
 {
 public:
-    InputEventWorker(ICapture* capture, unsigned int focusChannelIndex);
+    InputEventWorker(Controller* controller);
     virtual ~InputEventWorker();
 
 public:
     virtual void run();
 
 private:
-    ICapture* mCapture;
+    Controller* mController;
     unsigned int mFocusChannelIndex;
     int mEventFd;
 };
 
-InputEventWorker::InputEventWorker(ICapture* capture, unsigned int focusChannelIndex)
+InputEventWorker::InputEventWorker(Controller* controller)
 {
-    mCapture = capture;
-    mFocusChannelIndex = focusChannelIndex;
+    mController = controller;
     mEventFd = -1;
 }
 
@@ -49,7 +48,7 @@ InputEventWorker::~InputEventWorker()
 
 void InputEventWorker::run()
 {
-    if (NULL == mCapture)
+    if (NULL == mController)
     {
         return;
     }
@@ -84,21 +83,38 @@ void InputEventWorker::run()
         usleep(100);
     }
 
+    int x = -1;
+    int y = -1;
+
     int rd = read(mEventFd, event, sizeof(struct input_event) * 64);
     if (rd >= (int) sizeof(struct input_event))
     {
         for (int i = 0; i < rd / sizeof(struct input_event); i++)
         {
+            if (event[i].type == EV_ABS
+                && event[i].code == ABS_MT_POSITION_X)
+            {
+                x = event[i].value;
+            }
+
+            if (event[i].type == EV_ABS
+                && event[i].code == ABS_MT_POSITION_Y)
+            {
+                y = event[i].value;
+            }
+
             if (event[i].type == EV_KEY
                 && event[i].code == BTN_TOUCH
                 && event[i].value == 0)
             {
-                mFocusChannelIndex++;
-                if (mFocusChannelIndex >= VIDEO_CHANNEL_SIZE)
+                if (x >= 424 && y >= 0)
                 {
-                    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
+                    mController->procEvent(Controller::EVENT_UPDATE_FOCUS_CHANNEL);
                 }
-                mCapture->setFocusSource(mFocusChannelIndex, NULL);
+                else
+                {
+                    mController->procEvent(Controller::EVENT_UPDATE_PANORAMA_VIEW);
+                }
                 break;
             }
         }
@@ -371,7 +387,7 @@ int Controller::startInputEventModule()
         return -1;
     }
 
-    mInputEventWorker = new InputEventWorker(mCapture, VIDEO_CHANNEL_FRONT);
+    mInputEventWorker = new InputEventWorker(this);
     mInputEventWorker->start(15);
 
     return 0;
@@ -385,5 +401,8 @@ void Controller::stopInputEventModule()
         delete mInputEventWorker;
         mInputEventWorker = NULL;
     }
+}
 
+void Controller::procEvent(int event)
+{
 }

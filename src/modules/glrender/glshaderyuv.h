@@ -21,6 +21,9 @@ public:
     virtual void draw();
     virtual void shutdown();
 
+    virtual void updateFocusChannel();
+    virtual void updatePanoramaView();
+
 private:
     void drawOnce();
     void glDraw();

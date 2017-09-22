@@ -13,6 +13,7 @@ public:
     int startGLRenderModule();   
     void stopGLRenderModule();
 
+    virtual void procEvent(int event);
 private:
     IGLRender* mGLRender;
 };

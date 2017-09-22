@@ -11,8 +11,14 @@ class InputEventWorker;
 class Controller
 {
 public:
+    static const int EVENT_UPDATE_FOCUS_CHANNEL = 0;
+    static const int EVENT_UPDATE_PANORAMA_VIEW = 1;
+
+public:
     Controller();
     virtual ~Controller();
+
+    virtual void procEvent(int event);
 
     int initConfigModule();
     void uninitConfigModule();
@@ -22,6 +28,7 @@ public:
 
     int startInputEventModule();
     void stopInputEventModule();
+
 protected:
     IConfig* mConfig;
     ICapture* mCapture;

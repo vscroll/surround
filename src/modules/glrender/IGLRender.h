@@ -27,6 +27,10 @@ public:
         unsigned int top,
         unsigned int width,
         unsigned int height) = 0;
+
+    virtual void updateFocusChannel() = 0;
+    virtual void updatePanoramaView() = 0;
+
     virtual int init(ICapture* capture) = 0;
     virtual int start(unsigned int fps) = 0;
     virtual void stop() = 0;
