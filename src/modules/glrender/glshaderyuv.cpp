@@ -6,9 +6,6 @@
 #include "esUtil.h"
 #include "ogldev_util.h"
 
-#define PANORAMA_WIDTH 424
-#define PANORAMA_HEIGHT 600
-
 #define TEST 0
 
 #if TEST
@@ -44,55 +41,6 @@ const char* GLShaderYUV::getFragShader()
     ReadFile("panorama_yuv.frag", gFShaderStr);
     //std::cout << gFShaderStr << std::endl;
     return gFShaderStr.c_str();
-}
-
-int GLShaderYUV::initConfig()
-{
-    char procPath[1024] = {0};
-    if (Util::getAbsolutePath(procPath, 1024) < 0)
-    {
-        return -1;
-    }
-
-    cv::Mat lookupTabHor;
-    cv::Mat lookupTabVer;
-    cv::Mat mask;
-
-    char algoCfgPathName[1024] = {0};
-    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_1.xml", procPath);
-       cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
-       fs["Map_1"] >> lookupTabHor;
-       fs["Map_2"] >> lookupTabVer;
-       fs["Mask"] >> mask;
-       fs.release();
-
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabHor:" << lookupTabHor.cols << "x" << lookupTabHor.rows << " type:" << lookupTabHor.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabVer:" << lookupTabVer.cols << "x" << lookupTabVer.rows << " type:" << lookupTabVer.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
-            << std::endl;
-
-    cv::Mat mat(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
-    for (int i = 0; i < mat.rows; i++)
-    {
-        for (int j = 0; j < mat.cols; j++)
-        {
-            mat.at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
-            mat.at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
-            mat.at<float>(i, j+2) = mask.ptr<float>(i)[j];
-        }
-    }
-    mLutAll = mat;
-
-    std::cout << "GLShaderYUV::initConfig"
-            << ", mLutAll:" << mLutAll.cols << "x" << mLutAll.rows << " type:" << lookupTabHor.type()
-            << std::endl;
-
-    return 0;
 }
 
 void GLShaderYUV::initVertex()
@@ -228,7 +176,7 @@ void GLShaderYUV::initTexture()
 
     //lut
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

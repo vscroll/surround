@@ -14,11 +14,77 @@ GLShader::GLShader(ESContext* context, const std::string programBinaryFile)
     mESContext = context;
     mProgramBinaryFile.assign(programBinaryFile);
     mProgramObject = -1;
+
+    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
+    mPanoramaView = PANORAMA_VIEW_BIRD;
+
+    mLutAll = NULL;
 }
 
 GLShader::~GLShader()
 {
 
+}
+
+int GLShader::initConfig()
+{
+    loadLut(mPanoramaView);
+    return 0;
+}
+
+void GLShader::loadLut(int index)
+{
+    char procPath[1024] = {0};
+    if (Util::getAbsolutePath(procPath, 1024) < 0)
+    {
+        return;
+    }
+
+    cv::Mat lookupTabHor;
+    cv::Mat lookupTabVer;
+    cv::Mat mask;
+
+    char algoCfgPathName[1024] = {0};
+    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_%d.xml", procPath, index);
+    cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
+    fs["Map_1"] >> lookupTabHor;
+    fs["Map_2"] >> lookupTabVer;
+    fs["Mask"] >> mask;
+    fs.release();
+
+    std::cout << "GLShader::initConfig:"
+            << algoCfgPathName
+            << std::endl;
+    std::cout << "GLShader::initConfig"
+            << ", lookupTabHor:" << lookupTabHor.cols << "x" << lookupTabHor.rows << " type:" << lookupTabHor.type()
+            << std::endl;
+    std::cout << "GLShader::initConfig"
+            << ", lookupTabVer:" << lookupTabVer.cols << "x" << lookupTabVer.rows << " type:" << lookupTabVer.type()
+            << std::endl;
+    std::cout << "GLShader::initConfig"
+            << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
+            << std::endl;
+
+    if (NULL == mLutAll)
+    {
+        delete mLutAll;
+        mLutAll = NULL;
+    }
+
+    mLutAll = new cv::Mat(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
+    for (int i = 0; i < mLutAll->rows; i++)
+    {
+        for (int j = 0; j < mLutAll->cols; j++)
+        {
+            mLutAll->at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
+            mLutAll->at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
+            mLutAll->at<float>(i, j+2) = mask.ptr<float>(i)[j];
+        }
+    }
+
+    std::cout << "GLShader::initConfig"
+            << ", mLutAll:" << mLutAll->cols << "x" << mLutAll->rows << " type:" << mLutAll->type()
+            << std::endl;
 }
 
 GLuint GLShader::LoadProgram(unsigned char *buf, int length)

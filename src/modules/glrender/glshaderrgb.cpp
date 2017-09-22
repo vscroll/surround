@@ -6,12 +6,6 @@
 #include <string.h>
 #include "ogldev_util.h"
 
-#define PANORAMA_WIDTH 424
-#define PANORAMA_HEIGHT 600
-
-#define PANORAMA_VIEW_NUM_REAR 1
-#define PANORAMA_VIEW_NUM 16
-
 #if 0
 static const char gVShaderStr[] =  
     "attribute vec4 a_position;     \n"
@@ -46,11 +40,6 @@ GLShaderRGB::GLShaderRGB(ESContext* context, const std::string programBinaryFile
 {
     mCapture = capture;
 
-    mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
-    mPanoramaView = PANORAMA_VIEW_NUM_REAR;
-
-    mLutAll = NULL;
-
     mLastCallTime = 0;
 }
 
@@ -71,67 +60,6 @@ const char* GLShaderRGB::getFragShader()
     ReadFile("panorama_rgb.frag", gFShaderStr);
     //std::cout << gFShaderStr << std::endl;
     return gFShaderStr.c_str();
-}
-
-int GLShaderRGB::initConfig()
-{
-    loadLut(PANORAMA_VIEW_NUM_REAR);
-    return 0;
-}
-
-void GLShaderRGB::loadLut(int index)
-{
-    char procPath[1024] = {0};
-    if (Util::getAbsolutePath(procPath, 1024) < 0)
-    {
-        return;
-    }
-
-    cv::Mat lookupTabHor;
-    cv::Mat lookupTabVer;
-    cv::Mat mask;
-
-    char algoCfgPathName[1024] = {0};
-    sprintf(algoCfgPathName, "%s/calibration/Lut_ChannelY_View_%d.xml", procPath, index);
-    cv::FileStorage fs(algoCfgPathName, cv::FileStorage::READ);
-    fs["Map_1"] >> lookupTabHor;
-    fs["Map_2"] >> lookupTabVer;
-    fs["Mask"] >> mask;
-    fs.release();
-
-    std::cout << "GLShaderYUV::initConfig:"
-            << algoCfgPathName
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabHor:" << lookupTabHor.cols << "x" << lookupTabHor.rows << " type:" << lookupTabHor.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", lookupTabVer:" << lookupTabVer.cols << "x" << lookupTabVer.rows << " type:" << lookupTabVer.type()
-            << std::endl;
-    std::cout << "GLShaderYUV::initConfig"
-            << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
-            << std::endl;
-
-    if (NULL == mLutAll)
-    {
-        delete mLutAll;
-        mLutAll = NULL;
-    }
-
-    mLutAll = new cv::Mat(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
-    for (int i = 0; i < mLutAll->rows; i++)
-    {
-        for (int j = 0; j < mLutAll->cols; j++)
-        {
-            mLutAll->at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
-            mLutAll->at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
-            mLutAll->at<float>(i, j+2) = mask.ptr<float>(i)[j];
-        }
-    }
-
-    std::cout << "GLShaderYUV::initConfig"
-            << ", mLutAll:" << mLutAll->cols << "x" << mLutAll->rows << " type:" << mLutAll->type()
-            << std::endl;
 }
 
 void GLShaderRGB::initVertex()
@@ -227,7 +155,7 @@ void GLShaderRGB::updatePanoramaView()
 {
     if (++mPanoramaView > PANORAMA_VIEW_NUM)
     {
-        mPanoramaView = PANORAMA_VIEW_NUM_REAR;
+        mPanoramaView = PANORAMA_VIEW_BIRD;
     }
 
     loadLut(mPanoramaView);

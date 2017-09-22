@@ -2,7 +2,6 @@
 #define GLSHADERRGB_H
 
 #include <time.h>
-#include <opencv/cv.h>
 #include "common.h"
 #include "glshader.h"
 
@@ -15,7 +14,6 @@ public:
 
     virtual const char* getVertShader();
     virtual const char* getFragShader();
-    virtual int initConfig();
     virtual void initVertex();
     virtual void initTexture();
     virtual void draw();
@@ -27,8 +25,6 @@ public:
 private:
     void drawOnce();
     void glDraw();
-
-    void loadLut(int index);
 
 private:
     typedef struct
@@ -58,10 +54,6 @@ private:
     UserData mUserData;
 
     ICapture* mCapture;
-    unsigned int mFocusChannelIndex;
-    unsigned int mPanoramaView;
-
-    cv::Mat* mLutAll;
 
     clock_t mLastCallTime;
 };
