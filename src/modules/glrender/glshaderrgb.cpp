@@ -6,6 +6,8 @@
 #include <string.h>
 #include "ogldev_util.h"
 
+#define DEBUG_STITCH 1
+
 #if 0
 static const char gVShaderStr[] =  
     "attribute vec4 a_position;     \n"
@@ -39,6 +41,8 @@ GLShaderRGB::GLShaderRGB(ESContext* context, const std::string programBinaryFile
 :GLShader(context, programBinaryFile)
 {
     mCapture = capture;
+
+    mUpdateLut = true;
 
     mLastCallTime = 0;
 }
@@ -139,7 +143,7 @@ void GLShaderRGB::initTexture()
 
     //lut
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -163,6 +167,7 @@ void GLShaderRGB::updatePanoramaView()
     //must run in single thread
     //glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+    mUpdateLut = true;
 }
 
 void GLShaderRGB::draw()
@@ -193,11 +198,11 @@ void GLShaderRGB::drawOnce()
 #if DEBUG_STITCH
     clock_t start1 = clock();
 #endif
-
+    long elapsed = 0;
     surround_images_t* surroundImage = mCapture->popOneFrame();
     if (NULL != surroundImage)
     {
-        long elapsed = Util::get_system_milliseconds() - surroundImage->timestamp;
+        elapsed = Util::get_system_milliseconds() - surroundImage->timestamp;
         if (elapsed < 400)
         {
             // bind the textures
@@ -208,52 +213,57 @@ void GLShaderRGB::drawOnce()
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_FRONT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
-            unsigned char front[width*height*3] = {0};
-            Util::yuyv_to_rgb24(width, height, buffer, front);
+            //unsigned char front[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, front);
             glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, front);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
-            unsigned char rear[width*height*3] = {0};
-            Util::yuyv_to_rgb24(width, height, buffer, rear);
+            //unsigned char rear[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, rear);
             glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rear);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
-            unsigned char left[width*height*3] = {0};
-            Util::yuyv_to_rgb24(width, height, buffer, left);
+            //unsigned char left[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, left);
             glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, left);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
-            unsigned char right[width*height*3] = {0};
-            Util::yuyv_to_rgb24(width, height, buffer, right);
+            //unsigned char right[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, right);
             glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, right);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
         }
 
         delete surroundImage;
         surroundImage = NULL;
     }
 
+#if DEBUG_STITCH
+    clock_t start2 = clock();
+#endif
     glDraw();
 
 #if DEBUG_STITCH
-    clock_t start2 = clock();
+    clock_t start3 = clock();
 #endif
 
 #if DEBUG_STITCH
 
-    std::cout << "GLRenderWorker::run"
+    std::cout << "GLShaderRGB::drawOnce"
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
-            << ", render:" << (double)(start2-start1)/CLOCKS_PER_SEC
+            << ", upload:" << (double)(start2-start1)/CLOCKS_PER_SEC
+            << ", render:" << (double)(start3-start2)/CLOCKS_PER_SEC
+            << ", total:" << (double)(start3-start1)/CLOCKS_PER_SEC
             << std::endl;
 #endif
 
@@ -283,7 +293,11 @@ void GLShaderRGB::glDraw()
     //lut
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+    if (mUpdateLut)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+        mUpdateLut = false;
+    }
     glUniform1i(mUserData.lutLoc, 4);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

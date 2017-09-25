@@ -16,6 +16,7 @@ public:
 	//sink
     virtual int getSinkWidth() = 0;
     virtual int getSinkHeight() = 0;
+    virtual int getSinkPixfmt() = 0;
 
 	//crop
     virtual int getSinkCropX(int channelIndex) = 0;
@@ -41,6 +42,7 @@ public:
 	//source
     virtual int getSourceWidth(int channelIndex) = 0;
     virtual int getSourceHeight(int channelIndex) = 0;
+    virtual int getSourcePixfmt() = 0;
 
     virtual int getFocusSourceWidth() = 0;
     virtual int getFocusSourceHeight() = 0;

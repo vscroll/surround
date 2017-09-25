@@ -6,6 +6,8 @@
 #include "esUtil.h"
 #include "ogldev_util.h"
 
+#define DEBUG_STITCH 1
+
 #define TEST 0
 
 #if TEST
@@ -309,10 +311,14 @@ void GLShaderYUV::drawOnce()
         surroundImage = NULL;
     }
 
+#if DEBUG_STITCH
+    clock_t start2 = clock();
+#endif
+
     glDraw();
 
 #if DEBUG_STITCH
-    clock_t start2 = clock();
+    clock_t start3 = clock();
 #endif
 
 #if DEBUG_STITCH
@@ -320,7 +326,9 @@ void GLShaderYUV::drawOnce()
     std::cout << "GLShaderYUV::drawOnce"
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
-            << ", render:" << (double)(start2-start1)/CLOCKS_PER_SEC
+            << ", upload:" << (double)(start2-start1)/CLOCKS_PER_SEC
+            << ", render:" << (double)(start3-start2)/CLOCKS_PER_SEC
+            << ", total:" << (double)(start3-start1)/CLOCKS_PER_SEC
             << std::endl;
 #endif
 

@@ -55,6 +55,8 @@ private:
 
     ICapture* mCapture;
 
+    bool mUpdateLut;
+
     clock_t mLastCallTime;
 };
 

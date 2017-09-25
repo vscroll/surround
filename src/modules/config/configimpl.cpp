@@ -1,6 +1,7 @@
 #include "configimpl.h"
 #include <stdio.h>
 #include "inifile.h"
+#include <linux/videodev2.h>
 
 #define SECTION_CAPTURE         "CAPTURE"
 #define CAPTURE_KEY_FRONTCHN    "FrontCHN"
@@ -12,6 +13,7 @@
 #define SECTION_SINK	        "SINK"
 #define SINK_KEY_SINKWIDTH   	"SinkWidth"
 #define SINK_KEY_SINKHEIGHT  	"SinkHeight"
+#define SINK_KEY_SINKPIXFMT  	"SinkPixfmt"
 
 #define SECTION_CROP	        "CROP"
 #define CROP_KEY_PREFIX       	"CHN"
@@ -46,6 +48,7 @@
 #define SOURCE_KEY_PREFIX       	"CHN"
 #define SOURCE_KEY_SUFFIX_WIDTH   	"Width"
 #define SOURCE_KEY_SUFFIX_HEIGHT	"Height"
+#define SOURCE_KEY_SOURCE_PIXFMT	"SourcePixfmt"
 #define SOURCE_KEY_CHN0WIDTH   		(SOURCE_KEY_PREFIX##"0"##SOURCE_KEY_SUFFIX_WIDTH)
 #define SOURCE_KEY_CHN0HEIGHT  		(SOURCE_KEY_PREFIX##"0"##SOURCE_KEY_SUFFIX_HEIGHT)
 #define SOURCE_KEY_CHN1WIDTH   		(SOURCE_KEY_PREFIX##"1"##SOURCE_KEY_SUFFIX_WIDTH)
@@ -82,6 +85,44 @@
 #define RENDER_KEY_PANOTOP      	"PanoTop"
 #define RENDER_KEY_PANOWIDTH    	"PanoWidth"
 #define RENDER_KEY_PANOHEIGHT   	"PanoHeight"
+
+/*
+#0:V4L2_PIX_FMT_YUYV
+#1:V4L2_PIX_FMT_UYVY
+#2:V4L2_PIX_FMT_RGB555
+#3:V4L2_PIX_FMT_RGB565
+#4:V4L2_PIX_FMT_RGB24
+#5:V4L2_PIX_FMT_BGR24
+*/
+static int getV4L2Pixfmt(int value)
+{
+    int pixfmt = V4L2_PIX_FMT_RGB24;
+    switch (value)
+    {
+        case 0:
+            pixfmt = V4L2_PIX_FMT_YUYV;
+            break;
+        case 1:
+            pixfmt = V4L2_PIX_FMT_UYVY;
+            break;
+        case 2:
+            pixfmt = V4L2_PIX_FMT_RGB555;
+            break;
+        case 3:
+            pixfmt = V4L2_PIX_FMT_RGB565;
+            break;
+        case 4:
+            pixfmt = V4L2_PIX_FMT_RGB24;
+            break;
+        case 5:
+            pixfmt = V4L2_PIX_FMT_BGR24;
+            break;
+        default:        
+            break;
+    }
+
+    return pixfmt;
+}
 
 ConfigImpl::ConfigImpl()
 {
@@ -168,6 +209,17 @@ int ConfigImpl::getSinkHeight()
     }
 
     return mIniFile->getInt(SECTION_SINK, SINK_KEY_SINKHEIGHT);
+}
+
+int ConfigImpl::getSinkPixfmt()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    int value = mIniFile->getInt(SECTION_SINK, SINK_KEY_SINKPIXFMT);
+    return getV4L2Pixfmt(value);
 }
 
 //crop
@@ -372,6 +424,17 @@ int ConfigImpl::getSourceHeight(int channelIndex)
 	char key[256] = {0};
 	sprintf(key, "%s%d%s", SOURCE_KEY_PREFIX, channelIndex, SOURCE_KEY_SUFFIX_HEIGHT);
     return mIniFile->getInt(SECTION_SOURCE, key);
+}
+
+int ConfigImpl::getSourcePixfmt()
+{
+    if (mIniFile == NULL)
+    {
+        return -1;
+    }
+
+    int value = mIniFile->getInt(SECTION_SOURCE, SOURCE_KEY_SOURCE_PIXFMT);
+    return getV4L2Pixfmt(value);
 }
 
 int ConfigImpl::getFocusSourceWidth()

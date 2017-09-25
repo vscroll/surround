@@ -24,8 +24,6 @@ CFLAGS			            = -DLINUX -DUSE_SOC_MX6 -Wall -O2 -fsigned-char -march=armv
 			                    -I$(TOPDIR)/src/util/thread \
 			                    -I$(TOPDIR)/src/util/v4l2 \
 			                    -I$(TOPDIR)/src/modules/capture \
-			                    -I$(TOPDIR)/src/util/shm \
-			                    -I$(TOPDIR)/src/modules/imageshm \
 			                    -I$(TOPDIR)/src/modules/controller \
 			                    -I$(TOPDIR)/src/modules/glrender \
 			                    -I$(TOPDIR)/src/util/ini \
@@ -45,8 +43,6 @@ SRCS 		                += $(wildcard $(TOPDIR)/src/util/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/thread/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/util/v4l2/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/capture/*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/util/shm/*.cpp)
-SRCS 		                += $(wildcard $(TOPDIR)/src/modules/imageshm/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/glrender/*.cpp)
 SRCS 		                += $(wildcard $(TOPDIR)/src/modules/config/*.cpp)
 SRCS                        += $(TOPDIR)/src/modules/controller/controller.cpp

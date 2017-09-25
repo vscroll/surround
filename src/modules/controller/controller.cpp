@@ -4,12 +4,9 @@
 #include "IConfig.h"
 #include "configimpl.h"
 #include "ICapture.h"
-#include "captureimpl.h"
 #include "capture1impl.h"
 #include "util.h"
 #include "v4l2.h"
-#include "focussourceshmwriteworker.h"
-#include "sourceshmwriteworker.h"
 #include "wrap_thread.h"
 #include <linux/input.h>
 #include <fcntl.h>
@@ -126,12 +123,6 @@ Controller::Controller()
     mConfig = NULL;
     mCapture = NULL;
     mInputEventWorker = NULL;
-
-    mFocusSourceSHMWriteWorker = NULL;
-    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        mSourceSHMWriteWorker[i] = NULL;
-    }
 }
 
 Controller::~Controller()
@@ -181,11 +172,7 @@ int Controller::startCaptureModule(bool enableSHM)
     int leftChn;
     int rightChn;
     if (mConfig->getChannelNo(&frontChn, &rearChn, &leftChn, &rightChn) < 0)
-    {    char procPath[1024] = {0};
-    if (Util::getAbsolutePath(procPath, 1024) < 0)
     {
-        return -1;
-    }
         return -1;
     }
 
@@ -207,11 +194,9 @@ int Controller::startCaptureModule(bool enableSHM)
 	            << std::endl;
 		return -1;
 	}
-    char procPath[1024] = {0};
-    if (Util::getAbsolutePath(procPath, 1024) < 0)
-    {
-        return -1;
-    }
+
+    int sinkPixfmt = mConfig->getSinkPixfmt();
+
 	//crop
 	int cropX[VIDEO_CHANNEL_SIZE];
 	int cropY[VIDEO_CHANNEL_SIZE];
@@ -272,6 +257,8 @@ int Controller::startCaptureModule(bool enableSHM)
 		}
 	}
 
+    int srcPixfmt = mConfig->getSourcePixfmt();
+
 	int focusSrcWidth = mConfig->getFocusSourceWidth();
 	int focusSrcHeight = mConfig->getFocusSourceHeight();
 	if (focusSrcWidth < 0
@@ -284,18 +271,14 @@ int Controller::startCaptureModule(bool enableSHM)
 		return -1;
 	}
 
-#if 0
-    mCapture = new CaptureImpl();
-#else
     mCapture = new Capture1Impl(VIDEO_CHANNEL_SIZE);
-#endif
 
     unsigned int channel[VIDEO_CHANNEL_SIZE] = {frontChn,rearChn,leftChn,rightChn};
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = V4L2_PIX_FMT_YUYV;
+        sink[i].pixfmt = sinkPixfmt;
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
@@ -305,7 +288,7 @@ int Controller::startCaptureModule(bool enableSHM)
         sink[i].crop_h = cropHeight[i];
 
         // source's pixfmt is same as sink
-        source[i].pixfmt = sink[i].pixfmt;
+        source[i].pixfmt = srcPixfmt;
         source[i].width = srcWidth[i];
         source[i].height = srcHeight[i];
         source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
@@ -322,7 +305,7 @@ int Controller::startCaptureModule(bool enableSHM)
     // focus source's pixfmt is same as source
     int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
-    focusSource.pixfmt = source[0].pixfmt;
+    focusSource.pixfmt = sink[0].pixfmt;
     focusSource.width = focusSrcWidth;
     focusSource.height = focusSrcHeight;
     focusSource.size = V4l2::getVideoSize(focusSource.pixfmt, focusSource.width, focusSource.height);
@@ -339,39 +322,11 @@ int Controller::startCaptureModule(bool enableSHM)
 
     mCapture->start(captureFPS);
 
-    if (enableSHM)
-    {
-        //focus source
-        mFocusSourceSHMWriteWorker = new FocusSourceSHMWriteWorker(mCapture);
-        mFocusSourceSHMWriteWorker->start(captureFPS);
-
-        //4 source
-        for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-        {
-            mSourceSHMWriteWorker[i] = new SourceSHMWriteWorker(mCapture, i);
-            mSourceSHMWriteWorker[i]->start(captureFPS);
-        }
-    }
-
     return 0;
 }
 
 void Controller::stopCaptureModule()
 {
-    for (unsigned int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
-    {
-        mSourceSHMWriteWorker[i]->stop();
-        delete mSourceSHMWriteWorker[i];
-        mSourceSHMWriteWorker[i] = NULL;
-    }
-
-    if (NULL != mFocusSourceSHMWriteWorker)
-    {
-        mFocusSourceSHMWriteWorker->stop();
-        delete mFocusSourceSHMWriteWorker;
-        mFocusSourceSHMWriteWorker = NULL;
-    }
-
     if (NULL != mCapture)
     {
         mCapture->stop();

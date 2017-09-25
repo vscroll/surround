@@ -6,6 +6,18 @@
 
 using namespace std;
 
+static std::string& trim(std::string &s)   
+{  
+    if (s.empty())   
+    {  
+        return s;  
+    }  
+  
+    s.erase(0,s.find_first_not_of(" "));  
+    s.erase(s.find_last_not_of(" ") + 1);  
+    return s;  
+} 
+
 CIniFile::CIniFile()
 {
     mFp = NULL;
@@ -38,9 +50,11 @@ int CIniFile::open(const char* path)
     while (fgets(line, LINE_LEN_MAX, mFp))
     {
         lineTmp.assign(line);
+        lineTmp = trim(lineTmp);
         if (lineTmp.compare("\n") == 0
             || lineTmp.compare("\r\n") == 0
-            || lineTmp.length() <= 2)
+            || lineTmp.length() <= 2
+            || lineTmp.at(0) == '#')
         {
             continue;
         }
