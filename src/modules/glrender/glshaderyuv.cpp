@@ -23,6 +23,8 @@ GLShaderYUV::GLShaderYUV(ESContext* context, const std::string programBinaryFile
 {
     mCapture = capture;
 
+    mUpdateLut = true;
+
     mLastCallTime = 0;
 }
 
@@ -178,7 +180,7 @@ void GLShaderYUV::initTexture()
 
     //lut
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -198,6 +200,8 @@ void GLShaderYUV::updatePanoramaView()
     }
 
     loadLut(mPanoramaView);
+
+    mUpdateLut = true;
 }
 
 void GLShaderYUV::draw()
@@ -253,64 +257,81 @@ void GLShaderYUV::drawOnce()
             unsigned char* buffer;
             int width;
             int height;
+            int pixfmt;
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_FRONT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
-            unsigned char y0[width*height] = {0};
-            unsigned char uv0[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y0, uv0);
-            glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y0);
+            pixfmt = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.pixfmt;
+            if (pixfmt == V4L2_PIX_FMT_YUYV)
+            {
+                unsigned char y0[width*height] = {0};
+                unsigned char uv0[width*height] = {0};
+                Util::yuyv_to_yuv(width, height, buffer, y0, uv0);
+                glBindTexture(GL_TEXTURE_2D, mUserData.frontYTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y0);
 
-            glBindTexture(GL_TEXTURE_2D, mUserData.frontUVTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv0);
-            //checkGlError("initTexture: load front image texture");
+                glBindTexture(GL_TEXTURE_2D, mUserData.frontUVTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv0);
+                //checkGlError("initTexture: load front image texture");
+            }
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
-            unsigned char y1[width*height] = {0};
-            unsigned char uv1[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y1, uv1);
-            glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y1);
+            pixfmt = surroundImage->frame[VIDEO_CHANNEL_REAR].info.pixfmt;
+            if (pixfmt == V4L2_PIX_FMT_YUYV)
+            {
+                unsigned char y1[width*height] = {0};
+                unsigned char uv1[width*height] = {0};
+                Util::yuyv_to_yuv(width, height, buffer, y1, uv1);
+                glBindTexture(GL_TEXTURE_2D, mUserData.rearYTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y1);
 
-            glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv1);
-            //checkGlError("initTexture: load rear image texture");  
+                glBindTexture(GL_TEXTURE_2D, mUserData.rearUVTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv1);
+                //checkGlError("initTexture: load rear image texture");  
+            }
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
-            unsigned char y2[width*height] = {0};
-            unsigned char uv2[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y2, uv2);
-            glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y2);
+            pixfmt = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.pixfmt;
+            if (pixfmt == V4L2_PIX_FMT_YUYV)
+            {
+                unsigned char y2[width*height] = {0};
+                unsigned char uv2[width*height] = {0};
+                Util::yuyv_to_yuv(width, height, buffer, y2, uv2);
+                glBindTexture(GL_TEXTURE_2D, mUserData.leftYTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y2);
 
-            glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv2);
-            //checkGlError("initTexture: load left image texture");
+                glBindTexture(GL_TEXTURE_2D, mUserData.leftUVTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv2);
+                //checkGlError("initTexture: load left image texture");
+            }
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
-            unsigned char y3[width*height] = {0};
-            unsigned char uv3[width*height] = {0};
-            Util::yuyv_to_yuv(width, height, buffer, y3, uv3);
-            glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y3);
+            pixfmt = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.pixfmt;
+            if (pixfmt == V4L2_PIX_FMT_YUYV)
+            {
+                unsigned char y3[width*height] = {0};
+                unsigned char uv3[width*height] = {0};
+                Util::yuyv_to_yuv(width, height, buffer, y3, uv3);
+                glBindTexture(GL_TEXTURE_2D, mUserData.rightYTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y3);
 
-            glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv3);
-            //checkGlError("initTexture: load right image texture");
+                glBindTexture(GL_TEXTURE_2D, mUserData.rightUVTexId);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width/2, height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, uv3);
+                //checkGlError("initTexture: load right image texture");
+            }
         }
 
         delete surroundImage;
         surroundImage = NULL;
     }
-
+    mUpdateLut = true;
 #if DEBUG_STITCH
     clock_t start2 = clock();
 #endif
@@ -378,7 +399,11 @@ void GLShaderYUV::glDraw()
     //lut
     glActiveTexture(GL_TEXTURE8);
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+    if (mUpdateLut)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll->data);
+        mUpdateLut = false;
+    }
     glUniform1i(mUserData.lutLoc, 8);
 
     GLushort indices[] = { 0, 1, 2, 1, 2, 3 };
