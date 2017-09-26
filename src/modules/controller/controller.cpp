@@ -4,9 +4,11 @@
 #include "IConfig.h"
 #include "configimpl.h"
 #include "ICapture.h"
+#include "captureimpl.h"
 #include "capture1impl.h"
 #include "util.h"
 #include "v4l2.h"
+#include "imxipu.h"
 #include "wrap_thread.h"
 #include <linux/input.h>
 #include <fcntl.h>
@@ -271,14 +273,18 @@ int Controller::startCaptureModule(bool enableSHM)
 		return -1;
 	}
 
+#if 0
+    mCapture = new CaptureImpl();
+#else
     mCapture = new Capture1Impl(VIDEO_CHANNEL_SIZE);
+#endif
 
     unsigned int channel[VIDEO_CHANNEL_SIZE] = {frontChn,rearChn,leftChn,rightChn};
     struct cap_sink_t sink[VIDEO_CHANNEL_SIZE];
     struct cap_src_t source[VIDEO_CHANNEL_SIZE];
     for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
     {
-        sink[i].pixfmt = sinkPixfmt;
+        sink[i].pixfmt = V4l2::getPixfmt(sinkPixfmt);
         sink[i].width = CAPTURE_VIDEO_RES_X;
         sink[i].height = CAPTURE_VIDEO_RES_Y;
         sink[i].size = V4l2::getVideoSize(sink[i].pixfmt, sink[i].width, sink[i].height);
@@ -287,8 +293,7 @@ int Controller::startCaptureModule(bool enableSHM)
         sink[i].crop_w = cropWidth[i];
         sink[i].crop_h = cropHeight[i];
 
-        // source's pixfmt is same as sink
-        source[i].pixfmt = srcPixfmt;
+        source[i].pixfmt = V4l2::getPixfmt(srcPixfmt);
         source[i].width = srcWidth[i];
         source[i].height = srcHeight[i];
         source[i].size = V4l2::getVideoSize(source[i].pixfmt, source[i].width, source[i].height);
@@ -302,10 +307,10 @@ int Controller::startCaptureModule(bool enableSHM)
         return -1;        
     }
 
-    // focus source's pixfmt is same as source
+    // focus source's pixfmt is same as sink
     int focusChannelIndex = VIDEO_CHANNEL_FRONT;
     struct cap_src_t focusSource;
-    focusSource.pixfmt = sink[0].pixfmt;
+    focusSource.pixfmt = V4l2::getPixfmt(sinkPixfmt);
     focusSource.width = focusSrcWidth;
     focusSource.height = focusSrcHeight;
     focusSource.size = V4l2::getVideoSize(focusSource.pixfmt, focusSource.width, focusSource.height);

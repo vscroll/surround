@@ -5,6 +5,7 @@
 #include <string.h>
 #include "esUtil.h"
 #include "ogldev_util.h"
+#include <linux/videodev2.h>
 
 #define DEBUG_STITCH 1
 

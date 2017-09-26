@@ -29,7 +29,9 @@ public:
     static void stoptCapture(int fd);
     static int readFrame(int fd, struct v4l2_buffer* buf, v4l2_memory mem_type);
     static void v4l2QueueBuf(int fd, struct v4l2_buffer* buf);
-    static int getVideoSize(unsigned int pixfmt, unsigned int width, unsigned int height);
+    static unsigned int getPixfmt(unsigned int pixfmt_index);
+    static unsigned int getIPUPixfmt(unsigned int v4l2_pixfmt);
+    static unsigned int getVideoSize(unsigned int v4l2_pixfmt, unsigned int width, unsigned int height);
 };
 
 #endif // V4L2_H

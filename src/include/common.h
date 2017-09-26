@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <linux/videodev2.h>
-
 #if DEBUG
 #define DEBUG_CAPTURE 1
 #define DEBUG_STITCH 1
@@ -12,6 +10,17 @@
 #define ACCEL_POLICY_CPU                0
 #define ACCEL_POLICY_OPENCL             1
 #define ACCEL_POLICY_OPENCL_RENDER      2
+
+#define PIXFMT_YUYV         0
+#define PIXFMT_UYVY         1
+#define PIXFMT_RGB555       2
+#define PIXFMT_RGB565       3
+#define PIXFMT_RGB24        4
+#define PIXFMT_BGR24        5
+#define PIXFMT_RGB32        6
+#define PIXFMT_BGR32        7
+#define PIXFMT_YUV422P      8
+#define PIXFMT_NV12         9
 
 #define V4L2_BUF_COUNT 1
 

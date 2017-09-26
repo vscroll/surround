@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <linux/ipu.h>
+#include "common.h"
 
 V4l2::V4l2()
 {
@@ -74,17 +75,33 @@ int V4l2::setVideoFmt(int fd, unsigned int pixfmt, unsigned int width, unsigned 
     struct v4l2_format fmt;
     memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.pixelformat = pixfmt;
-    fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-    fmt.fmt.pix.width = width;
-    fmt.fmt.pix.height = height;
-    int result = ioctl(fd, VIDIOC_S_FMT, &fmt);
+    int result = ioctl(fd, VIDIOC_G_FMT, &fmt);
     if (-1 == result)
     {
         std::cout << "V4l2::setVideoFmt"
-                 << ", setVideoFmt failed:" << fmt.fmt.pix.pixelformat
+                 << ", setVideoFmt failed"
+                 << ", pixfmt:" << fmt.fmt.pix.pixelformat
+                 << ", width:" << fmt.fmt.pix.width
+                 << ", height:" << fmt.fmt.pix.height
                  << ", errno:" << errno
-		 << std::endl;
+		         << std::endl;
+        return result;
+    }
+
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt.fmt.pix.pixelformat = pixfmt;
+    fmt.fmt.pix.width = width;
+    fmt.fmt.pix.height = height;
+    result = ioctl(fd, VIDIOC_S_FMT, &fmt);
+    if (-1 == result)
+    {
+        std::cout << "V4l2::setVideoFmt"
+                 << ", setVideoFmt failed. "
+                 << ", pixfmt:" << fmt.fmt.pix.pixelformat
+                 << ", width:" << fmt.fmt.pix.width
+                 << ", height:" << fmt.fmt.pix.height
+                 << ", errno:" << errno
+		         << std::endl;
     }
 
     return result;
@@ -286,23 +303,121 @@ void V4l2::v4l2QueueBuf(int fd, struct v4l2_buffer* buf)
     ioctl(fd, VIDIOC_QBUF, buf); //再将其入列
 }
 
-int V4l2::getVideoSize(unsigned int pixfmt, unsigned int width, unsigned int height)
+unsigned int V4l2::getPixfmt(unsigned int pixfmt_index)
 {
-    int size = 0;
-    switch (pixfmt)
+    unsigned int v4l2_pixfmt = PIXFMT_YUYV;
+    switch (pixfmt_index)
     {
-    case V4L2_PIX_FMT_UYVY:
-    case V4L2_PIX_FMT_YUYV:
-        size = width * height * 2;
-        break;
-    case V4L2_PIX_FMT_RGB24:
-    case V4L2_PIX_FMT_BGR24:
-        size = width * height * 3;
-        break;
-    default:
-        break;
+        case PIXFMT_YUYV:
+            v4l2_pixfmt = V4L2_PIX_FMT_YUYV;
+            break;
+        case PIXFMT_UYVY:
+            v4l2_pixfmt = V4L2_PIX_FMT_UYVY;
+            break;
+        case PIXFMT_RGB555:
+            v4l2_pixfmt = V4L2_PIX_FMT_RGB555;
+            break;
+        case PIXFMT_RGB565:
+            v4l2_pixfmt = V4L2_PIX_FMT_RGB565;
+            break;
+        case PIXFMT_RGB24:
+            v4l2_pixfmt = V4L2_PIX_FMT_RGB24;
+            break;
+        case PIXFMT_BGR24:
+            v4l2_pixfmt = V4L2_PIX_FMT_BGR24;
+            break;
+        case PIXFMT_RGB32:
+            v4l2_pixfmt = V4L2_PIX_FMT_RGB32;
+            break;
+        case PIXFMT_BGR32:
+            v4l2_pixfmt = V4L2_PIX_FMT_BGR32;
+            break;
+        case PIXFMT_YUV422P:
+            v4l2_pixfmt = V4L2_PIX_FMT_YUV422P;
+            break;
+        case PIXFMT_NV12:
+            v4l2_pixfmt = V4L2_PIX_FMT_NV12;
+            break;
+        default:
+            break;
     }
 
-    return size;
+    return v4l2_pixfmt;
+}
+
+unsigned int V4l2::getIPUPixfmt(unsigned int v4l2_pixfmt)
+{
+    unsigned int ipu_pixfmt = IPU_PIX_FMT_YUYV;
+    switch (v4l2_pixfmt)
+    {
+        case V4L2_PIX_FMT_YUYV:
+            ipu_pixfmt = IPU_PIX_FMT_YUYV;
+            break;
+        case V4L2_PIX_FMT_UYVY:
+            ipu_pixfmt = IPU_PIX_FMT_UYVY;
+            break;
+        case V4L2_PIX_FMT_RGB555:
+            ipu_pixfmt = IPU_PIX_FMT_RGB555;
+            break;
+        case V4L2_PIX_FMT_RGB565:
+            ipu_pixfmt = IPU_PIX_FMT_RGB565;
+            break;
+        case V4L2_PIX_FMT_RGB24:
+            ipu_pixfmt = IPU_PIX_FMT_RGB24;
+            break;
+        case V4L2_PIX_FMT_BGR24:
+            ipu_pixfmt = IPU_PIX_FMT_BGR24;
+            break;
+        case V4L2_PIX_FMT_RGB32:
+            ipu_pixfmt = IPU_PIX_FMT_RGB32;
+            break;
+        case V4L2_PIX_FMT_BGR32:
+            ipu_pixfmt = IPU_PIX_FMT_BGR32;
+            break;
+        case V4L2_PIX_FMT_YUV422P:
+            ipu_pixfmt = IPU_PIX_FMT_YUV420P;
+            break;
+        case V4L2_PIX_FMT_NV12:
+            ipu_pixfmt = IPU_PIX_FMT_NV12;
+            break;
+        default:
+            break;
+    }
+
+    return ipu_pixfmt;
+}
+
+unsigned int V4l2::getVideoSize(unsigned int v4l2_pixfmt, unsigned int width, unsigned int height)
+{
+    unsigned int bpp;
+
+    switch (v4l2_pixfmt)
+    {
+        case V4L2_PIX_FMT_RGB565:
+            /*interleaved 422*/
+        case V4L2_PIX_FMT_YUYV:
+        case V4L2_PIX_FMT_UYVY:
+            /*non-interleaved 422*/
+        case V4L2_PIX_FMT_YUV422P:
+            bpp = 16;
+            break;
+        case V4L2_PIX_FMT_BGR24:
+        case V4L2_PIX_FMT_RGB24:
+            bpp = 24;
+            break;
+        case V4L2_PIX_FMT_BGR32:
+        case V4L2_PIX_FMT_RGB32:
+            bpp = 32;
+            break;
+            /*non-interleaved 420*/
+        case V4L2_PIX_FMT_NV12:
+            bpp = 12;
+            break;
+        default:
+            bpp = 8;
+            break;
+    }
+
+    return width*height*bpp/8;
 }
 

@@ -196,7 +196,8 @@ void GLShaderRGB::drawOnce()
     }
 
 #if DEBUG_STITCH
-    clock_t start1 = clock();
+    clock_t start1 = 0;
+    clock_t start2 = 0;
 #endif
     long elapsed = 0;
     surround_images_t* surroundImage = mCapture->popOneFrame();
@@ -210,58 +211,51 @@ void GLShaderRGB::drawOnce()
             int width;
             int height;
             int pixfmt;
+            GLenum internalFormat;
+            GLenum format;
+            GLenum type;
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_FRONT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.pixfmt;
-            if (pixfmt == V4L2_PIX_FMT_RGB24
-                || pixfmt == V4L2_PIX_FMT_BGR24)
-            {
-                //unsigned char front[width*height*3] = {0};
-                //Util::yuyv_to_rgb24(width, height, buffer, front);
-                glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
-            }
+            //unsigned char front[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, front);
+            glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
+            getTexImageParam(pixfmt, &internalFormat, &format, &type);
+            start1 = clock();
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, buffer);
+            start2 = clock();
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_REAR].info.pixfmt;
-            if (pixfmt == V4L2_PIX_FMT_RGB24
-                || pixfmt == V4L2_PIX_FMT_BGR24)
-            {
-                //unsigned char rear[width*height*3] = {0};
-                //Util::yuyv_to_rgb24(width, height, buffer, rear);
-                glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
-            }
+            //unsigned char rear[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, rear);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
+            getTexImageParam(pixfmt, &internalFormat, &format, &type);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, buffer);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.pixfmt;
-            if (pixfmt == V4L2_PIX_FMT_RGB24
-                || pixfmt == V4L2_PIX_FMT_BGR24)
-            {
-                //unsigned char left[width*height*3] = {0};
-                //Util::yuyv_to_rgb24(width, height, buffer, left);
-                glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
-            }
+            //unsigned char left[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, left);
+            glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
+            getTexImageParam(pixfmt, &internalFormat, &format, &type);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, buffer);
 
             buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.pixfmt;
-            if (pixfmt == V4L2_PIX_FMT_RGB24
-                || pixfmt == V4L2_PIX_FMT_BGR24)
-            {
-                //unsigned char right[width*height*3] = {0};
-                //Util::yuyv_to_rgb24(width, height, buffer, right);
-                glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
-            }
+            //unsigned char right[width*height*3] = {0};
+            //Util::yuyv_to_rgb24(width, height, buffer, right);
+            glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
+            getTexImageParam(pixfmt, &internalFormat, &format, &type);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, buffer);
         }
 
         delete surroundImage;
@@ -269,12 +263,13 @@ void GLShaderRGB::drawOnce()
     }
 
 #if DEBUG_STITCH
-    clock_t start2 = clock();
+    clock_t start3 = clock();
 #endif
+
     glDraw();
 
 #if DEBUG_STITCH
-    clock_t start3 = clock();
+    clock_t start4 = clock();
 #endif
 
 #if DEBUG_STITCH
@@ -283,8 +278,8 @@ void GLShaderRGB::drawOnce()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
             << ", upload:" << (double)(start2-start1)/CLOCKS_PER_SEC
-            << ", render:" << (double)(start3-start2)/CLOCKS_PER_SEC
-            << ", total:" << (double)(start3-start1)/CLOCKS_PER_SEC
+            << ", render:" << (double)(start4-start3)/CLOCKS_PER_SEC
+            << ", total:" << (double)(start4-start1)/CLOCKS_PER_SEC
             << std::endl;
 #endif
 

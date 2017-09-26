@@ -180,6 +180,7 @@ void Capture1WorkerV4l2::run()
         if (buf.index < V4L2_BUF_COUNT)
         {
 			//enhance, convert, crop, resize
+            if(isNeedConvert(&mSink, &mSource))
             {            
                 // IPU can improve image quality, even though the source is same as the sink
                 //YUYV/YVYU/UYVY/VYUY:  in planes[0], buffer address is with 16bytes alignment.
@@ -192,7 +193,7 @@ void Capture1WorkerV4l2::run()
                 task.input.crop.pos.y = mSink.crop_y;
                 task.input.crop.w = mSink.crop_w;
                 task.input.crop.h = mSink.crop_h;
-                task.input.format = mSink.pixfmt;
+                task.input.format = V4l2::getIPUPixfmt(mSink.pixfmt);
                 task.input.deinterlace.enable = 1;
                 task.input.deinterlace.motion = 2;
 
@@ -202,7 +203,7 @@ void Capture1WorkerV4l2::run()
                 task.output.crop.pos.y = 0;
                 task.output.crop.w = mSource.width;
                 task.output.crop.h = mSource.height;
-                task.output.format = mSource.pixfmt;
+                task.output.format = V4l2::getIPUPixfmt(mSource.pixfmt);
 
                 task.input.paddr = (int)mV4l2Buf[buf.index].offset;
                 task.output.paddr = (int)mOutIPUBuf.offset;
@@ -256,8 +257,14 @@ void Capture1WorkerV4l2::run()
             surround_image->info.size = mSource.size;
             //surround_image->data = new unsigned char[mFocusSource.size];
             //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
-            //surround_image->data = mV4l2Buf[buf.index].start;
-            surround_image->data = mOutIPUBuf.start;         
+            if(isNeedConvert(&mSink, &mSource))
+            {
+                surround_image->data = mOutIPUBuf.start;
+            }
+            else
+            {
+                surround_image->data = mV4l2Buf[buf.index].start;
+            }        
 
             pthread_mutex_lock(&mMutexQueue);
             mSurroundImageQueue.push(surround_image);

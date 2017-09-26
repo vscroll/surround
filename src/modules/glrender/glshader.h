@@ -26,6 +26,8 @@ public:
 protected:
     void loadLut(int index);
 
+    void getTexImageParam(unsigned int v4l2Pixfmt, GLenum* internalFormat, GLenum* format, GLenum* type);
+
     static const int PANORAMA_WIDTH = 424;
     static const int PANORAMA_HEIGHT = 600;
 

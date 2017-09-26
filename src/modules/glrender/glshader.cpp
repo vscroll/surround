@@ -8,6 +8,7 @@
 #include "IGLRender.h"
 #include "ICapture.h"
 #include <GLES2/gl2ext.h>
+#include <linux/videodev2.h>
 
 GLShader::GLShader(ESContext* context, const std::string programBinaryFile)
 {
@@ -153,6 +154,43 @@ void GLShader::shutdown()
 {
     // Delete program object
     glDeleteProgram(mProgramObject);
+}
+
+void GLShader::getTexImageParam(unsigned int v4l2Pixfmt, GLenum* internalFormat, GLenum* format, GLenum* type)
+{
+    switch (v4l2Pixfmt)
+    {
+        case V4L2_PIX_FMT_RGB565:
+        {
+            *internalFormat = GL_RGB;
+            *format = GL_RGB;
+            *type = GL_UNSIGNED_SHORT_5_6_5;
+            break;
+        }
+        case V4L2_PIX_FMT_RGB32:
+        case V4L2_PIX_FMT_BGR32:
+        {
+            *internalFormat = GL_RGBA;
+            *format = GL_RGBA;
+            *type = GL_UNSIGNED_BYTE;
+            break;
+        }
+        case V4L2_PIX_FMT_RGB24:
+        case V4L2_PIX_FMT_BGR24:
+        {
+            *internalFormat = GL_RGB;
+            *format = GL_RGB;
+            *type = GL_UNSIGNED_BYTE;
+            break;
+        }
+        default:
+        {
+            *internalFormat = GL_RGB;
+            *format = GL_RGB;
+            *type = GL_UNSIGNED_BYTE;
+            break;
+        }
+     }
 }
 
 void GLShader::checkGlError(const char* op)   

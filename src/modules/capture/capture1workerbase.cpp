@@ -65,8 +65,10 @@ int Capture1WorkerBase::setFocusSource(struct cap_src_t* focusSource)
                 << " not support convert sink to source"
 				<< ", sink width:" << mSink.width
 				<< ", sink height:" << mSink.height
-				<< ", source width:" << focusSource->width
-				<< ", source height:" << focusSource->height
+				<< ", sink pixfmt:" << mSink.pixfmt
+				<< ", focus width:" << focusSource->width
+				<< ", focus height:" << focusSource->height
+				<< ", focus pixfmt:" << focusSource->pixfmt
                 << std::endl;
         return -1;
     }
