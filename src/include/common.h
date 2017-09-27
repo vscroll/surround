@@ -84,6 +84,7 @@ typedef struct surround_image_t {
     long timestamp;
     frame_info_t info;
     void* data;
+    unsigned int pAddr;
 } surround_image_t;
 
 typedef struct surround_images_t {

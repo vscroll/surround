@@ -6,8 +6,11 @@
 #include "esUtil.h"
 #include "ogldev_util.h"
 #include <linux/videodev2.h>
+#include <GLES2/gl2ext.h>
 
-#define DEBUG_STITCH 1
+#define GL_VIV_YUY2 0x8FC2
+
+//#define DEBUG_STITCH 1
 
 static std::string gVShaderStr;
 static std::string gFShaderStr;
@@ -168,9 +171,8 @@ void GLShaderYUYV::drawOnce()
         return;
     }
 
-#if DEBUG_STITCH
-    clock_t start1;
-    clock_t start2;
+#if DEBUG_STITCH 
+    start1 = clock();
 #endif
 
     long elapsed = 0;
@@ -181,51 +183,74 @@ void GLShaderYUYV::drawOnce()
         if (elapsed < 400)
         {
             // bind the textures
-            unsigned char* buffer;
+            void* buffer;
+            unsigned int pAddr;
             int width;
             int height;
             int pixfmt;
 
-            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_FRONT].data);
+            buffer = surroundImage->frame[VIDEO_CHANNEL_FRONT].data;
+            pAddr = surroundImage->frame[VIDEO_CHANNEL_FRONT].pAddr;
             width = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_FRONT].info.pixfmt;
             if (pixfmt == V4L2_PIX_FMT_YUYV)
             {
                 glBindTexture(GL_TEXTURE_2D, mUserData.frontTexId);
-                start1 = clock();
+#if 0
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width/2, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-                start2 = clock();
+#else
+                glTexDirectVIVMap (GL_TEXTURE_2D, width, height, GL_VIV_YUY2, &buffer, &pAddr);
+                glTexDirectInvalidateVIV (GL_TEXTURE_2D);
+#endif
             }
 
-            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_REAR].data);
+            buffer = surroundImage->frame[VIDEO_CHANNEL_REAR].data;
+            pAddr = surroundImage->frame[VIDEO_CHANNEL_REAR].pAddr;
             width = surroundImage->frame[VIDEO_CHANNEL_REAR].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_REAR].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_REAR].info.pixfmt;
             if (pixfmt == V4L2_PIX_FMT_YUYV)
             {
                 glBindTexture(GL_TEXTURE_2D, mUserData.rearTexId);
+#if 0
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width/2, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+#else
+                glTexDirectVIVMap (GL_TEXTURE_2D, width, height, GL_VIV_YUY2, &buffer, &pAddr);
+                glTexDirectInvalidateVIV (GL_TEXTURE_2D);
+#endif
             }
 
-            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_LEFT].data);
+            buffer = surroundImage->frame[VIDEO_CHANNEL_LEFT].data;
+            pAddr = surroundImage->frame[VIDEO_CHANNEL_LEFT].pAddr;
             width = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_LEFT].info.pixfmt;
             if (pixfmt == V4L2_PIX_FMT_YUYV)
             {
                 glBindTexture(GL_TEXTURE_2D, mUserData.leftTexId);
+#if 0
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width/2, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+#else
+                glTexDirectVIVMap (GL_TEXTURE_2D, width, height, GL_VIV_YUY2, &buffer, &pAddr);
+                glTexDirectInvalidateVIV (GL_TEXTURE_2D);
+#endif
             }
 
-            buffer = (unsigned char*)(surroundImage->frame[VIDEO_CHANNEL_RIGHT].data);
+            buffer = surroundImage->frame[VIDEO_CHANNEL_RIGHT].data;
+            pAddr = surroundImage->frame[VIDEO_CHANNEL_RIGHT].pAddr;
             width = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.width;
             height = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.height;
             pixfmt = surroundImage->frame[VIDEO_CHANNEL_RIGHT].info.pixfmt;
             if (pixfmt == V4L2_PIX_FMT_YUYV)
             {
                 glBindTexture(GL_TEXTURE_2D, mUserData.rightTexId);
+#if 0
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width/2, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+#else
+                glTexDirectVIVMap (GL_TEXTURE_2D, width, height, GL_VIV_YUY2, &buffer, &pAddr);
+                glTexDirectInvalidateVIV (GL_TEXTURE_2D);
+#endif
             }
         }
 
@@ -234,13 +259,13 @@ void GLShaderYUYV::drawOnce()
     }
     mUpdateLut = true;
 #if DEBUG_STITCH
-    clock_t start3 = clock();
+    clock_t start2 = clock();
 #endif
 
     glDraw();
 
 #if DEBUG_STITCH
-    clock_t start4 = clock();
+    clock_t start3 = clock();
 #endif
 
 #if DEBUG_STITCH
@@ -249,8 +274,8 @@ void GLShaderYUYV::drawOnce()
             << ", elapsed to last time:" << elapsed_to_last
             << ", elapsed to capture:" << (double)elapsed/1000
             << ", upload:" << (double)(start2-start1)/CLOCKS_PER_SEC
-            << ", render:" << (double)(start4-start3)/CLOCKS_PER_SEC
-            << ", total:" << (double)(start4-start1)/CLOCKS_PER_SEC
+            << ", render:" << (double)(start3-start2)/CLOCKS_PER_SEC
+            << ", total:" << (double)(start3-start1)/CLOCKS_PER_SEC
             << std::endl;
 #endif
 

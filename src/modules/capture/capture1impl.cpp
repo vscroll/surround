@@ -174,6 +174,7 @@ surround_images_t* Capture1Impl::popOneFrame()
         if (NULL != tmp)
         {
             pFrame->frame[i].data = tmp->data;
+            pFrame->frame[i].pAddr = tmp->pAddr;
             pFrame->frame[i].info.width = tmp->info.width;
             pFrame->frame[i].info.height = tmp->info.height;
             pFrame->frame[i].info.pixfmt = tmp->info.pixfmt;

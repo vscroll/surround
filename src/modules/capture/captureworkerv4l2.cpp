@@ -147,6 +147,7 @@ void CaptureWorkerV4l2::run()
 #endif
 
     void* image[VIDEO_CHANNEL_SIZE] = {NULL};
+    unsigned int image_pAddr[VIDEO_CHANNEL_SIZE] = {0};
     unsigned char flag = 1;
     long timestamp[VIDEO_CHANNEL_SIZE] = {0};
     for (unsigned int i = 0; i < mVideoChannelNum; ++i)
@@ -237,10 +238,12 @@ void CaptureWorkerV4l2::run()
                     if (isNeedConvert(&mSink[i], &mSource[i]))
                     {
                         surround_image->data = mOutIPUBuf[i].start;
+                        surround_image->pAddr = mOutIPUBuf[i].offset;
                     }
                     else
                     {
                         surround_image->data = mV4l2Buf[i][buf.index].start;
+                        surround_image->pAddr = mV4l2Buf[i][buf.index].offset;
                     }
 
                     pthread_mutex_lock(&mMutexFocusSourceQueue);
@@ -258,6 +261,7 @@ void CaptureWorkerV4l2::run()
                         mCaptureFrame4FocusSource.info.height = surround_image->info.height;
                         mCaptureFrame4FocusSource.info.size = surround_image->info.size;
                         mCaptureFrame4FocusSource.data = surround_image->data;
+                        mCaptureFrame4FocusSource.pAddr = surround_image->pAddr;
                     }
                 }
 
@@ -267,8 +271,16 @@ void CaptureWorkerV4l2::run()
                     flag = flag << 1;
                     //image[i] = new unsigned char[mSource[i].size];
                     //memcpy(image[i], (unsigned char*)mV4l2Buf[i][buf.index].start, mSource[i].size);
-                    //image[i] = mV4l2Buf[i][buf.index].start;
-                	image[i] = mOutIPUBuf[i].start;
+                    if (isNeedConvert(&mSink[i], &mSource[i]))
+                    {
+                	    image[i] = mOutIPUBuf[i].start;
+                        image_pAddr[i] = mOutIPUBuf[i].offset;
+                    }
+                    else
+                    {
+                        image[i] = mV4l2Buf[i][buf.index].start;
+                        image_pAddr[i] = mV4l2Buf[i][buf.index].offset;
+                    }
                 }
             }
         }
@@ -288,6 +300,7 @@ void CaptureWorkerV4l2::run()
             surroundImage->info.pixfmt = mSource[i].pixfmt;
             surroundImage->info.size = mSource[i].size;
             surroundImage->data = image[i];
+            surroundImage->pAddr = image_pAddr[i];
 
             pthread_mutex_lock(&mMutexQueue[i]);
             mSurroundImageQueue[i].push(surroundImage);

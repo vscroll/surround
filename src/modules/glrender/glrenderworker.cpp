@@ -14,7 +14,7 @@
 #include "glshaderrgb.h"
 
 //#define SHADER_PIXFMT PIXFMT_YUYV
-#define SHADER_PIXFMT PIXFMT_RGB24
+#define SHADER_PIXFMT PIXFMT_RGB32
 
 GLRenderWorker::GLRenderWorker()
 {
@@ -96,7 +96,7 @@ int GLRenderWorker::init(ICapture* capture)
 #if (SHADER_PIXFMT == PIXFMT_YUYV)
         mShader = new GLShaderYUYV(&mWindow->mESContext, "panorama_yuyv.prog", capture);
         //mShader = new GLShaderYUV(&mWindow->mESContext, "panorama_yuv.prog", capture);
-#elif (SHADER_PIXFMT == PIXFMT_RGB24)
+#elif (SHADER_PIXFMT == PIXFMT_RGB32)
         mShader = new GLShaderRGB(&mWindow->mESContext, "panorama_rgb.prog", capture);
 #else
 

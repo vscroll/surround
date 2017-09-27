@@ -227,6 +227,7 @@ void Capture1WorkerV4l2::run()
                 //surround_image->data = new unsigned char[mFocusSource.size];
                 //memcpy((unsigned char*)surround_image->data, (unsigned char*)mV4l2Buf[i][buf.index].start, mFocusSource.size);
 				surround_image->data = mV4l2Buf[buf.index].start;
+				surround_image->pAddr = mV4l2Buf[buf.index].offset;
                 //surround_image->data = mOutIPUBuf.start;
 
                 pthread_mutex_lock(&mMutexFocusSourceQueue);
@@ -244,6 +245,7 @@ void Capture1WorkerV4l2::run()
                     mCaptureFrame4FocusSource.info.height = surround_image->info.height;
                     mCaptureFrame4FocusSource.info.size = surround_image->info.size;
                     mCaptureFrame4FocusSource.data = surround_image->data;
+                    mCaptureFrame4FocusSource.pAddr = surround_image->pAddr;
                 }
             }
 
@@ -260,10 +262,12 @@ void Capture1WorkerV4l2::run()
             if(isNeedConvert(&mSink, &mSource))
             {
                 surround_image->data = mOutIPUBuf.start;
+                surround_image->pAddr = mOutIPUBuf.offset;
             }
             else
             {
                 surround_image->data = mV4l2Buf[buf.index].start;
+                surround_image->pAddr = mV4l2Buf[buf.index].offset;
             }        
 
             pthread_mutex_lock(&mMutexQueue);
