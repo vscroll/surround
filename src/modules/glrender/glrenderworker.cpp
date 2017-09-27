@@ -10,7 +10,11 @@
 #include "IGLRender.h"
 #include "glshader.h"
 #include "glshaderyuv.h"
+#include "glshaderyuyv.h"
 #include "glshaderrgb.h"
+
+//#define SHADER_PIXFMT PIXFMT_YUYV
+#define SHADER_PIXFMT PIXFMT_RGB24
 
 GLRenderWorker::GLRenderWorker()
 {
@@ -89,10 +93,13 @@ int GLRenderWorker::init(ICapture* capture)
 
     if (NULL == mShader)
     {
-#if 0
-        mShader = new GLShaderYUV(&mWindow->mESContext, "panorama_yuv.prog", capture);
-#else
+#if (SHADER_PIXFMT == PIXFMT_YUYV)
+        mShader = new GLShaderYUYV(&mWindow->mESContext, "panorama_yuyv.prog", capture);
+        //mShader = new GLShaderYUV(&mWindow->mESContext, "panorama_yuv.prog", capture);
+#elif (SHADER_PIXFMT == PIXFMT_RGB24)
         mShader = new GLShaderRGB(&mWindow->mESContext, "panorama_rgb.prog", capture);
+#else
+
 #endif
     }
 
