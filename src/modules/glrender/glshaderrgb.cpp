@@ -7,6 +7,8 @@
 #include "ogldev_util.h"
 #include <GLES2/gl2ext.h>
 
+//#define DEBUG_STITCH 1
+
 #if 0
 static const char gVShaderStr[] =  
     "attribute vec4 a_position;     \n"
@@ -195,7 +197,7 @@ void GLShaderRGB::drawOnce()
     }
 
 #if DEBUG_STITCH 
-    start1 = clock();
+    clock_t start1 = clock();
 #endif
 
     long elapsed = 0;
