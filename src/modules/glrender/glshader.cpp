@@ -19,7 +19,6 @@ GLShader::GLShader(ESContext* context, const std::string programBinaryFile)
     mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
     mPanoramaView = PANORAMA_VIEW_BIRD;
 
-    mLutAll = NULL;
 }
 
 GLShader::~GLShader()
@@ -66,25 +65,28 @@ void GLShader::loadLut(int index)
             << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
             << std::endl;
 
-    if (NULL != mLutAll)
+    if (!mLutAll.empty())
     {
-        delete mLutAll;
-        mLutAll = NULL;
+        mLutAll.release();
     }
 
-    mLutAll = new cv::Mat(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
-    for (int i = 0; i < mLutAll->rows; i++)
+    mLutAll.create(lookupTabHor.rows, lookupTabHor.cols, CV_32FC3);
+    for (int i = 0; i < mLutAll.rows; i++)
     {
-        for (int j = 0; j < mLutAll->cols; j++)
+        for (int j = 0; j < mLutAll.cols; j++)
         {
-            mLutAll->at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
-            mLutAll->at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
-            mLutAll->at<float>(i, j+2) = mask.ptr<float>(i)[j];
+            mLutAll.at<float>(i, j) = lookupTabHor.ptr<float>(i)[j];
+            mLutAll.at<float>(i, j+1) = lookupTabVer.ptr<float>(i)[j];
+            mLutAll.at<float>(i, j+2) = mask.ptr<float>(i)[j];
         }
     }
 
+    lookupTabHor.release();
+    lookupTabVer.release();
+    mask.release();
+
     std::cout << "GLShader::initConfig"
-            << ", mLutAll:" << mLutAll->cols << "x" << mLutAll->rows << " type:" << mLutAll->type()
+            << ", mLutAll:" << mLutAll.cols << "x" << mLutAll.rows << " type:" << mLutAll.type()
             << std::endl;
 }
 

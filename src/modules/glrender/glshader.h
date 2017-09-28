@@ -49,7 +49,7 @@ protected:
     unsigned int mFocusChannelIndex;
     unsigned int mPanoramaView;
 
-    cv::Mat* mLutAll;
+    cv::Mat mLutAll;
 };
 
 #endif // GLSHADERR_H
