@@ -66,7 +66,7 @@ void GLShader::loadLut(int index)
             << ", mask:" << mask.cols << "x" << mask.rows << " type:" << mask.type()
             << std::endl;
 
-    if (NULL == mLutAll)
+    if (NULL != mLutAll)
     {
         delete mLutAll;
         mLutAll = NULL;
