@@ -13,6 +13,7 @@ class Controller
 public:
     static const int EVENT_UPDATE_FOCUS_CHANNEL = 0;
     static const int EVENT_UPDATE_PANORAMA_VIEW = 1;
+    static const int EVENT_CAPTURE_IMAGE = 2;
 
 public:
     Controller();

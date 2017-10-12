@@ -111,6 +111,8 @@ void GLShaderRGB::initTexture()
 
     mUserData.lutLoc = glGetUniformLocation(mProgramObject, "s_lut");
 
+    mUserData.panoramaViewLoc = glGetUniformLocation(mProgramObject, "u_panorama_view");
+
     glGenTextures(1, &mUserData.frontTexId);
     glGenTextures(1, &mUserData.rearTexId);
     glGenTextures(1, &mUserData.leftTexId);
@@ -158,12 +160,16 @@ void GLShaderRGB::updateFocusChannel()
 
 void GLShaderRGB::updatePanoramaView()
 {
-    if (++mPanoramaView > PANORAMA_VIEW_NUM)
+    if (++mPanoramaView > PANORAMA_VIEW_MAX)
     {
-        mPanoramaView = PANORAMA_VIEW_BIRD;
+        mPanoramaView = PANORAMA_VIEW_MIN;
     }
 
-    loadLut(mPanoramaView);
+    if (mPanoramaView >= PANORAMA_VIEW_BIRD
+        && mPanoramaView <= PANORAMA_VIEW_MAX)
+    {
+        loadLut(mPanoramaView);
+    }
 
     //must run in single thread
     //glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
@@ -337,12 +343,16 @@ void GLShaderRGB::glDraw()
     //lut
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    if (mUpdateLut)
+    if (mUpdateLut
+        && (mPanoramaView >= PANORAMA_VIEW_BIRD
+        && mPanoramaView <= PANORAMA_VIEW_MAX))
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll.data);
         mUpdateLut = false;
     }
     glUniform1i(mUserData.lutLoc, 4);
+
+    glUniform1i(mUserData.panoramaViewLoc, mPanoramaView);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

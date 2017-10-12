@@ -17,7 +17,7 @@ GLShader::GLShader(ESContext* context, const std::string programBinaryFile)
     mProgramObject = -1;
 
     mFocusChannelIndex = VIDEO_CHANNEL_FRONT;
-    mPanoramaView = PANORAMA_VIEW_BIRD;
+    mPanoramaView = PANORAMA_VIEW_MIN;
 
 }
 
@@ -28,7 +28,12 @@ GLShader::~GLShader()
 
 int GLShader::initConfig()
 {
-    loadLut(mPanoramaView);
+    if (mPanoramaView >= PANORAMA_VIEW_BIRD
+        && mPanoramaView <= PANORAMA_VIEW_MAX)
+    {
+        loadLut(mPanoramaView);
+    }
+
     return 0;
 }
 

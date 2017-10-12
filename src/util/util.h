@@ -33,6 +33,8 @@ public:
     static int readAllBytes(std::vector<unsigned char>& byteArray, const char* filename);
 
     static int writeAllBytes(const char* filename, const std::vector<unsigned char>& byteArray, int size);
+
+    static void write2File(int channel, void* image);
 private:
     static size_t convert(const std::streamoff value);
     static int getStreamLength(std::ifstream& stream);

@@ -1,6 +1,8 @@
 #include "util.h"
 #include <unistd.h>
 #include <string.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 Util::Util()
 {
@@ -270,4 +272,27 @@ int Util::writeAllBytes(const char* filename, const std::vector<unsigned char>& 
         return -1;
     }
     return 0;
+}
+
+
+void Util::write2File(int channel, void* image)
+{
+    IplImage* frame = (IplImage*)image;
+    char outImageName[256] = {0};
+    IplImage* outImage = cvCreateImage(cvGetSize(frame),frame->depth,frame->nChannels);
+    // 将原图拷贝过来
+    cvCopy(frame,outImage,NULL);
+
+    timespec time;
+    clock_gettime(CLOCK_REALTIME, &time);
+    tm now;
+    localtime_r(&time.tv_sec, &now);
+
+    //设置保存的图片名称和格式
+    memset(outImageName, 0, sizeof(outImageName));
+    sprintf(outImageName, "cam%d_%04d%02d%02d_%02d%02d%02d.jpg", channel,
+            now.tm_year + 1900, now.tm_mon+1, now.tm_mday, 
+            now.tm_hour, now.tm_min, now.tm_sec);
+    //保存图片
+    cvSaveImage(outImageName, outImage, 0);
 }

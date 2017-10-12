@@ -74,4 +74,6 @@ void ControllerGL::procEvent(int event)
         default:
             break;
     }
+
+    Controller::procEvent(event);
 }

@@ -136,12 +136,16 @@ void GLShaderYUYV::updateFocusChannel()
 
 void GLShaderYUYV::updatePanoramaView()
 {
-    if (++mPanoramaView > PANORAMA_VIEW_NUM)
+    if (++mPanoramaView > PANORAMA_VIEW_MAX)
     {
         mPanoramaView = PANORAMA_VIEW_BIRD;
     }
 
-    loadLut(mPanoramaView);
+    if (mPanoramaView >= PANORAMA_VIEW_BIRD
+        && mPanoramaView <= PANORAMA_VIEW_MAX)
+    {
+        loadLut(mPanoramaView);
+    }
 
     mUpdateLut = true;
 }
@@ -309,7 +313,9 @@ void GLShaderYUYV::glDraw()
     //lut
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, mUserData.lutTexId);
-    if (mUpdateLut)
+    if (mUpdateLut
+        && (mPanoramaView >= PANORAMA_VIEW_BIRD
+        && mPanoramaView <= PANORAMA_VIEW_MAX))
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, PANORAMA_WIDTH, PANORAMA_HEIGHT, 0, GL_RGB, GL_FLOAT, mLutAll.data);
         mUpdateLut = false;

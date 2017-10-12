@@ -31,9 +31,12 @@ protected:
     static const int PANORAMA_WIDTH = 424;
     static const int PANORAMA_HEIGHT = 600;
 
+    static const int PANORAMA_VIEW_MIN = -1;
+    static const int PANORAMA_VIEW_4VIEW = PANORAMA_VIEW_MIN;
     static const int PANORAMA_VIEW_BIRD = 0;
     static const int PANORAMA_VIEW_REAR = 1;
-    static const int PANORAMA_VIEW_NUM = 16;
+    static const int PANORAMA_VIEW_FRONT = 16;
+    static const int PANORAMA_VIEW_MAX = PANORAMA_VIEW_FRONT;
 
 private:
     GLuint LoadProgram(unsigned char *buf, int length);

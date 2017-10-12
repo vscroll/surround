@@ -41,6 +41,8 @@ private:
 
         GLint lutLoc;
 
+        GLint panoramaViewLoc;
+
         // Texture handle
         GLuint frontTexId;
         GLuint rearTexId;

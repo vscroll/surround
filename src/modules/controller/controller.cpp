@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <opencv/cv.h>
 
 class InputEventWorker : public WrapThread
 {
@@ -103,18 +104,30 @@ void InputEventWorker::run()
             }
 
             if (event[i].type == EV_KEY
-                && event[i].code == BTN_TOUCH
-                && event[i].value == 0)
+                && event[i].code == BTN_TOUCH)
             {
-                if (x >= 424 && y >= 0)
+                std::cout << "(x,y):" << x << "," << y << std::endl;
+                if (x >= 424)
                 {
+            	    std::cout << "Controller::EVENT_UPDATE_FOCUS_CHANNEL" << std::endl;
                     mController->procEvent(Controller::EVENT_UPDATE_FOCUS_CHANNEL);
+                }
+                else if (x >= 0)
+                {
+                    if (y >= 300)
+                    {
+                        std::cout << "Controller::EVENT_UPDATE_PANORAMA_VIEW" << std::endl;
+                        mController->procEvent(Controller::EVENT_UPDATE_PANORAMA_VIEW);
+                    }
+                    else
+                    {
+                        std::cout << "Controller::EVENT_CAPTURE_IMAGE" << std::endl;
+                        mController->procEvent(Controller::EVENT_CAPTURE_IMAGE);
+                    }
                 }
                 else
                 {
-                    mController->procEvent(Controller::EVENT_UPDATE_PANORAMA_VIEW);
                 }
-                break;
             }
         }
     }
@@ -365,4 +378,39 @@ void Controller::stopInputEventModule()
 
 void Controller::procEvent(int event)
 {
+    if (NULL == mCapture)
+    {
+        return;
+    }
+
+    switch (event)
+    {
+        case EVENT_CAPTURE_IMAGE:
+        {
+            surround_images_t* surroundImage = mCapture->popOneFrame();
+            if (NULL != surroundImage)
+            {
+                std::cout << "Controller::procEvent EVENT_CAPTURE_IMAGE"
+                        << std::endl;
+
+                for (int i = 0; i < VIDEO_CHANNEL_SIZE; ++i)
+                {
+                    unsigned char* buffer = (unsigned char*)surroundImage->frame[i].data;
+                    int width = surroundImage->frame[i].info.width;
+                    int height = surroundImage->frame[i].info.height;
+                    int pixfmt = surroundImage->frame[i].info.pixfmt;
+                    int size = surroundImage->frame[i].info.size;
+                    if (pixfmt == V4L2_PIX_FMT_RGB32)
+                    {
+                        cv::Mat image = cv::Mat(height, width, CV_8UC4, buffer);
+                        IplImage iplImage = IplImage(image);
+                        Util::write2File(i, &iplImage);
+                    }
+                }
+            }
+            break;
+        }          
+        default:
+            break;
+    }
 }

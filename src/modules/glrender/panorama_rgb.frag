@@ -16,6 +16,7 @@ uniform sampler2D s_rear;
 uniform sampler2D s_left;
 uniform sampler2D s_right;
 uniform sampler2D s_lut;
+uniform int u_panorama_view;
 
 out vec4 o_fragColor;
 
@@ -38,6 +39,66 @@ void main()
 
     int x_screen = int(gl_FragCoord.x);
     int y_screen = int(gl_FragCoord.y);
+
+    if (u_panorama_view == -1)
+    {
+        int display_width = screen_width/2;
+        int display_height = screen_height/2;
+ 
+        if (x_screen < display_width)
+        {
+            if (y_screen < display_height)
+            {
+                int y_image = display_height - y_screen - 1;
+                int x_image = x_screen;
+                int display_y = y_image*image_height/display_height;
+                int display_x = x_image*image_width/display_width;
+                float s = float(display_x)/float(image_width);
+                float t = float(display_y)/float(image_height);
+                vec2 texCoord = vec2(s, t);
+                rgb = texture(s_rear, texCoord);
+            }
+            else
+            {
+                int y_image = display_height - (y_screen - display_height) - 1;
+                int x_image = x_screen;
+                int display_y = y_image*image_height/display_height;
+                int display_x = x_image*image_width/display_width;
+                float s = float(display_x)/float(image_width);
+                float t = float(display_y)/float(image_height);
+                vec2 texCoord = vec2(s, t);
+                rgb = texture(s_front, texCoord);
+            }
+        }
+        else
+        {
+            if (y_screen < display_height)
+            {
+                int y_image = display_height - y_screen - 1;
+                int x_image = x_screen - display_width;
+                int display_y = y_image*image_height/display_height;
+                int display_x = x_image*image_width/display_width;
+                float s = float(display_x)/float(image_width);
+                float t = float(display_y)/float(image_height);
+                vec2 texCoord = vec2(s, t);
+                rgb = texture(s_right, texCoord);
+            }
+            else
+            {
+                int y_image = display_height - (y_screen - display_height) - 1;
+                int x_image = x_screen - display_width;
+                int display_y = y_image*image_height/display_height;
+                int display_x = x_image*image_width/display_width;
+                float s = float(display_x)/float(image_width);
+                float t = float(display_y)/float(image_height);
+                vec2 texCoord = vec2(s, t);
+                rgb = texture(s_left, texCoord);
+            }
+        }       
+
+        o_fragColor = rgb;
+        return;
+    }
 
     if (x_screen < panorama_width)
     {
